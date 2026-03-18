@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+    <html lang="vi">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large">
+        <link rel="canonical" href="https://phim.nguonc.com/api-document">
+        <meta property="og:locale" content="vi_VN">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="NGUỒN PHIM">
+        <meta property="og:url" content="https://phim.nguonc.com/api-document">
+        <title>Hướng dẫn sử dụng API</title>
+        <meta property="og:title" content="Hướng dẫn sử dụng API">
+        <meta name="twitter:title" content="Hướng dẫn sử dụng API">
+        <meta name="apple-mobile-web-app-title" content="Hướng dẫn sử dụng API">
+        <meta property="og:image:alt" content="Hướng dẫn sử dụng API">
+        <meta name="apple-mobile-web-app-title" content="API Document - Dữ liệu phim vietsub mới nhất. Cập nhật nhanh chóng, chất lượng cao và không quảng cáo">
+<meta name="description" content="Hướng dẫn sử dụng API">
+<meta property="og:description" content="Hướng dẫn sử dụng API">
+<meta property="og:image" content="https://phim.nguonc.com/public/images/Logo/logonc.png">
+<meta property="og:image:secure_url" content="https://phim.nguonc.com/public/images/Logo/logonc.png">
+<meta property="og:image:alt" content="API Document">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:description" content="Hướng dẫn sử dụng API">
+<meta name="twitter:site" content="@NGUỒN PHIM">
+<meta name="twitter:creator" content="@Animesub">
+<meta name="twitter:image" content="https://phim.nguonc.com/public/images/Logo/logonc.png">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Animesub">
+<script type="application/ld+json" class="seo_generate">{"@context":"https:\/\/schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/phim.nguonc.com\/api-document#article"},"headline":"H\u01b0\u1edbng d\u1eabn s\u1eed d\u1ee5ng API","image":["https:\/\/phim.nguonc.com\/public\/images\/Logo\/logonc.png"],"datePublished":"2023-05-31","dateModified":"2024-05-07","author":{"@type":"Person","name":"Animesub"},"publisher":{"@type":"Organization","id":"#Organization","name":"NGU\u1ed2N PHIM","logo":{"@type":"ImageObject","url":"https:\/\/phim.nguonc.com\/public\/images\/Logo\/logonc.png"}},"description":"H\u01b0\u1edbng d\u1eabn s\u1eed d\u1ee5ng API"}</script>
+<script type="application/ld+json" class="seo_generate">{"@context":"https:\/\/schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":2,"name":"API Document","item":"https:\/\/phim.nguonc.com\/api-document"}]}</script>
+        <link rel="shortlink" href="https://phim.nguonc.com/api-document">
+        <link rel="shortcut icon" href="https://phim.nguonc.com/public/images/Logo/tv.png">
+        <link rel="apple-touch-icon-precomposed" href="https://phim.nguonc.com/public/images/Logo/tv.png">
+        <link rel="stylesheet" href="https://phim.nguonc.com/public/style/site/css/index.css">
+        <script>
+            try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark')
+                } else {
+                    document.documentElement.classList.add('light')
+                }
+            } catch (_) {}
+        </script>
+        <style>
+            .dark .close_menu_mb svg{
+                fill: #d9d1d1;
+            }
+            .page-item.disabled .page-link{
+                display: none !important;
+            }
+        </style>
+        
+    </head>
+
+    <body class="antialiased text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900">
+        <div class="absolute z-20 top-0 inset-x-0 flex justify-center overflow-hidden pointer-events-none">
+            <div class="w-[108rem] flex-none flex justify-end">
+                <picture><img src="https://phim.nguonc.com/public/pictures/bg-light.png" alt=""
+                        class="w-[71.75rem] flex-none max-w-none dark:hidden"></picture>
+                <picture><img src="https://phim.nguonc.com/public/pictures/bg-dark.png" alt=""
+                        class="w-[90rem] flex-none max-w-none hidden dark:block"></picture>
+            </div>
+        </div>
+        <div class="sticky top-0 z-40 w-full flex-none transition-colors duration-500 lg:z-50 lg:border-b lg:border-slate-900/10 dark:border-slate-50/[0.06] backdrop-blur bg-white/60 dark:bg-transparent">
+            <div class="max-w-8xl mx-auto">
+                <div class="py-4 border-b border-slate-900/10 lg:px-8 lg:border-0 dark:border-slate-300/10 mx-4 lg:mx-0">
+                    <div class="relative flex items-center">
+                        <div class="mr-3 flex-none overflow-hidden w-auto">
+                            <span class="font-bold">
+                                <a href="https://phim.nguonc.com" class="ajax-load">
+                                    <img class="hidden dark:inline" src="https://phim.nguonc.com/public/images/Logo/logonc.png"
+                                        width="150" height="40" alt="https://phim.nguonc.com/NGUỒN PHIM" />
+                                    <img class="dark:hidden" src="https://phim.nguonc.com/public/images/Logo/logonc.png"
+                                        width="150" height="40" alt="https://phim.nguonc.com/NGUỒN PHIM" />
+                                </a>
+                            </span>
+                        </div>
+                        <div class="relative pointer-events-auto">
+                            <div class="relative hidden xl:block">
+                                <form class="group relative form-ajax m-0" method="GET" action="https://phim.nguonc.com/tim-kiem">
+                                    <svg width="20" height="20" fill="currentColor" class="absolute left-3 top-1/2 -mt-2.5 text-slate-400 pointer-events-none group-focus-within:text-blue-500" aria-hidden="true">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z">
+                                        </path>
+                                    </svg>
+                                    <input type="text" value=""
+                                        class="keyword_search required focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none w-full text-sm leading-6 text-slate-900 dark:text-slate-100 placeholder-slate-400 rounded-full py-2 pl-10 ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm dark:bg-slate-800 dark:highlight-white/5 dark:hover:bg-slate-700"
+                                        aria-label="Tìm kiếm phim" name="keyword" required placeholder="Tìm kiếm phim..." />
+                                    </form>
+                            </div>
+                        </div>
+                        <div class="relative flex ml-auto">
+                            <nav class="text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200" id="menu-header">
+    <ul class="flex space-x-8">
+                    <li>
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 ajax-load" href="https://phim.nguonc.com/danh-sach/tv-shows">TV shows</a>
+                            </li>
+                    <li>
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 ajax-load" href="https://phim.nguonc.com/danh-sach/phim-le">Phim lẻ</a>
+                            </li>
+                    <li>
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 ajax-load" href="https://phim.nguonc.com/danh-sach/phim-bo">Phim bộ</a>
+                            </li>
+                    <li>
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 ajax-load" href="https://phim.nguonc.com/danh-sach/phim-dang-chieu">Phim đang chiếu</a>
+                            </li>
+                    <li>
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu inline-flex justify-center w-full text-sm font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Thể loại
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub-menu absolute right-0 w-[450px] mt-8 origin-top-right bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 grid grid-flow-rows grid-cols-3 justify-items-center" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hanh-dong">Hành Động</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phieu-luu">Phiêu Lưu</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hoat-hinh">Hoạt Hình</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-hai">Hài</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hinh-su">Hình Sự</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tai-lieu">Tài Liệu</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/chinh-kich">Chính Kịch</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gia-dinh">Gia Đình</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gia-tuong">Giả Tưởng</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/lich-su">Lịch Sử</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/kinh-di">Kinh Dị</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-nhac">Nhạc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/bi-an">Bí Ẩn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/lang-man">Lãng Mạn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/khoa-hoc-vien-tuong">Khoa Học Viễn Tưởng</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gay-can">Gây Cấn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/chien-tranh">Chiến Tranh</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tam-ly">Tâm Lý</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tinh-cam">Tình Cảm</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/co-trang">Cổ Trang</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/mien-tay">Miền Tây</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-18">Phim 18+</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li>
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu inline-flex justify-center w-full text-sm font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Quốc gia
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub-menu absolute right-0 w-[450px] mt-8 origin-top-right bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 grid grid-flow-rows grid-cols-3 justify-items-center" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/au-my">Âu Mỹ</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/anh">Anh</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/trung-quoc">Trung Quốc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/indonesia">Indonesia</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/viet-nam">Việt Nam</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/phap">Pháp</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/hong-kong">Hồng Kông</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/han-quoc">Hàn Quốc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/nhat-ban">Nhật Bản</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/thai-lan">Thái Lan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/dai-loan">Đài Loan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/nga">Nga</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/ha-lan">Hà Lan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/philippines">Philippines</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/an-do">Ấn Độ</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/quoc-gia-khac">Quốc gia khác</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li>
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu inline-flex justify-center w-full text-sm font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Năm
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub-menu absolute right-0 w-[450px] mt-8 origin-top-right bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 grid grid-flow-rows grid-cols-3 justify-items-center" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2004">2004</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2005">2005</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2006">2006</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2007">2007</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2008">2008</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2009">2009</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2010">2010</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2011">2011</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2012">2012</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2013">2013</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2014">2014</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2015">2015</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2016">2016</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2017">2017</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2018">2018</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2019">2019</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2020">2020</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2021">2021</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2022">2022</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2023">2023</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2024">2024</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2025">2025</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-sm" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2026">2026</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li>
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 ajax-load" href="https://phim.nguonc.com/cau-hoi-thuong-gap">Faqs</a>
+                            </li>
+            </ul>
+</nav>
+
+                            <div class="flex items-center border-l border-slate-200 ml-6 pl-6 dark:border-slate-800">
+                                <label class="sr-only">Theme</label>
+                                <div class="relative inline-block text-left">
+                                    <button class="open_theme inline-flex justify-center w-full text-sm font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                        id="headlessui-menu-button-undefined" type="button" aria-haspopup="true"
+                                        aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                                            class="dark:hidden w-6 h-6">
+                                            <path fill-rule="evenodd"
+                                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                clip-rule="evenodd"></path>
+                                        </svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                            fill="currentColor" aria-hidden="true"
+                                            class="hidden dark:inline w-6 h-6">
+                                            <path
+                                                d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                    <ul class="option_theme absolute z-50 top-full right-0 bg-white rounded-lg ring-1 ring-slate-900/10 shadow-lg overflow-hidden w-36 py-1 text-sm text-slate-700 font-semibold dark:bg-slate-800 dark:ring-0 dark:highlight-white/5 dark:text-slate-300 mt-4"
+                                        role="menu" tabindex="0">
+                                        <li class="py-1 px-2 flex items-center cursor-pointer text-sky-500 dark:text-gray-50 hover:bg-slate-50 dark:hover:bg-slate-600 theme"
+                                            data-theme="light">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" aria-hidden="true" class="w-6 h-6 mr-2">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg> Sáng
+                                        </li>
+                                        <li class="py-1 px-2 flex items-center cursor-pointer text-gray-600 dark:text-sky-500 hover:bg-slate-50 dark:hover:bg-slate-600 theme"
+                                            data-theme="dark">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" aria-hidden="true" class="w-6 h-6 mr-2">
+                                                <path
+                                                    d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z">
+                                                </path>
+                                            </svg> Tối
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative ml-4 xl:hidden">
+                            <button type="button" class="open-search ml-auto text-slate-500 w-8 h-8 -my-1 rounded-full">
+                                <span class="sr-only">Search</span>
+                                <svg width="24" height="24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m19 19-3.5-3.5"></path>
+                                    <circle cx="11" cy="11" r="6"></circle>
+                                </svg>
+                            </button>
+                            <div class="form-search absolute right-0 mt-2 origin-top-right" role="menu" tabindex="0">
+                                <form class="group relative form-ajax m-0" method="GET" action="https://phim.nguonc.com/tim-kiem">
+                                    <svg width="20" height="20" fill="currentColor" class="absolute left-3 top-1/2 -mt-2.5 text-slate-400 pointer-events-none group-focus-within:text-blue-500" aria-hidden="true">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z">
+                                    </path>
+                                    </svg>
+                                    <input type="text" value="" name="keyword" style="min-width: 200px" required class="required keyword_search focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none w-full text-sm leading-6 text-slate-900 dark:text-slate-100 placeholder-slate-400 rounded-full py-2 pl-10 ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm dark:bg-slate-800 dark:highlight-white/5 dark:hover:bg-slate-700"
+                                    aria-label="Tìm kiếm phim" placeholder="Tìm kiếm phim..." />
+                                </form>
+                            </div>
+                        </div>
+                        <div class="ml-2 -my-1 xl:hidden">
+                            <button type="button" id="open-menu"
+                                class="text-slate-500 w-8 h-8 flex items-center justify-center hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"><span
+                                    class="sr-only">Navigation</span><svg xmlns="http://www.w3.org/2000/svg"
+                                    class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M4 6h16M4 12h16M4 18h16">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container px-2 mx-auto" id="content">
+                <!--<link rel="stylesheet" href="https://phim.nguonc.com/public/js/plugins/prism/prism.css">-->
+    <h1 class="h1 text-center mt-4 text-2xl">Hướng dẫn sử dụng API</h1>
+    <div class="content-page container">
+        <div class="container mx-auto mt-2 px-8 py-2 w-full">
+<div class="flex flex-col">
+<div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8 space-y-2">
+<div class="w-full">
+<h1 class="mb-4 text-2xl uppercase font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#7367F0] to-[#cecbf0]">D&agrave;nh cho nh&agrave; ph&aacute;t triển Website</h1>
+
+<div class="w-full space-y-2 mx-auto bg-gray-100 dark:bg-slate-800 rounded-2xl">
+<div class="mt-4 card-collapse"><button aria-controls="headlessui-disclosure-panel-5" aria-expanded="true" class="toggle-content flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-sky-900 bg-sky-300 dark:text-sky-400 dark:bg-sky-900 rounded-lg rounded-b-none hover:bg-sky-200" id="headlessui-disclosure-button-4" type="button"><span>Danh s&aacute;ch phim</span><svg aria-hidden="true" class="transform rotate-180 w-5 h-5 text-sky-500" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" fill-rule="evenodd"></path></svg></button>
+
+<div class="card-collapse-content px-4 pt-4 pb-2 text-sm text-gray-500 dark:text-gray-200">
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Phim mới cập nhật</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=</span><span class="font-semibold text-red-500 disable">${page}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1</span></div>
+</div>
+
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Phim theo danh mục</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/danh-sach/<span class="font-semibold text-red-500 disable">${slug}</span>?page=</span><span class="font-semibold text-red-500 disable">${page}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/danh-sach/phim-dang-chieu?page=1</span></div>
+</div>
+
+<div class="mt-4 card-collapse"><button aria-controls="headlessui-disclosure-panel-5" aria-expanded="true" class="toggle-content flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-sky-900 bg-sky-300 dark:text-sky-400 dark:bg-sky-900 rounded-lg rounded-b-none hover:bg-sky-200" id="headlessui-disclosure-button-4" type="button"><span>Phim &amp; Tập Phim</span><svg aria-hidden="true" class="transform rotate-180 w-5 h-5 text-sky-500" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" fill-rule="evenodd"></path></svg></button>
+
+<div class="card-collapse-content px-4 pt-4 pb-2 text-sm text-gray-500 dark:text-gray-200">
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Th&ocirc;ng tin Phim &amp; Danh s&aacute;ch tập phim</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/film/</span><span class="font-semibold text-red-500 disable">${slug}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/film/hoa-thien-cot</span></div>
+</div>
+</div>
+
+<div class="mt-4 card-collapse"><button aria-expanded="true" class="toggle-content flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-sky-900 bg-sky-300 dark:text-sky-400 dark:bg-sky-900 rounded-lg rounded-b-none hover:bg-sky-200" id="headlessui-disclosure-button-6" type="button"><span>Thể loại &amp; Quốc gia &amp; Năm</span><svg aria-hidden="true" class="w-5 h-5 text-sky-500 transform rotate-180" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" fill-rule="evenodd"></path></svg></button>
+
+<div class="card-collapse-content px-4 pt-4 pb-2 text-sm text-gray-500 dark:text-gray-200">
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Phim theo thể loại</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/the-loai/<span class="font-semibold text-red-500 disable">${slug}</span>?page=</span><span class="font-semibold text-red-500 disable">${page}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/the-loai/hanh-dong?page=1</span></div>
+</div>
+
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Phim theo quốc gia</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/quoc-gia/<span class="font-semibold text-red-500 disable">${slug}</span>?page=</span><span class="font-semibold text-red-500 disable">${page}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/quoc-gia/au-my?page=1</span></div>
+</div>
+
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">Phim theo năm</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/nam-phat-hanh/<span class="font-semibold text-red-500 disable">${slug}</span>?page=</span><span class="font-semibold text-red-500 disable">${page}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/nam-phat-hanh/2024?page=1</span></div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="mt-4 card-collapse"><button aria-controls="headlessui-disclosure-panel-5" aria-expanded="true" class="toggle-content flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-sky-900 bg-sky-300 dark:text-sky-400 dark:bg-sky-900 rounded-lg rounded-b-none hover:bg-sky-200" id="headlessui-disclosure-button-4" type="button"><span>T&igrave;m Phim</span><svg aria-hidden="true" class="transform rotate-180 w-5 h-5 text-sky-500" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" fill-rule="evenodd"></path></svg></button>
+
+<div class="card-collapse-content px-4 pt-4 pb-2 text-sm text-gray-500 dark:text-gray-200">
+<div class="w-full max-w-3xl px-2 sm:px-0">
+<h2 class="sm:text-xl text-lg text-slate-900 font-bold tracking-tight dark:text-slate-50 ">T&igrave;m kiếm phim</h2>
+
+<div class="ml-4 my-2"><span class="px-1 py-0.5 mr-2 rounded-md bg-sky-500 text-white cursor-pointer">GET</span><span class="font-semibold text-indigo-500">https://phim.nguonc.com/api/films/search?keyword=</span><span class="font-semibold text-red-500 disable">${slug}</span></div>
+
+<div class="ml-4 space-x-2"><span>V&iacute; dụ: https://phim.nguonc.com/api/films/search?keyword=Regeneration</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+    </div>
+    <!--<script src="https://phim.nguonc.com/public/js/plugins/prism/prism.js?ver=1.0"></script>-->
+        </div>
+        <footer class="text-sm leading-6 mt-16 p-2 xl:p-0">
+            <div class="container mx-auto pt-2 pb-28 border-t border-slate-200 text-slate-500 dark:border-slate-200/5">
+                <p class="block"><p>Tất cả nội dung của trang web n&agrave;y được thu thập từ c&aacute;c trang web video ch&iacute;nh thống tr&ecirc;n Internet v&agrave; kh&ocirc;ng cung cấp ph&aacute;t trực tuyến ch&iacute;nh h&atilde;ng. Nếu quyền lợi của bạn bị vi phạm, vui l&ograve;ng th&ocirc;ng b&aacute;o cho ch&uacute;ng t&ocirc;i, ch&uacute;ng t&ocirc;i sẽ x&oacute;a nội dung vi phạm kịp thời, cảm ơn sự hợp t&aacute;c của bạn!</p></p>
+                <div class="sm:flex justify-between pt-2">
+                    <div class="mb-6 sm:mb-0 sm:flex">
+                        <p>Copyright © 2023 NguonC.com</p>
+                        <p class="sm:ml-4 sm:pl-4 sm:border-l sm:border-slate-200 dark:sm:border-slate-200/5">
+        <a class="hover:text-slate-900 dark:hover:text-slate-400 ajax-load" href="https://phim.nguonc.com/gioi-thieu">Giới thiệu</a>
+    </p>
+    <p class="sm:ml-4 sm:pl-4 sm:border-l sm:border-slate-200 dark:sm:border-slate-200/5">
+        <a class="hover:text-slate-900 dark:hover:text-slate-400 ajax-load" href="https://phim.nguonc.com/khieu-nai-ban-quyen">Khiếu nại bản quyền</a>
+    </p>
+    <p class="sm:ml-4 sm:pl-4 sm:border-l sm:border-slate-200 dark:sm:border-slate-200/5">
+        <a class="hover:text-slate-900 dark:hover:text-slate-400 ajax-load" href="https://phim.nguonc.com/api-document">API</a>
+    </p>
+    <p class="sm:ml-4 sm:pl-4 sm:border-l sm:border-slate-200 dark:sm:border-slate-200/5">
+        <a class="hover:text-slate-900 dark:hover:text-slate-400 ajax-load" href="https://phim.nguonc.com/yeu-cau-phim">Yêu Cầu Phim</a>
+    </p>
+
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <nav class="text-sm leading-6 font-semibold text-slate-700 dark:text-slate-200 relative" id="menu_header_mobile">
+    <span class="absolute cursor-pointer close_menu_mb" style="top: 0px;right: 300px;"><svg xmlns="http://www.w3.org/2000/svg" style="width: 28px;height: 28px;" class="dark:bg-slate-800 bg-white" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg></span>
+    <ul class="list-decimal bg-white dark:bg-slate-800">
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 text-lg ajax-load menu_item" href="https://phim.nguonc.com/danh-sach/tv-shows">TV shows</a>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 text-lg ajax-load menu_item" href="https://phim.nguonc.com/danh-sach/phim-le">Phim lẻ</a>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 text-lg ajax-load menu_item" href="https://phim.nguonc.com/danh-sach/phim-bo">Phim bộ</a>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 text-lg ajax-load menu_item" href="https://phim.nguonc.com/danh-sach/phim-dang-chieu">Phim đang chiếu</a>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu_mobile inline-flex w-full text-lg font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Thể loại
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 mt-1 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub_menu_mobile origin-top-right mt-2 bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 flex flex-wrap" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hanh-dong">Hành Động</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phieu-luu">Phiêu Lưu</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hoat-hinh">Hoạt Hình</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-hai">Hài</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/hinh-su">Hình Sự</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tai-lieu">Tài Liệu</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/chinh-kich">Chính Kịch</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gia-dinh">Gia Đình</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gia-tuong">Giả Tưởng</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/lich-su">Lịch Sử</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/kinh-di">Kinh Dị</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-nhac">Nhạc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/bi-an">Bí Ẩn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/lang-man">Lãng Mạn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/khoa-hoc-vien-tuong">Khoa Học Viễn Tưởng</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/gay-can">Gây Cấn</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/chien-tranh">Chiến Tranh</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tam-ly">Tâm Lý</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/tinh-cam">Tình Cảm</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/co-trang">Cổ Trang</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/mien-tay">Miền Tây</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/the-loai/phim-18">Phim 18+</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu_mobile inline-flex w-full text-lg font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Quốc gia
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 mt-1 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub_menu_mobile origin-top-right mt-2 bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 flex flex-wrap" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/au-my">Âu Mỹ</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/anh">Anh</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/trung-quoc">Trung Quốc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/indonesia">Indonesia</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/viet-nam">Việt Nam</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/phap">Pháp</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/hong-kong">Hồng Kông</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/han-quoc">Hàn Quốc</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/nhat-ban">Nhật Bản</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/thai-lan">Thái Lan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/dai-loan">Đài Loan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/nga">Nga</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/ha-lan">Hà Lan</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/philippines">Philippines</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/an-do">Ấn Độ</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/quoc-gia/quoc-gia-khac">Quốc gia khác</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                <span class="hover:text-sky-500 dark:hover:text-sky-400">
+                    <div class="relative inline-block text-left">
+                        <button class="has_sub_menu_mobile inline-flex w-full text-lg font-medium rounded-md bg-opacity-20 hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+                                type="button" aria-haspopup="true" aria-expanded="true">Năm
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"class="w-5 mt-1 h-5 ml-2 -mr-1 text-violet-400 hover:text-violet-800">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div class="sub_menu_mobile origin-top-right mt-2 bg-white dark:bg-slate-800 divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" tabindex="0">
+                            <div class="px-1 py-1 flex flex-wrap" role="none">
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2004">2004</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2005">2005</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2006">2006</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2007">2007</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2008">2008</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2009">2009</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2010">2010</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2011">2011</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2012">2012</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2013">2013</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2014">2014</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2015">2015</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2016">2016</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2017">2017</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2018">2018</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2019">2019</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2020">2020</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2021">2021</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2022">2022</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2023">2023</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2024">2024</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2025">2025</a>
+                                    </button>
+                                                                    <button class="hover:bg-violet-500 hover:text-white text-gray-900 dark:text-white group flex rounded-md text-md" role="menuitem" tabindex="-1">
+                                        <a class="px-4 py-2 ajax-load menu_item" href="https://phim.nguonc.com/nam-phat-hanh/2026">2026</a>
+                                    </button>
+                                                            </div>
+                        </div>
+                    </div>
+                </span>
+                            </li>
+                    <li class="border-b border-slate-200 dark:border-slate-800">
+                                    <a class="hover:text-sky-500 dark:hover:text-sky-400 text-lg ajax-load menu_item" href="https://phim.nguonc.com/cau-hoi-thuong-gap">Faqs</a>
+                            </li>
+            </ul>
+</nav>
+
+        <div id="nprogress" style="opacity: 0">
+            <div class="bar" role="bar" style="transform: translate3d(-87%, 0px, 0px);transition: all 500ms ease 0s;">
+                <div class="peg"></div>
+            </div>
+        </div>
+        <script>
+            const Hn_Framework = {
+                ele: '#content',
+                url: 'https://phim.nguonc.com',
+                _token: 't1f2mWqiKWIx6aB74wSUbGbTtObyxsQfOp8KTAG1',
+                settings: {
+                    dev: 1,
+                    top: 80,
+                }
+            }
+        </script>
+        <link rel="stylesheet" href="https://phim.nguonc.com/public/js/plugins/cute-alert/style.css">
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="https://phim.nguonc.com/public/js/site/functions.js?ver=1.0.2" referrerpolicy="origin"></script>
+        <script src="https://phim.nguonc.com/public/js/plugins/cute-alert/cute-alert.js" defer></script>
+        <script src="https://phim.nguonc.com/public/js/site/main.js?ver=1.0.0" referrerpolicy="origin"></script>
+            </body>
+
+    </html>
+

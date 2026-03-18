@@ -1,0 +1,5 @@
+{
+  "name": "Phimcuatoi Clone",
+  "description": "A movie streaming website clone of phimcuatoi.com using phim.nguonc.com API.",
+  "requestFramePermissions": []
+}

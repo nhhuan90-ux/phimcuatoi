@@ -30,11 +30,14 @@ export default function Browse({ type }: { type: string }) {
         }
 
         const res = await fetchMovies(endpoint, page);
-        setMovies(res.items || []);
         
-        // The API returns paginate info
-        if (res.paginate) {
-          setTotalPages(res.paginate.total_page);
+        // Remove duplicates (phimapi sometimes returns duplicate movies in lists)
+        const uniqueMovies = Array.from(new Map((res.items || []).map((m: any) => [m.slug, m])).values());
+        setMovies(uniqueMovies as any);
+        
+        // phimapi and our normalization returns pagination
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages || res.pagination.totalItems / res.pagination.totalItemsPerPage || 1);
         }
         
         // Set title based on slug or year

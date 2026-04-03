@@ -83,18 +83,16 @@ export default function Watch() {
         </div>
 
         {/* Player */}
-        <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 relative">
+        <div className="w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4" style={{ paddingBottom: '56.25%' }}>
           {currentEpData.embed ? (
             <iframe
-              key={playerKey}
               src={currentEpData.embed.replace(/^http:\/\//i, 'https://')}
-              className="w-full h-full border-0 absolute inset-0"
+              className="absolute top-0 left-0 w-full h-full border-0"
               allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              title={`Watch ${movie.name} Episode ${currentEpData.name}`}
+              title={movie.name}
             ></iframe>
           ) : (
-            <div className="flex items-center justify-center w-full h-full text-gray-400">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
               Không tìm thấy link phát video.
             </div>
           )}

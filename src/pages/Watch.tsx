@@ -9,6 +9,7 @@ export default function Watch() {
   const [currentEpData, setCurrentEpData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
+  const [playerKey, setPlayerKey] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,6 +61,10 @@ export default function Watch() {
     window.scrollTo(0, 0);
   }, [slug, episode, navigate]);
 
+  const reloadPlayer = () => {
+    setPlayerKey(prev => prev + 1);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -87,12 +92,6 @@ export default function Watch() {
       </div>
     );
   }
-
-  const [playerKey, setPlayerKey] = useState(0);
-
-  const reloadPlayer = () => {
-    setPlayerKey(prev => prev + 1);
-  };
 
   return (
     <div className="bg-[#0a0a0a] min-h-screen">

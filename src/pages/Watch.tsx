@@ -64,6 +64,12 @@ export default function Watch() {
     );
   }
 
+  const [playerKey, setPlayerKey] = useState(0);
+
+  const reloadPlayer = () => {
+    setPlayerKey(prev => prev + 1);
+  };
+
   return (
     <div className="bg-[#0a0a0a] min-h-screen">
       <div className="container mx-auto px-4 lg:px-8 py-6">
@@ -80,6 +86,7 @@ export default function Watch() {
         <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 relative">
           {currentEpData.embed ? (
             <iframe
+              key={playerKey}
               src={currentEpData.embed.replace(/^http:\/\//i, 'https://')}
               className="w-full h-full border-0 absolute inset-0"
               allowFullScreen
@@ -93,17 +100,28 @@ export default function Watch() {
           )}
         </div>
         
-        <div className="flex justify-end mb-6">
-          {currentEpData.embed && (
-            <a 
-              href={currentEpData.embed.replace(/^http:\/\//i, 'https://')} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-white underline"
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <div className="flex gap-4">
+            <button 
+              onClick={reloadPlayer}
+              className="px-4 py-2 bg-[#2b2b2b] hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
             >
-              Lỗi khởi tạo player? Nhấn vào đây để xem
-            </a>
-          )}
+              <span>🔄</span> Tải lại player
+            </button>
+            {currentEpData.embed && (
+              <a 
+                href={currentEpData.embed.replace(/^http:\/\//i, 'https://')} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <span>🔗</span> Mở link trực tiếp
+              </a>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 italic">
+            * Nếu player không tải được, hãy thử nhấn "Tải lại player" hoặc "Mở link trực tiếp".
+          </p>
         </div>
 
         {/* Movie Info */}

@@ -20,6 +20,7 @@ const GENRES = [
   { name: 'Thần Thoại', slug: 'than-thoai' },
   { name: 'Tài Liệu', slug: 'tai-lieu' },
   { name: 'Gia Đình', slug: 'gia-dinh' },
+  { name: 'Phim 18+', slug: 'phim-18' },
 ];
 
 export default function GenreCarousel() {

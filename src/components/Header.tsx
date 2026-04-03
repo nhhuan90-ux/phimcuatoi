@@ -34,8 +34,9 @@ export default function Header() {
   const navLinks = [
     { name: 'Phim Lẻ', path: '/danh-sach/phim-le' },
     { name: 'Phim Bộ', path: '/danh-sach/phim-bo' },
+    { name: 'Phim Hot / Rạp', path: '/danh-sach/phim-dang-chieu' },
+    { name: 'Phim 18+', path: '/the-loai/phim-18' },
     { name: 'Hoạt Hình', path: '/danh-sach/hoat-hinh' },
-    { name: 'TV Shows', path: '/danh-sach/tv-shows' },
   ];
 
   return (
@@ -49,7 +50,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center gap-8">
             <Link to="/" className="text-2xl font-bold text-red-600 tracking-tighter">
-              PHIMCUATOI<span className="text-white">.COM</span>
+              PHIMCUATOI<span className="text-white">.ONLINE</span>
             </Link>
             <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map((link) => (

@@ -4,72 +4,103 @@ import MovieSection from '../components/MovieSection';
 import HeroSlider from '../components/HeroSlider';
 import GenreCarousel from '../components/GenreCarousel';
 
-export default function Home() {
-  const [newMovies, setNewMovies] = useState([]);
+const MovieSectionWithFetch = ({ title, endpoint, viewAllLink }: { title: string; endpoint: string; viewAllLink?: string }) => {
   const [movies, setMovies] = useState([]);
-  const [series, setSeries] = useState([]);
-  const [cartoons, setCartoons] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
-        setLoading(true);
-        const [newRes, moviesRes, seriesRes, cartoonRes] = await Promise.all([
-          fetchMovies('/films/phim-moi-cap-nhat', 1),
-          fetchMovies('/films/danh-sach/phim-le', 1),
-          fetchMovies('/films/danh-sach/phim-bo', 1),
-          fetchMovies('/films/danh-sach/hoat-hinh', 1),
-        ]);
-
-        setNewMovies(newRes.items || []);
-        setMovies(moviesRes.items || []);
-        setSeries(seriesRes.items || []);
-        setCartoons(cartoonRes.items || []);
+        const res = await fetchMovies(endpoint, 1);
+        setMovies(res.items || []);
       } catch (error) {
-        console.error('Failed to fetch home data:', error);
+        console.error(`Failed to fetch ${title}:`, error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadData();
-  }, []);
+    load();
+  }, [endpoint, title]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <section className="py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-8 w-48 bg-gray-800 rounded animate-pulse"></div>
+          <div className="h-4 w-20 bg-gray-800 rounded animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="aspect-[2/3] bg-gray-800 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+      </section>
     );
   }
 
+  return <MovieSection title={title} movies={movies.slice(0, 12)} viewAllLink={viewAllLink} />;
+};
+
+export default function Home() {
+  const [heroMovies, setHeroMovies] = useState([]);
+
+  useEffect(() => {
+    const loadHero = async () => {
+      try {
+        const res = await fetchMovies('/films/phim-moi-cap-nhat', 1);
+        setHeroMovies(res.items || []);
+      } catch (error) {
+        console.error('Failed to fetch hero movies:', error);
+      }
+    };
+    loadHero();
+  }, []);
+
   return (
     <div className="pb-12">
-      {newMovies.length > 0 && <HeroSlider movies={newMovies.slice(0, 10)} />}
+      {heroMovies.length > 0 ? (
+        <HeroSlider movies={heroMovies.slice(0, 10)} />
+      ) : (
+        <div className="w-full h-[50vh] md:h-[70vh] bg-gray-900 animate-pulse"></div>
+      )}
       
       <div className="container mx-auto px-4 lg:px-8 mt-8 space-y-4">
         <GenreCarousel />
         
-        <MovieSection
+        <MovieSectionWithFetch
+          title="Phim Hot / Chiếu Rạp"
+          endpoint="/films/danh-sach/phim-dang-chieu"
+          viewAllLink="/danh-sach/phim-dang-chieu"
+        />
+
+        <MovieSectionWithFetch
           title="Phim Mới Cập Nhật"
-          movies={newMovies.slice(0, 12)}
+          endpoint="/films/phim-moi-cap-nhat"
           viewAllLink="/danh-sach/phim-moi-cap-nhat"
         />
-        <MovieSection
+
+        <MovieSectionWithFetch
           title="Phim Lẻ Mới"
-          movies={movies.slice(0, 12)}
+          endpoint="/films/danh-sach/phim-le"
           viewAllLink="/danh-sach/phim-le"
         />
-        <MovieSection
+
+        <MovieSectionWithFetch
           title="Phim Bộ Mới"
-          movies={series.slice(0, 12)}
+          endpoint="/films/danh-sach/phim-bo"
           viewAllLink="/danh-sach/phim-bo"
         />
-        <MovieSection
+
+        <MovieSectionWithFetch
           title="Hoạt Hình"
-          movies={cartoons.slice(0, 12)}
+          endpoint="/films/danh-sach/hoat-hinh"
           viewAllLink="/danh-sach/hoat-hinh"
+        />
+
+        <MovieSectionWithFetch
+          title="Phim 18+"
+          endpoint="/films/the-loai/phim-18"
+          viewAllLink="/the-loai/phim-18"
         />
       </div>
     </div>

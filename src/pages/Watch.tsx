@@ -8,34 +8,49 @@ export default function Watch() {
   const [movie, setMovie] = useState<any>(null);
   const [currentEpData, setCurrentEpData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorInfo, setErrorInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       if (!slug) return;
       setLoading(true);
+      setErrorInfo(null);
       try {
         const res = await fetchMovieDetail(slug);
+        if (!res || !res.movie) {
+          setErrorInfo('API trả về dữ liệu không hợp lệ hoặc không có thông tin phim.');
+          setLoading(false);
+          return;
+        }
+        
         setMovie(res.movie);
         
         // Find current episode
         let found = false;
-        if (res.movie.episodes) {
+        if (res.movie.episodes && Array.isArray(res.movie.episodes)) {
           for (const server of res.movie.episodes) {
-            const ep = server.items.find((item: any) => item.slug === episode);
-            if (ep) {
-              setCurrentEpData(ep);
-              found = true;
-              break;
+            if (server.items && Array.isArray(server.items)) {
+              const ep = server.items.find((item: any) => item.slug === episode);
+              if (ep) {
+                setCurrentEpData(ep);
+                found = true;
+                break;
+              }
             }
           }
         }
         
-        if (!found && res.movie.episodes?.[0]?.items?.[0]) {
-          // Fallback to first episode if not found
-          navigate(`/xem-phim/${slug}/${res.movie.episodes[0].items[0].slug}`, { replace: true });
+        if (!found) {
+          if (res.movie.episodes?.[0]?.items?.[0]) {
+             // Fallback to first episode if not found
+            navigate(`/xem-phim/${slug}/${res.movie.episodes[0].items[0].slug}`, { replace: true });
+          } else {
+            setErrorInfo('Không tìm thấy danh sách tập phim cho phim này.');
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch movie detail:', error);
+        setErrorInfo(`Lỗi kết nối API: ${error.message || 'Không xác định'}`);
       } finally {
         setLoading(false);
       }
@@ -47,19 +62,28 @@ export default function Watch() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-400">Đang tải phim...</p>
       </div>
     );
   }
 
-  if (!movie || !currentEpData) {
+  if (errorInfo || !movie || !currentEpData) {
     return (
       <div className="container mx-auto px-4 py-20 text-center text-white">
-        <h1 className="text-2xl font-bold mb-4">Không tìm thấy tập phim</h1>
-        <button onClick={() => navigate('/')} className="text-red-500 hover:underline">
-          Quay lại trang chủ
-        </button>
+        <div className="bg-red-600/10 border border-red-600/20 p-6 rounded-lg max-w-2xl mx-auto">
+          <h1 className="text-2xl font-bold mb-4 text-red-500">Ối! Có lỗi xảy ra</h1>
+          <p className="text-gray-300 mb-6">{errorInfo || 'Không tìm thấy tập phim yêu cầu.'}</p>
+          <div className="flex justify-center gap-4">
+            <button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded font-medium transition-colors">
+              Thử lại
+            </button>
+            <button onClick={() => navigate('/')} className="bg-[#2b2b2b] hover:bg-gray-700 px-6 py-2 rounded font-medium transition-colors">
+              Quay lại trang chủ
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -86,6 +110,7 @@ export default function Watch() {
         <div className="w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4" style={{ paddingBottom: '56.25%' }}>
           {currentEpData.embed ? (
             <iframe
+              key={playerKey}
               src={currentEpData.embed.replace(/^http:\/\//i, 'https://')}
               className="absolute top-0 left-0 w-full h-full border-0"
               allowFullScreen

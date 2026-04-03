@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchMovieDetail } from '../services/api';
+import VideoPlayer from '../components/VideoPlayer';
 
 export default function Watch() {
   const { slug, episode } = useParams();
@@ -107,19 +108,12 @@ export default function Watch() {
 
         {/* Player */}
         <div className="w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4" style={{ paddingBottom: '56.25%' }}>
-          {currentEpData.embed ? (
-            <iframe
-              key={playerKey}
-              src={currentEpData.embed.replace(/^http:\/\//i, 'https://')}
-              className="absolute top-0 left-0 w-full h-full border-0"
-              allowFullScreen
-              title={movie.name}
-            ></iframe>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-              Không tìm thấy link phát video.
-            </div>
-          )}
+          <VideoPlayer
+            m3u8Url={currentEpData.m3u8}
+            embedUrl={currentEpData.embed}
+            title={movie.name}
+            playerKey={playerKey}
+          />
         </div>
         
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
@@ -137,12 +131,12 @@ export default function Watch() {
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
               >
-                <span>🔗</span> Mở link trực tiếp
+                <span>🔗</span> Mở link embed
               </a>
             )}
           </div>
           <p className="text-xs text-gray-500 italic">
-            * Nếu player không tải được, hãy thử nhấn "Tải lại player" hoặc "Mở link trực tiếp".
+            * Player sử dụng nguồn m3u8 trực tiếp. Nếu không phát được, thử nhấn "Tải lại player".
           </p>
         </div>
 

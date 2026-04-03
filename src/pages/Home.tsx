@@ -68,15 +68,15 @@ export default function Home() {
         <GenreCarousel />
         
         <MovieSectionWithFetch
-          title="Phim Hot / Chiếu Rạp"
-          endpoint="/films/danh-sach/phim-dang-chieu"
-          viewAllLink="/danh-sach/phim-dang-chieu"
-        />
-
-        <MovieSectionWithFetch
           title="Phim Mới Cập Nhật"
           endpoint="/films/phim-moi-cap-nhat"
           viewAllLink="/danh-sach/phim-moi-cap-nhat"
+        />
+
+        <MovieSectionWithFetch
+          title="Phim Hành Động"
+          endpoint="/films/the-loai/hanh-dong"
+          viewAllLink="/the-loai/hanh-dong"
         />
 
         <MovieSectionWithFetch

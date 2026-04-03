@@ -34,14 +34,25 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8 }}
-          className="absolute inset-0"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            const threshold = 50;
+            if (info.offset.x < -threshold) {
+              nextSlide();
+            } else if (info.offset.x > threshold) {
+              prevSlide();
+            }
+          }}
+          className="absolute inset-0 cursor-grab active:cursor-grabbing"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10" />
           <img
             src={movie.poster_url || movie.thumb_url}
             alt={movie.name}
-            className="w-full h-full object-cover opacity-60"
+            className="w-full h-full object-cover opacity-60 pointer-events-none"
           />
         </motion.div>
       </AnimatePresence>

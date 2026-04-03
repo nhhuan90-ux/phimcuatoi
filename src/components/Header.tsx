@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, Download } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,15 +12,54 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
     };
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsStandalone(true);
+      setShowInstallBtn(false);
+    } else {
+      setIsStandalone(false);
+      setShowInstallBtn(true); // Always show button if not standalone
+    }
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Show manual guide for iOS or if prompt is not available
+      setShowGuide(true);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +105,15 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-4">
+            {showInstallBtn && (
+              <button
+                onClick={handleInstallClick}
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-black rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-lg shadow-red-600/40 border border-red-500 animate-pulse-subtle"
+              >
+                <Download size={16} strokeWidth={3} />
+                CÀI ĐẶT APP
+              </button>
+            )}
             <form onSubmit={handleSearch} className="hidden md:flex relative">
               <input
                 type="text"
@@ -78,12 +126,24 @@ export default function Header() {
                 <Search size={18} />
               </button>
             </form>
-            <button
-              className="lg:hidden text-gray-300 hover:text-white"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            
+            <div className="flex items-center gap-3 lg:hidden">
+              {showInstallBtn && (
+                <button
+                  onClick={handleInstallClick}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-full hover:bg-red-700 transition-colors shadow-md shadow-red-600/30 border border-red-500"
+                >
+                  <Download size={12} strokeWidth={3} />
+                  APP
+                </button>
+              )}
+              <button
+                className="text-gray-300 hover:text-white"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -92,6 +152,15 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-[#141414] border-t border-gray-800">
           <div className="px-4 py-4 space-y-4">
+            {showInstallBtn && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white text-sm font-bold rounded-md hover:bg-red-700 transition-colors border border-red-500"
+              >
+                <Download size={18} />
+                TẢI APP PHIMCUATOI
+              </button>
+            )}
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
@@ -116,6 +185,58 @@ export default function Header() {
                 </Link>
               ))}
             </nav>
+          </div>
+        </div>
+      )}
+      {/* Install Guide Modal */}
+      {showGuide && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl max-w-md w-full p-6 relative overflow-hidden">
+            <button 
+              onClick={() => setShowGuide(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-600/20 rounded-2xl flex items-center justify-center text-red-600 mb-2">
+                <Download size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-white uppercase tracking-tight">Cài đặt Ứng dụng</h3>
+              <p className="text-gray-400 text-sm">
+                Để có trải nghiệm xem phim tốt nhất, không quảng cáo trình duyệt và khởi động nhanh, hãy cài đặt PhimCuaToi vào màn hình chính.
+              </p>
+              
+              <div className="w-full space-y-4 pt-4">
+                <div className="bg-[#262626] p-4 rounded-xl text-left">
+                  <p className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+                    Cho iPhone (iOS) - Safari:
+                  </p>
+                  <p className="text-gray-400 text-xs leading-relaxed">
+                    Nhấn biểu tượng <span className="text-blue-400 font-bold">Chia sẻ</span> (hình ô vuông có mũi tên lên) trên trình duyệt, sau đó chọn <span className="text-white font-bold">"Thêm vào MH chính"</span>.
+                  </p>
+                </div>
+                
+                <div className="bg-[#262626] p-4 rounded-xl text-left">
+                  <p className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
+                    Cho Android - Chrome:
+                  </p>
+                  <p className="text-gray-400 text-xs leading-relaxed">
+                    Nhấn biểu tượng <span className="text-gray-200 font-bold">3 chấm</span> ở góc phải, sau đó chọn <span className="text-white font-bold">"Cài đặt ứng dụng"</span> hoặc <span className="text-white font-bold">"Thêm vào màn hình chính"</span>.
+                  </p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => setShowGuide(false)}
+                className="w-full py-3 mt-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors uppercase text-sm tracking-wider"
+              >
+                Đã hiểu
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -108,10 +108,10 @@ export default function Header() {
             {showInstallBtn && (
               <button
                 onClick={handleInstallClick}
-                className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-black rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-lg shadow-red-600/40 border border-red-500 animate-pulse-subtle"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white text-[11px] font-bold rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-lg shadow-red-600/40 border border-red-500 animate-pulse-subtle"
               >
-                <Download size={16} strokeWidth={3} />
-                CÀI ĐẶT APP
+                <Download size={13} strokeWidth={3} />
+                CÀI APP
               </button>
             )}
             <form onSubmit={handleSearch} className="hidden md:flex relative">
@@ -131,9 +131,9 @@ export default function Header() {
               {showInstallBtn && (
                 <button
                   onClick={handleInstallClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-full hover:bg-red-700 transition-colors shadow-md shadow-red-600/30 border border-red-500"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white text-[9px] font-bold rounded-full hover:bg-red-700 transition-colors shadow-md shadow-red-600/30 border border-red-500"
                 >
-                  <Download size={12} strokeWidth={3} />
+                  <Download size={10} strokeWidth={3} />
                   APP
                 </button>
               )}

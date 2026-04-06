@@ -139,7 +139,7 @@ const nguoncFetchDetail = async (slug: string) => {
   const movie = data.movie;
   const episodes = (movie?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'NguonC',
-    items: (server.items || []).map((ep: any) => ({
+    items: (server.server_data || server.items || []).map((ep: any) => ({
       name: ep.name,
       slug: ep.slug,
       embed: ep.embed || ep.link_embed || '',

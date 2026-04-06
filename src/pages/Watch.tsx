@@ -63,11 +63,12 @@ export default function Watch() {
         }
         
         if (!found) {
-          if (res.movie.episodes?.[0]?.items?.[0]) {
+          const firstServerWithItems = res.movie.episodes?.find((s: any) => s.items && s.items.length > 0);
+          if (firstServerWithItems && firstServerWithItems.items[0]) {
              // Fallback to first episode if not found
-            navigate(`/xem-phim/${slug}/${res.movie.episodes[0].items[0].slug}?id=0`, { replace: true });
+            navigate(`/xem-phim/${slug}/${firstServerWithItems.items[0].slug}?id=0`, { replace: true });
           } else {
-            setErrorInfo('Không tìm thấy danh sách tập phim cho phim này.');
+            setErrorInfo(`Không tìm thấy danh sách tập phim cho phim này. \n(Debug: Source=${res.movie._source}, Servers=${res.movie.episodes?.length}, FirstServerItems=${res.movie.episodes?.[0]?.items?.length})`);
           }
         }
       } catch (error: any) {

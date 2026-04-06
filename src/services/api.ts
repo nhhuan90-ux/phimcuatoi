@@ -64,6 +64,9 @@ const phimapiFetchDetail = async (slug: string) => {
   const res = await fetch(`${PHIMAPI_URL}/phim/${slug}`);
   if (!res.ok) throw new Error(`phimapi detail ${res.status}`);
   const data = await res.json();
+  if (!data.status || !data.movie || data.movie === '') {
+    throw new Error(`phimapi detail not found`);
+  }
   const movie = data.movie;
   const episodes = (data.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'PhimAPI',
@@ -136,6 +139,9 @@ const nguoncFetchDetail = async (slug: string) => {
   const res = await fetch(`${NGUONC_URL}/film/${slug}`);
   if (!res.ok) throw new Error(`nguonc detail ${res.status}`);
   const data = await res.json();
+  if (data.status !== 'success' || !data.movie || data.movie === '') {
+    throw new Error(`nguonc detail not found`);
+  }
   const movie = data.movie;
   const episodes = (movie?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'NguonC',
@@ -221,9 +227,12 @@ const vsmovFetchDetail = async (slug: string) => {
   const res = await fetch(`${VSMOV_URL}/phim/${slug}`);
   if (!res.ok) throw new Error(`vsmov detail ${res.status}`);
   const data = await res.json();
+  if (data.status === false) {
+    throw new Error(`vsmov detail not found`);
+  }
   const movie = data.movie || data.data?.item;
   
-  if (!movie) throw new Error('VSMov no movie data');
+  if (!movie || movie === '') throw new Error('VSMov no movie data');
 
   const episodes = (movie.episodes || data.episodes || data.data?.item?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'VSMov',

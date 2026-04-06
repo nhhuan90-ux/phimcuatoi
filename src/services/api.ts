@@ -314,16 +314,17 @@ export const fetchMovies = async (endpoint: string, page: number = 1) => {
 };
 
 export const fetchMovieDetail = async (slug: string) => {
+  // 1. Initial attempt by slug
   const results = await Promise.allSettled([
-    fetchWithTimeout(phimapiFetchDetail(slug), 8000),
-    fetchWithTimeout(nguoncFetchDetail(slug), 8000),
-    fetchWithTimeout(vsmovFetchDetail(slug), 8000)
+    fetchWithTimeout(phimapiFetchDetail(slug), 6000),
+    fetchWithTimeout(nguoncFetchDetail(slug), 6000),
+    fetchWithTimeout(vsmovFetchDetail(slug), 6000)
   ]);
 
   let baseMovie: any = null;
   const allEpisodes: any[] = [];
 
-  const addMovieData = (result: any, sourceName: string) => {
+  const processResult = (result: any, sourceName: string) => {
     if (result.status === 'fulfilled' && result.value?.movie) {
       if (!baseMovie) {
         baseMovie = { ...result.value.movie, _source: sourceName };
@@ -344,13 +345,50 @@ export const fetchMovieDetail = async (slug: string) => {
   };
 
   // Prioritize PhimAPI for base info, then NguonC, then VSMov
-  addMovieData(results[0], 'PhimAPI');
-  addMovieData(results[1], 'NguonC');
-  addMovieData(results[2], 'VSMov');
+  const hasPhimApi = processResult(results[0], 'PhimAPI');
+  const hasNguonc = processResult(results[1], 'NguonC');
+  const hasVsmov = processResult(results[2], 'VSMov');
 
   if (!baseMovie) {
     throw new Error('All sources failed or movie not found');
   }
+
+  // 2. For any source that failed (404 due to different slugs), try searching by name
+  const tryFallbackSearch = async (
+    hasSource: boolean, 
+    sourceName: string, 
+    searchFn: (kw: string) => Promise<any>, 
+    detailFn: (s: string) => Promise<any>
+  ) => {
+    if (hasSource || !baseMovie) return;
+    try {
+      const keyword = baseMovie.original_name || baseMovie.name;
+      if (!keyword) return;
+
+      const searchRes = await fetchWithTimeout(searchFn(keyword), 4000);
+      if (searchRes.items && searchRes.items.length > 0) {
+        // Find the most confident match
+        const match = searchRes.items.find((item: any) => 
+          (item.original_name && item.original_name.toLowerCase() === baseMovie.original_name?.toLowerCase()) ||
+          (item.name && item.name.toLowerCase() === baseMovie.name?.toLowerCase()) ||
+          (item.slug && item.slug.includes(slug))
+        ) || searchRes.items[0]; // Or fallback to best search result
+
+        if (match && match.slug !== slug) {
+          const detailRes = await fetchWithTimeout(detailFn(match.slug), 4000);
+          processResult({ status: 'fulfilled', value: detailRes }, sourceName);
+        }
+      }
+    } catch (e) {
+      console.warn(`Fallback for ${sourceName} failed:`, e);
+    }
+  };
+
+  await Promise.allSettled([
+    tryFallbackSearch(hasPhimApi, 'PhimAPI', phimapiSearch, phimapiFetchDetail),
+    tryFallbackSearch(hasNguonc, 'NguonC', nguoncSearch, nguoncFetchDetail),
+    tryFallbackSearch(hasVsmov, 'VSMov', vsmovSearch, vsmovFetchDetail)
+  ]);
 
   // Deduplicate servers just in case
   baseMovie.episodes = allEpisodes;

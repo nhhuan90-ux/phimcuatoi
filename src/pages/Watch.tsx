@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchMovieDetail } from '../services/api';
 import VideoPlayer from '../components/VideoPlayer';
 
 export default function Watch() {
   const { slug, episode } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [movie, setMovie] = useState<any>(null);
   const [currentEpData, setCurrentEpData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -29,14 +30,33 @@ export default function Watch() {
         
         // Find current episode
         let found = false;
+        const serverIdStr = searchParams.get('id');
+        const defaultServerIdx = serverIdStr ? parseInt(serverIdStr, 10) : -1;
+
         if (res.movie.episodes && Array.isArray(res.movie.episodes)) {
-          for (const server of res.movie.episodes) {
+          // If a specific server index is requested, try to find the episode there first
+          if (defaultServerIdx >= 0 && defaultServerIdx < res.movie.episodes.length) {
+            const server = res.movie.episodes[defaultServerIdx];
             if (server.items && Array.isArray(server.items)) {
               const ep = server.items.find((item: any) => item.slug === episode);
               if (ep) {
-                setCurrentEpData(ep);
+                setCurrentEpData({ ...ep, currentServerIdx: defaultServerIdx });
                 found = true;
-                break;
+              }
+            }
+          }
+
+          // Fallback to searching all servers if not found above
+          if (!found) {
+            for (let i = 0; i < res.movie.episodes.length; i++) {
+              const server = res.movie.episodes[i];
+              if (server.items && Array.isArray(server.items)) {
+                const ep = server.items.find((item: any) => item.slug === episode);
+                if (ep) {
+                  setCurrentEpData({ ...ep, currentServerIdx: i });
+                  found = true;
+                  break;
+                }
               }
             }
           }
@@ -45,7 +65,7 @@ export default function Watch() {
         if (!found) {
           if (res.movie.episodes?.[0]?.items?.[0]) {
              // Fallback to first episode if not found
-            navigate(`/xem-phim/${slug}/${res.movie.episodes[0].items[0].slug}`, { replace: true });
+            navigate(`/xem-phim/${slug}/${res.movie.episodes[0].items[0].slug}?id=0`, { replace: true });
           } else {
             setErrorInfo('Không tìm thấy danh sách tập phim cho phim này.');
           }
@@ -60,7 +80,7 @@ export default function Watch() {
 
     loadData();
     window.scrollTo(0, 0);
-  }, [slug, episode, navigate]);
+  }, [slug, episode, navigate, searchParams]);
 
   const reloadPlayer = () => {
     setPlayerKey(prev => prev + 1);
@@ -116,6 +136,37 @@ export default function Watch() {
           />
         </div>
         
+        {/* Server Selection */}
+        {movie.episodes && movie.episodes.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 bg-[#141414] p-4 rounded-lg border border-gray-800">
+            <span className="text-gray-400 text-sm font-medium mr-2">Đổi máy chủ:</span>
+            {movie.episodes.map((server: any, idx: number) => {
+              const isSelectedServer = currentEpData?.currentServerIdx === idx;
+              // Find matching episode in this server, or fallback to first episode
+              const epInServer = server.items.find((item: any) => item.slug === episode) || server.items[0];
+              
+              let serverDisplayName = server.server_name;
+              if (idx === 0) serverDisplayName = `Server 1 (${server.server_name})`;
+              else if (idx === 1) serverDisplayName = `Server 2 (${server.server_name})`;
+              else if (idx === 2) serverDisplayName = `Server 3 (${server.server_name})`;
+
+              return (
+                <Link
+                  key={idx}
+                  to={`/xem-phim/${movie.slug}/${epInServer.slug}?id=${idx}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isSelectedServer 
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' 
+                      : 'bg-[#2b2b2b] text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  {serverDisplayName}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
           <div className="flex gap-4">
             <button 
@@ -136,7 +187,7 @@ export default function Watch() {
             )}
           </div>
           <p className="text-xs text-gray-500 italic">
-            * Player sử dụng nguồn m3u8 trực tiếp. Nếu không phát được, thử nhấn "Tải lại player".
+            * Nhấn "Tải lại player" nếu video không phát được, hoặc thử đổi máy chủ bằng nút bên trên.
           </p>
         </div>
 
@@ -166,36 +217,30 @@ export default function Watch() {
           </div>
         </div>
 
-        {/* Episode List */}
-        {movie.episodes && movie.episodes.length > 0 && (
+        {/* Episode List (Only for selected server) */}
+        {movie.episodes && movie.episodes.length > 0 && currentEpData && (
           <div className="bg-[#141414] p-6 rounded-lg border border-gray-800">
-            <h3 className="text-xl font-bold mb-6 text-white border-l-4 border-red-600 pl-3">Chọn tập phim</h3>
-            {movie.episodes.map((server: any, idx: number) => (
-              <div key={idx} className="mb-6 last:mb-0">
-                <h4 className="text-gray-400 mb-3 text-sm font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-600"></span>
-                  {server.server_name}
-                </h4>
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-                  {server.items.map((ep: any) => {
-                    const isActive = ep.slug === episode;
-                    return (
-                      <Link
-                        key={ep.slug}
-                        to={`/xem-phim/${movie.slug}/${ep.slug}`}
-                        className={`text-center py-2 rounded text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                            : 'bg-[#2b2b2b] text-gray-300 hover:bg-gray-700 hover:text-white'
-                        }`}
-                      >
-                        {ep.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            <h3 className="text-xl font-bold mb-6 text-white border-l-4 border-red-600 pl-3">
+              Danh sách tập - {movie.episodes[currentEpData.currentServerIdx]?.server_name}
+            </h3>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
+              {movie.episodes[currentEpData.currentServerIdx]?.items.map((ep: any, epIdx: number) => {
+                const isActive = ep.slug === episode;
+                return (
+                  <Link
+                    key={`${ep.slug}-${epIdx}`}
+                    to={`/xem-phim/${movie.slug}/${ep.slug}?id=${currentEpData.currentServerIdx}`}
+                    className={`text-center py-2 rounded text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                        : 'bg-[#2b2b2b] text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    {ep.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

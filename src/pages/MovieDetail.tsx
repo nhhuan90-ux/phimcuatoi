@@ -73,7 +73,7 @@ export default function MovieDetail() {
               />
               {firstEpisode && (
                 <Link
-                  to={`/xem-phim/${movie.slug}/${firstEpisode.slug}`}
+                  to={`/xem-phim/${movie.slug}/${firstEpisode.slug}?id=0`}
                   className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >
                   <div className="bg-red-600 rounded-full p-4 transform scale-90 group-hover:scale-100 transition-transform duration-300">
@@ -84,7 +84,7 @@ export default function MovieDetail() {
             </div>
             {firstEpisode && (
               <Link
-                to={`/xem-phim/${movie.slug}/${firstEpisode.slug}`}
+                to={`/xem-phim/${movie.slug}/${firstEpisode.slug}?id=0`}
                 className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-600/20"
               >
                 <Play fill="currentColor" size={20} />
@@ -175,10 +175,10 @@ export default function MovieDetail() {
                   <div key={idx} className="mb-6">
                     <h4 className="text-gray-400 mb-3 text-sm font-medium">{server.server_name}</h4>
                     <div className="flex flex-wrap gap-2">
-                      {server.items.map((ep: any) => (
+                      {server.items.map((ep: any, epIdx: number) => (
                         <Link
-                          key={ep.slug}
-                          to={`/xem-phim/${movie.slug}/${ep.slug}`}
+                          key={`${idx}-${ep.slug}-${epIdx}`}
+                          to={`/xem-phim/${movie.slug}/${ep.slug}?id=${idx}`}
                           className="bg-[#2b2b2b] hover:bg-red-600 text-gray-300 hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors"
                         >
                           {ep.name}

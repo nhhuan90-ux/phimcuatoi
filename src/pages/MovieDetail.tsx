@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchMovieDetail } from '../services/api';
+import { fetchMovieDetail, searchMovies, getBaseName, normalizeName } from '../services/api';
 import { Play, Calendar, Clock, Globe, Film, RotateCcw } from 'lucide-react';
 import { getHistoryItem } from '../utils/history';
+import MovieCard from '../components/MovieCard';
 
 export default function MovieDetail() {
   const { slug } = useParams();
@@ -10,6 +11,7 @@ export default function MovieDetail() {
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [historyEp, setHistoryEp] = useState<any>(null);
+  const [relatedSeasons, setRelatedSeasons] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -18,6 +20,21 @@ export default function MovieDetail() {
       try {
         const res = await fetchMovieDetail(slug);
         setMovie(res.movie);
+        
+        // Find related seasons using base name
+        const searchKeyword = getBaseName(res.movie.name) || getBaseName(res.movie.original_name);
+        if (searchKeyword) {
+          const searchRes = await searchMovies(searchKeyword);
+          const baseNormName = normalizeName(searchKeyword);
+          const seasons = searchRes.items.filter((item: any) => 
+            item.slug !== res.movie.slug && 
+            (normalizeName(getBaseName(item.name)) === baseNormName || normalizeName(getBaseName(item.original_name)) === baseNormName)
+          );
+          setRelatedSeasons(seasons);
+        } else {
+          setRelatedSeasons([]);
+        }
+
       } catch (error) {
         console.error('Failed to fetch movie detail:', error);
       } finally {
@@ -206,6 +223,18 @@ export default function MovieDetail() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Related Seasons list */}
+            {relatedSeasons.length > 0 && (
+              <div className="mt-12">
+                <h3 className="text-xl font-bold mb-4 border-l-4 border-red-600 pl-3">Các phần khác</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {relatedSeasons.map((item) => (
+                    <MovieCard key={item.slug} movie={item} />
+                  ))}
+                </div>
               </div>
             )}
           </div>

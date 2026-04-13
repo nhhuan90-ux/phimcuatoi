@@ -5,11 +5,29 @@
 const PHIMAPI_URL = 'https://phimapi.com';
 const PHIMAPI_IMG = 'https://phimimg.com';
 
-// Helper: ensure image URL is absolute
 const fixImageUrl = (url: any): string => {
   if (!url || typeof url !== 'string') return '';
   if (url.startsWith('http')) return url;
   return `${PHIMAPI_IMG}/${url}`;
+};
+
+const ophimFixImageUrl = (url: any): string => {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('http')) return url;
+  return `https://img.ophim.live/uploads/movies/${url}`;
+};
+
+export const normalizeName = (name: string | undefined): string => {
+  if (!name) return '';
+  return name.replace(/[^a-z0-9]/gi, '').toLowerCase();
+};
+
+export const getBaseName = (name: string | undefined): string => {
+  if (!name) return '';
+  // Removes (Phần X), (Season X), Phần X, Season X, P.X, etc.
+  return name.replace(/\s*\([^)]*(?:phần|season|ss|part|\bp\.)[^)]*\)\s*/i, '')
+             .replace(/\s*(?:phần|season|ss|part|\bp\.)\s*\d+\s*/i, '')
+             .trim();
 };
 
 const fetchWithTimeout = (promise: Promise<any>, ms: number = 10000): Promise<any> => {
@@ -318,8 +336,8 @@ const ophimFetchList = async (endpoint: string, page: number) => {
       name: item.name,
       slug: item.slug,
       original_name: item.origin_name,
-      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
-      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      thumb_url: ophimFixImageUrl(item.thumb_url) || ophimFixImageUrl(item.poster_url),
+      poster_url: ophimFixImageUrl(item.poster_url) || ophimFixImageUrl(item.thumb_url),
       year: item.year,
       _source: 'OPhim',
     })),
@@ -351,8 +369,8 @@ const ophimFetchDetail = async (slug: string) => {
       slug: movie.slug,
       original_name: movie.origin_name,
       description: movie.content,
-      thumb_url: fixImageUrl(movie.thumb_url),
-      poster_url: fixImageUrl(movie.poster_url),
+      thumb_url: ophimFixImageUrl(movie.thumb_url),
+      poster_url: ophimFixImageUrl(movie.poster_url),
       quality: movie.quality,
       language: movie.lang,
       time: movie.time,
@@ -378,8 +396,8 @@ const ophimSearch = async (keyword: string) => {
       name: item.name,
       slug: item.slug,
       original_name: item.origin_name,
-      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
-      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      thumb_url: ophimFixImageUrl(item.thumb_url) || ophimFixImageUrl(item.poster_url),
+      poster_url: ophimFixImageUrl(item.poster_url) || ophimFixImageUrl(item.thumb_url),
       year: item.year,
       _source: 'OPhim',
     })),
@@ -511,7 +529,29 @@ export const fetchMovies = async (endpoint: string, page: number = 1) => {
         latestPagination = res.value.pagination;
       }
       res.value.items.forEach((item: any) => {
-        const existing = allItems.find(i => i.slug === item.slug || (i.original_name && i.original_name === item.original_name));
+        // 1. Strict deduplication based on exact/normalized original name
+        let isRefused = false;
+        const normOrigName = normalizeName(item.original_name);
+        const normName = normalizeName(item.name);
+        const baseNormName = normalizeName(getBaseName(item.name));
+        const baseNormOrigName = normalizeName(getBaseName(item.original_name));
+
+        const existing = allItems.find(i => {
+           if (i.slug === item.slug) return true;
+           const iNormOrigName = normalizeName(i.original_name);
+           const iNormName = normalizeName(i.name);
+           if (iNormOrigName && normOrigName && iNormOrigName === normOrigName) return true;
+           if (iNormName && normName && iNormName === normName) return true;
+           
+           // Season grouping blocker: if a base version of this movie is already in list, hide this season
+           const iBaseNormName = normalizeName(getBaseName(i.name));
+           const iBaseNormOrigName = normalizeName(getBaseName(i.original_name));
+           if (baseNormName && iBaseNormName && baseNormName === iBaseNormName) return true;
+           if (baseNormOrigName && iBaseNormOrigName && baseNormOrigName === iBaseNormOrigName) return true;
+           
+           return false;
+        });
+
         if (!existing && !slugs.has(item.slug)) {
           slugs.add(item.slug);
           allItems.push(item);
@@ -585,10 +625,12 @@ export const fetchMovieDetail = async (slug: string) => {
       if (searchRes.items && searchRes.items.length > 0) {
         // Find the most confident match
         const match = searchRes.items.find((item: any) => 
-          (item.original_name && item.original_name.toLowerCase() === baseMovie.original_name?.toLowerCase()) ||
-          (item.name && item.name.toLowerCase() === baseMovie.name?.toLowerCase()) ||
+          (normalizeName(item.original_name) && normalizeName(item.original_name) === normalizeName(baseMovie.original_name)) ||
+          (normalizeName(item.name) && normalizeName(item.name) === normalizeName(baseMovie.name)) ||
           (item.slug && item.slug.includes(slug))
-        ) || searchRes.items[0]; // Or fallback to best search result
+        ) || searchRes.items.find((item: any) => 
+          (normalizeName(getBaseName(item.name)) === normalizeName(getBaseName(baseMovie.name)))
+        ) || searchRes.items[0]; // Fallback
 
         if (match && match.slug !== slug) {
           const detailRes = await fetchWithTimeout(detailFn(match.slug), 4000);
@@ -629,7 +671,24 @@ export const searchMovies = async (keyword: string) => {
   results.forEach((res) => {
     if (res.status === 'fulfilled' && res.value?.items) {
       res.value.items.forEach((item: any) => {
-        const existing = allItems.find(i => i.slug === item.slug || (i.original_name && i.original_name === item.original_name));
+        const normOrigName = normalizeName(item.original_name);
+        const normName = normalizeName(item.name);
+        const baseNormName = normalizeName(getBaseName(item.name));
+
+        const existing = allItems.find(i => {
+           if (i.slug === item.slug) return true;
+           const iNormOrigName = normalizeName(i.original_name);
+           const iNormName = normalizeName(i.name);
+           if (iNormOrigName && normOrigName && iNormOrigName === normOrigName) return true;
+           if (iNormName && normName && iNormName === normName) return true;
+           
+           // Season grouping blocker
+           const iBaseNormName = normalizeName(getBaseName(i.name));
+           if (baseNormName && iBaseNormName && baseNormName === iBaseNormName) return true;
+           
+           return false;
+        });
+
         if (!existing && !slugs.has(item.slug)) {
           slugs.add(item.slug);
           allItems.push(item);

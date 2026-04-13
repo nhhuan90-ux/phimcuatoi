@@ -30,14 +30,21 @@ const NetflixItem: React.FC<ItemProps> = ({ movie }) => {
       ref={elementRef as any}
       className={`netflix-item ${isActive ? 'netflix-item--open' : ''}`}
     >
-      <Link to={`/phim/${movie.slug}`} className="block w-full h-full relative">
-        <img src={movie.thumb_url || movie.poster_url} alt={movie.name} />
-      </Link>
-      <ShowDetailsButton onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onSelectSlide(movie);
-      }} />
+      <div className="relative group/poster">
+        <Link to={`/phim/${movie.slug}`} className="block w-full h-full">
+          <img src={movie.thumb_url || movie.poster_url} alt={movie.name} />
+        </Link>
+        <ShowDetailsButton onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelectSlide(movie);
+        }} />
+      </div>
+      
+      <div className="netflix-item__title">
+        {movie.name}
+      </div>
+
       {isActive && <Mark />}
     </div>
   );

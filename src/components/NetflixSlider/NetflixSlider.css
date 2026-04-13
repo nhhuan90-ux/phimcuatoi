@@ -123,8 +123,9 @@
   position: relative;
   cursor: pointer;
   border-radius: 6px;
-  overflow: hidden;
   background: #1a1a1a;
+  display: flex;
+  flex-direction: column;
 }
 @media (max-width: 1024px) {
   .netflix-item { flex: 0 0 24.5%; }
@@ -137,12 +138,35 @@
 }
 
 .netflix-item img {
-  height: 100%;
   width: 100%;
+  aspect-ratio: 2/3;
   vertical-align: top;
   object-fit: cover;
   border-radius: 6px;
 }
+
+.netflix-item__title {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e5e5e5;
+  text-align: center;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 300ms ease;
+}
+
+.netflix-slider:hover .netflix-item__title {
+  opacity: 0.7;
+}
+
+.netflix-item:hover .netflix-item__title {
+  opacity: 1;
+  color: #fff;
+}
+
 
 /* Mark */
 .netflix-mark {
@@ -181,7 +205,7 @@
 /* ShowDetailsButton */
 .netflix-show-details-button {
   position: absolute;
-  bottom: -12px;
+  bottom: 10px;
   left: 0;
   right: 0;
   opacity: 0;

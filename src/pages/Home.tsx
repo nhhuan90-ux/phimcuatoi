@@ -157,9 +157,9 @@ export default function Home() {
         />
 
         <MovieSectionWithFetch
-          title="Phim Hành Động"
-          endpoint="/films/the-loai/hanh-dong"
-          viewAllLink="/the-loai/hanh-dong"
+          title="Phim Hot / Phim Chiếu Rạp"
+          endpoint="/films/danh-sach/phim-chieu-rap"
+          viewAllLink="/danh-sach/phim-chieu-rap"
         />
 
         <MovieSectionWithFetch

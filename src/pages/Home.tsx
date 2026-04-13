@@ -128,7 +128,7 @@ export default function Home() {
   useEffect(() => {
     const loadHero = async () => {
       try {
-        const res = await fetchMovies('/films/phim-moi-cap-nhat', 1);
+        const res = await fetchMovies('/films/danh-sach/phim-chieu-rap', 1);
         setHeroMovies(res.items || []);
       } catch (error) {
         console.error('Failed to fetch hero movies:', error);

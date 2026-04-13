@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Download } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, Menu, X, Download, Clock } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,6 +17,7 @@ export default function Header() {
   const [showGuide, setShowGuide] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,10 +74,12 @@ export default function Header() {
   const navLinks = [
     { name: 'Phim Lẻ', path: '/danh-sach/phim-le' },
     { name: 'Phim Bộ', path: '/danh-sach/phim-bo' },
-    { name: 'Phim Hot / Rạp', path: '/danh-sach/phim-dang-chieu' },
+    { name: 'Phim Hot / Rạp', path: '/danh-sach/phim-chieu-rap' },
     { name: 'Phim 18+', path: '/the-loai/phim-18' },
     { name: 'Hoạt Hình', path: '/danh-sach/hoat-hinh' },
   ];
+
+  const isHistoryActive = location.pathname === '/lich-su';
 
   return (
     <header
@@ -101,6 +104,13 @@ export default function Header() {
                   {link.name}
                 </Link>
               ))}
+              <Link
+                to="/lich-su"
+                className={`flex items-center gap-1.5 text-sm font-bold transition-all ${isHistoryActive ? 'text-red-500 border-b-2 border-red-500 pb-1' : 'text-gray-300 hover:text-white pb-1'}`}
+              >
+                <Clock size={16} className={isHistoryActive ? 'text-red-500' : ''} />
+                LỊCH SỬ
+              </Link>
             </nav>
           </div>
 
@@ -184,6 +194,14 @@ export default function Header() {
                   {link.name}
                 </Link>
               ))}
+               <Link
+                  to="/lich-su"
+                  className={`text-base font-bold flex items-center gap-2 py-2 mt-2 border-t border-gray-800 ${isHistoryActive ? 'text-red-500' : 'text-gray-300 hover:text-white'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Clock size={18} />
+                  Lịch sử xem phim
+                </Link>
             </nav>
           </div>
         </div>

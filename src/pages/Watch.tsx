@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchMovieDetail } from '../services/api';
 import VideoPlayer from '../components/VideoPlayer';
+import { getHistoryItem, saveHistoryItem } from '../utils/history';
 
 export default function Watch() {
   const { slug, episode } = useParams();
@@ -12,6 +13,8 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [playerKey, setPlayerKey] = useState(0);
+  const [initialTime, setInitialTime] = useState(0);
+  const lastSavedTime = useRef(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -25,9 +28,9 @@ export default function Watch() {
           setLoading(false);
           return;
         }
-        
+
         setMovie(res.movie);
-        
+
         // Find current episode
         let found = false;
         const serverIdStr = searchParams.get('id');
@@ -61,11 +64,11 @@ export default function Watch() {
             }
           }
         }
-        
+
         if (!found) {
           const firstServerWithItems = res.movie.episodes?.find((s: any) => s.items && s.items.length > 0);
           if (firstServerWithItems && firstServerWithItems.items[0]) {
-             // Fallback to first episode if not found
+            // Fallback to first episode if not found
             navigate(`/xem-phim/${slug}/${firstServerWithItems.items[0].slug}?id=0`, { replace: true });
           } else {
             setErrorInfo(`Không tìm thấy danh sách tập phim cho phim này. \n(Debug: Source=${res.movie._source}, Servers=${res.movie.episodes?.length}, FirstServerItems=${res.movie.episodes?.[0]?.items?.length})`);
@@ -79,9 +82,55 @@ export default function Watch() {
       }
     };
 
+    const loadHistory = () => {
+      if (slug && episode) {
+        const historyItem = getHistoryItem(slug);
+        if (historyItem && historyItem.epSlug === episode && historyItem.timePlayed > 5) {
+          setInitialTime(historyItem.timePlayed);
+        } else {
+          setInitialTime(0);
+        }
+      }
+    };
+
     loadData();
+    loadHistory();
     window.scrollTo(0, 0);
   }, [slug, episode, navigate, searchParams]);
+
+  const handleTimeUpdate = useCallback((currentTime: number, duration: number) => {
+    // Only save if time has advanced enough (e.g., every 5 seconds) to avoid spamming localStorage
+    if (Math.abs(currentTime - lastSavedTime.current) > 5 && movie && currentEpData) {
+      saveHistoryItem({
+        movieSlug: movie.slug,
+        movieName: movie.name,
+        posterUrl: movie.thumb_url || movie.poster_url,
+        epSlug: currentEpData.slug,
+        epName: currentEpData.name,
+        timePlayed: currentTime,
+        duration: duration,
+        updatedAt: Date.now(),
+      });
+      lastSavedTime.current = currentTime;
+    }
+  }, [movie, currentEpData]);
+
+  // Save history on initial load even if iframe (where time updating might fail)
+  useEffect(() => {
+    if (movie && currentEpData) {
+       saveHistoryItem({
+        movieSlug: movie.slug,
+        movieName: movie.name,
+        posterUrl: movie.thumb_url || movie.poster_url,
+        epSlug: currentEpData.slug,
+        epName: currentEpData.name,
+        timePlayed: initialTime, 
+        duration: 0,
+        updatedAt: Date.now(),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEpData]);
 
   const reloadPlayer = () => {
     setPlayerKey(prev => prev + 1);
@@ -134,9 +183,11 @@ export default function Watch() {
             embedUrl={currentEpData.embed}
             title={movie.name}
             playerKey={playerKey}
+            initialTime={initialTime}
+            onTimeUpdate={handleTimeUpdate}
           />
         </div>
-        
+
         {/* Server Selection */}
         {movie.episodes && movie.episodes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-4 bg-[#141414] p-4 rounded-lg border border-gray-800">
@@ -145,7 +196,7 @@ export default function Watch() {
               const isSelectedServer = currentEpData?.currentServerIdx === idx;
               // Find matching episode in this server, or fallback to first episode
               const epInServer = server.items.find((item: any) => item.slug === episode) || server.items[0];
-              
+
               let serverDisplayName = server.server_name;
               if (idx === 0) serverDisplayName = `Server 1 (${server.server_name})`;
               else if (idx === 1) serverDisplayName = `Server 2 (${server.server_name})`;
@@ -155,11 +206,10 @@ export default function Watch() {
                 <Link
                   key={idx}
                   to={`/xem-phim/${movie.slug}/${epInServer.slug}?id=${idx}`}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isSelectedServer 
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' 
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isSelectedServer
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
                       : 'bg-[#2b2b2b] text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
+                    }`}
                 >
                   {serverDisplayName}
                 </Link>
@@ -170,16 +220,16 @@ export default function Watch() {
 
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={reloadPlayer}
               className="px-4 py-2 bg-[#2b2b2b] hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
             >
               <span>🔄</span> Tải lại player
             </button>
             {currentEpData.embed && (
-              <a 
-                href={currentEpData.embed.replace(/^http:\/\//i, 'https://')} 
-                target="_blank" 
+              <a
+                href={currentEpData.embed.replace(/^http:\/\//i, 'https://')}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
               >
@@ -231,11 +281,10 @@ export default function Watch() {
                   <Link
                     key={`${ep.slug}-${epIdx}`}
                     to={`/xem-phim/${movie.slug}/${ep.slug}?id=${currentEpData.currentServerIdx}`}
-                    className={`text-center py-2 rounded text-sm font-medium transition-colors ${
-                      isActive
+                    className={`text-center py-2 rounded text-sm font-medium transition-colors ${isActive
                         ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
                         : 'bg-[#2b2b2b] text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {ep.name}
                   </Link>

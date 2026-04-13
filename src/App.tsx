@@ -5,6 +5,7 @@ import Browse from './pages/Browse';
 import MovieDetail from './pages/MovieDetail';
 import Watch from './pages/Watch';
 import Search from './pages/Search';
+import History from './pages/History';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="phim/:slug" element={<MovieDetail />} />
           <Route path="xem-phim/:slug/:episode" element={<Watch />} />
           <Route path="tim-kiem" element={<Search />} />
+          <Route path="lich-su" element={<History />} />
         </Route>
       </Routes>
     </BrowserRouter>

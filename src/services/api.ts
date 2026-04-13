@@ -288,6 +288,207 @@ const vsmovSearch = async (keyword: string) => {
 
 
 // =====================================================
+// ophim1.com — SERVER 4
+// =====================================================
+const OPHIM_URL = 'https://ophim1.com/v1/api';
+
+const ophimFetchList = async (endpoint: string, page: number) => {
+  let url = '';
+  if (endpoint === '/films/phim-moi-cap-nhat') {
+    url = `https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=${page}`;
+  } else if (endpoint.startsWith('/films/danh-sach/')) {
+    const slug = endpoint.replace('/films/danh-sach/', '');
+    url = `${OPHIM_URL}/danh-sach/${slug}?page=${page}`;
+  } else if (endpoint.startsWith('/films/the-loai/')) {
+    const slug = endpoint.replace('/films/the-loai/', '');
+    url = `${OPHIM_URL}/the-loai/${slug}?page=${page}`;
+  } else if (endpoint.startsWith('/films/quoc-gia/')) {
+    const slug = endpoint.replace('/films/quoc-gia/', '');
+    url = `${OPHIM_URL}/quoc-gia/${slug}?page=${page}`;
+  } else {
+    url = `https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=${page}`;
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`ophim list ${res.status}`);
+  const data = await res.json();
+  const items = data.items || data.data?.items || [];
+  return {
+    items: items.map((item: any) => ({
+      name: item.name,
+      slug: item.slug,
+      original_name: item.origin_name,
+      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
+      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      year: item.year,
+      _source: 'OPhim',
+    })),
+    pagination: data.pagination || data.data?.params?.pagination,
+  };
+};
+
+const ophimFetchDetail = async (slug: string) => {
+  const res = await fetch(`${OPHIM_URL}/phim/${slug}`);
+  if (!res.ok) throw new Error(`ophim detail ${res.status}`);
+  const data = await res.json();
+  if (!data.status || !data.movie || data.movie === '') {
+    throw new Error(`ophim detail not found`);
+  }
+  const movie = data.movie;
+  const episodes = (data.episodes || []).map((server: any) => ({
+    server_name: server.server_name || 'OPhim',
+    items: (server.server_data || []).map((ep: any) => ({
+      name: ep.name,
+      slug: ep.slug,
+      embed: ep.link_embed || '',
+      m3u8: ep.link_m3u8 || '',
+    })),
+  }));
+
+  return {
+    movie: {
+      name: movie.name,
+      slug: movie.slug,
+      original_name: movie.origin_name,
+      description: movie.content,
+      thumb_url: fixImageUrl(movie.thumb_url),
+      poster_url: fixImageUrl(movie.poster_url),
+      quality: movie.quality,
+      language: movie.lang,
+      time: movie.time,
+      current_episode: movie.episode_current,
+      total_episodes: movie.episode_total,
+      director: Array.isArray(movie.director) ? movie.director.join(', ') : movie.director,
+      casts: Array.isArray(movie.actor) ? movie.actor.join(', ') : movie.actor,
+      category: movie.category,
+      country: movie.country,
+      episodes,
+      _source: 'OPhim',
+    },
+  };
+};
+
+const ophimSearch = async (keyword: string) => {
+  const res = await fetch(`${OPHIM_URL}/tim-kiem?keyword=${encodeURIComponent(keyword)}`);
+  if (!res.ok) throw new Error(`ophim search ${res.status}`);
+  const data = await res.json();
+  const items = data.data?.items || [];
+  return {
+    items: items.map((item: any) => ({
+      name: item.name,
+      slug: item.slug,
+      original_name: item.origin_name,
+      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
+      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      year: item.year,
+      _source: 'OPhim',
+    })),
+    pagination: data.data?.params?.pagination,
+  };
+};
+
+// =====================================================
+// ontv.icu (OBB) — SERVER 5
+// =====================================================
+const OBB_URL = 'https://ontv.icu/v1/api';
+
+const obbFetchList = async (endpoint: string, page: number) => {
+  let url = '';
+  if (endpoint === '/films/phim-moi-cap-nhat') {
+    url = `https://ontv.icu/danh-sach/phim-moi-cap-nhat?page=${page}`;
+  } else if (endpoint.startsWith('/films/danh-sach/')) {
+    const slug = endpoint.replace('/films/danh-sach/', '');
+    url = `${OBB_URL}/danh-sach/${slug}?page=${page}`;
+  } else if (endpoint.startsWith('/films/the-loai/')) {
+    const slug = endpoint.replace('/films/the-loai/', '');
+    url = `${OBB_URL}/the-loai/${slug}?page=${page}`;
+  } else if (endpoint.startsWith('/films/quoc-gia/')) {
+    const slug = endpoint.replace('/films/quoc-gia/', '');
+    url = `${OBB_URL}/quoc-gia/${slug}?page=${page}`;
+  } else {
+    url = `https://ontv.icu/danh-sach/phim-moi-cap-nhat?page=${page}`;
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`obb list ${res.status}`);
+  const data = await res.json();
+  const items = data.items || data.data?.items || [];
+  return {
+    items: items.map((item: any) => ({
+      name: item.name,
+      slug: item.slug,
+      original_name: item.origin_name,
+      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
+      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      year: item.year,
+      _source: 'OBB',
+    })),
+    pagination: data.pagination || data.data?.params?.pagination,
+  };
+};
+
+const obbFetchDetail = async (slug: string) => {
+  const res = await fetch(`${OBB_URL}/phim/${slug}`);
+  if (!res.ok) throw new Error(`obb detail ${res.status}`);
+  const data = await res.json();
+  if (!data.status || !data.movie || data.movie === '') {
+    throw new Error(`obb detail not found`);
+  }
+  const movie = data.movie;
+  const episodes = (data.episodes || []).map((server: any) => ({
+    server_name: server.server_name || 'OBB',
+    items: (server.server_data || []).map((ep: any) => ({
+      name: ep.name,
+      slug: ep.slug,
+      embed: ep.link_embed || '',
+      m3u8: ep.link_m3u8 || '',
+    })),
+  }));
+
+  return {
+    movie: {
+      name: movie.name,
+      slug: movie.slug,
+      original_name: movie.origin_name,
+      description: movie.content,
+      thumb_url: fixImageUrl(movie.thumb_url),
+      poster_url: fixImageUrl(movie.poster_url),
+      quality: movie.quality,
+      language: movie.lang,
+      time: movie.time,
+      current_episode: movie.episode_current,
+      total_episodes: movie.episode_total,
+      director: Array.isArray(movie.director) ? movie.director.join(', ') : movie.director,
+      casts: Array.isArray(movie.actor) ? movie.actor.join(', ') : movie.actor,
+      category: movie.category,
+      country: movie.country,
+      episodes,
+      _source: 'OBB',
+    },
+  };
+};
+
+const obbSearch = async (keyword: string) => {
+  const res = await fetch(`${OBB_URL}/tim-kiem?keyword=${encodeURIComponent(keyword)}`);
+  if (!res.ok) throw new Error(`obb search ${res.status}`);
+  const data = await res.json();
+  const items = data.data?.items || [];
+  return {
+    items: items.map((item: any) => ({
+      name: item.name,
+      slug: item.slug,
+      original_name: item.origin_name,
+      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
+      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      year: item.year,
+      _source: 'OBB',
+    })),
+    pagination: data.data?.params?.pagination,
+  };
+};
+
+
+// =====================================================
 // PUBLIC API — Auto-failover & Merging
 // =====================================================
 
@@ -295,7 +496,9 @@ export const fetchMovies = async (endpoint: string, page: number = 1) => {
   const results = await Promise.allSettled([
     fetchWithTimeout(phimapiFetchList(endpoint, page), 6000),
     fetchWithTimeout(nguoncFetchList(endpoint, page), 6000),
-    fetchWithTimeout(vsmovFetchList(endpoint, page), 6000)
+    fetchWithTimeout(vsmovFetchList(endpoint, page), 6000),
+    fetchWithTimeout(ophimFetchList(endpoint, page), 6000),
+    fetchWithTimeout(obbFetchList(endpoint, page), 3000)
   ]);
   
   const allItems: any[] = [];
@@ -327,7 +530,9 @@ export const fetchMovieDetail = async (slug: string) => {
   const results = await Promise.allSettled([
     fetchWithTimeout(phimapiFetchDetail(slug), 6000),
     fetchWithTimeout(nguoncFetchDetail(slug), 6000),
-    fetchWithTimeout(vsmovFetchDetail(slug), 6000)
+    fetchWithTimeout(vsmovFetchDetail(slug), 6000),
+    fetchWithTimeout(ophimFetchDetail(slug), 6000),
+    fetchWithTimeout(obbFetchDetail(slug), 3000)
   ]);
 
   let baseMovie: any = null;
@@ -357,6 +562,8 @@ export const fetchMovieDetail = async (slug: string) => {
   const hasPhimApi = processResult(results[0], 'PhimAPI');
   const hasNguonc = processResult(results[1], 'NguonC');
   const hasVsmov = processResult(results[2], 'VSMov');
+  const hasOphim = processResult(results[3], 'OPhim');
+  const hasObb = processResult(results[4], 'OBB');
 
   if (!baseMovie) {
     throw new Error('All sources failed or movie not found');
@@ -396,7 +603,9 @@ export const fetchMovieDetail = async (slug: string) => {
   await Promise.allSettled([
     tryFallbackSearch(hasPhimApi, 'PhimAPI', phimapiSearch, phimapiFetchDetail),
     tryFallbackSearch(hasNguonc, 'NguonC', nguoncSearch, nguoncFetchDetail),
-    tryFallbackSearch(hasVsmov, 'VSMov', vsmovSearch, vsmovFetchDetail)
+    tryFallbackSearch(hasVsmov, 'VSMov', vsmovSearch, vsmovFetchDetail),
+    tryFallbackSearch(hasOphim, 'OPhim', ophimSearch, ophimFetchDetail),
+    tryFallbackSearch(hasObb, 'OBB', obbSearch, obbFetchDetail)
   ]);
 
   // Deduplicate servers just in case
@@ -409,7 +618,9 @@ export const searchMovies = async (keyword: string) => {
   const results = await Promise.allSettled([
     fetchWithTimeout(phimapiSearch(keyword), 6000),
     fetchWithTimeout(nguoncSearch(keyword), 6000),
-    fetchWithTimeout(vsmovSearch(keyword), 6000)
+    fetchWithTimeout(vsmovSearch(keyword), 6000),
+    fetchWithTimeout(ophimSearch(keyword), 6000),
+    fetchWithTimeout(obbSearch(keyword), 3000)
   ]);
   
   const allItems: any[] = [];

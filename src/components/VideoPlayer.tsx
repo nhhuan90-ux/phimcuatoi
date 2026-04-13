@@ -6,12 +6,15 @@ interface VideoPlayerProps {
   embedUrl?: string;
   title: string;
   playerKey: number;
+  initialTime?: number;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
 }
 
-export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey }: VideoPlayerProps) {
+export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initialTime = 0, onTimeUpdate }: VideoPlayerProps) {
   const [iframeError, setIframeError] = useState(false);
   const [isPlayingNative, setIsPlayingNative] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hasSeekedOnce = useRef(false);
 
   useEffect(() => {
     // Attempt native player if we have m3u8.
@@ -22,6 +25,7 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey }: Vid
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setIsPlayingNative(true);
+          hasSeekedOnce.current = false;
         });
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
@@ -49,6 +53,33 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey }: Vid
       }
     }
   }, [m3u8Url, playerKey]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedMetadata = () => {
+      if (!hasSeekedOnce.current && initialTime > 0) {
+        // Only seek if initialTime is greater than 0 and we haven't seeked yet for this video load
+        video.currentTime = initialTime;
+        hasSeekedOnce.current = true;
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      if (onTimeUpdate && video.currentTime > 0) {
+        onTimeUpdate(video.currentTime, video.duration || 0);
+      }
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [initialTime, onTimeUpdate, isPlayingNative]);
 
   const handleSkip = (seconds: number) => {
     if (videoRef.current) {

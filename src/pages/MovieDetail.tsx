@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchMovieDetail } from '../services/api';
-import { Play, Calendar, Clock, Globe, Film } from 'lucide-react';
+import { Play, Calendar, Clock, Globe, Film, RotateCcw } from 'lucide-react';
+import { getHistoryItem } from '../utils/history';
 
 export default function MovieDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [historyEp, setHistoryEp] = useState<any>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,7 +25,15 @@ export default function MovieDetail() {
       }
     };
 
+    const checkHistory = () => {
+      if (slug) {
+        const item = getHistoryItem(slug);
+        if (item) setHistoryEp(item);
+      }
+    };
+
     loadData();
+    checkHistory();
     window.scrollTo(0, 0);
   }, [slug]);
 
@@ -82,16 +92,25 @@ export default function MovieDetail() {
                 </Link>
               )}
             </div>
-            {firstEpisode && (
-              <Link
-                to={`/xem-phim/${movie.slug}/${firstEpisode.slug}?id=0`}
-                className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-600/20"
-              >
-                <Play fill="currentColor" size={20} />
-                XEM PHIM
-              </Link>
-            )}
-          </div>
+              {firstEpisode && !historyEp && (
+                <Link
+                  to={`/xem-phim/${movie.slug}/${firstEpisode.slug}?id=0`}
+                  className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-600/20"
+                >
+                  <Play fill="currentColor" size={20} />
+                  XEM PHIM
+                </Link>
+              )}
+              {historyEp && (
+                 <Link
+                 to={`/xem-phim/${movie.slug}/${historyEp.epSlug}?id=0`}
+                 className="mt-4 w-full bg-[#1a1a1a] border border-red-600 hover:bg-red-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-600/20"
+               >
+                 <RotateCcw size={20} />
+                 TIẾP TỤC: TẬP {historyEp.epName}
+               </Link>
+              )}
+            </div>
 
           {/* Info */}
           <div className="flex-grow text-white">

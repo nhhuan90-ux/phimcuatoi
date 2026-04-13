@@ -6,11 +6,11 @@ export default function Footer() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="text-2xl font-bold text-red-600 tracking-tighter mb-4 inline-block">
-              PHIMCUATOI<span className="text-white">.COM</span>
+            <Link to="/" className="inline-block mb-4 transition-transform hover:scale-105 active:scale-95">
+              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-10 w-auto object-contain" />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed max-w-md">
-              Phimcuatoi.com - Trang web xem phim trực tuyến miễn phí chất lượng cao với giao diện trực quan, tốc độ tải trang nhanh, cùng kho phim khổng lồ được cập nhật liên tục.
+              PhimCuaToi.Online - Trang web xem phim trực tuyến miễn phí chất lượng cao với giao diện trực quan, tốc độ tải trang nhanh, cùng kho phim khổng lồ được cập nhật liên tục.
             </p>
             <p className="text-gray-500 text-xs mt-4">
               Disclaimer: This site does not store any files on its server. All contents are provided by non-affiliated third parties.
@@ -28,7 +28,7 @@ export default function Footer() {
 
         </div>
         <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} Phimcuatoi.com. All rights reserved.
+          &copy; {new Date().getFullYear()} PhimCuaToi.Online. All rights reserved.
         </div>
       </div>
     </footer>

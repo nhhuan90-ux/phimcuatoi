@@ -87,8 +87,8 @@ export default function Header() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center gap-8">
-            <Link to="/" className="text-2xl font-bold text-red-600 tracking-tighter">
-              PHIMCUATOI<span className="text-white">.ONLINE</span>
+            <Link to="/" className="flex items-center transition-transform hover:scale-105 active:scale-95">
+              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-8 md:h-10 w-auto object-contain" />
             </Link>
             <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map((link) => (

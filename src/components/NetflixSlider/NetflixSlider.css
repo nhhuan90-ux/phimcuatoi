@@ -351,9 +351,10 @@
 
 .netflix-slider-wrapper {
   padding: 60px 0;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
   touch-action: pan-y;
+  width: 100%;
 }
 
 .netflix-slider:not(.netflix-slider--open) .netflix-item:hover .netflix-show-details-button,
@@ -372,11 +373,7 @@
 }
 
 /* SliderWrapper */
-.netflix-slider-wrapper {
-  padding: 60px 0;
-  overflow: visible;
-  position: relative;
-}
+/* Removed duplicate .netflix-slider-wrapper style */
 
 .netflix-item-view-all {
   display: flex;

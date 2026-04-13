@@ -131,7 +131,7 @@
 
 /* Item */
 .netflix-item {
-  flex: 0 0 24.5%;
+  flex: 0 0 24.7%;
   transition: transform 300ms ease 100ms;
   margin: 0 2px;
   position: relative;
@@ -179,7 +179,7 @@
 }
 
 .netflix-item:hover .netflix-item__title {
-  bottom: 0px;
+  bottom: 35px;
   font-size: 13px;
   padding: 10px 10px 5px 10px;
   background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%);
@@ -261,7 +261,7 @@
 }
 
 .netflix-item:hover .netflix-show-details-button {
-  bottom: -30px;
+  bottom: -35px;
   opacity: 1;
 }
 
@@ -330,7 +330,7 @@
 }
 .netflix-slider__container {
   display: flex;
-  padding: 0 55px;
+  padding: 0 45px;
   transition: transform 300ms ease 100ms;
   z-index: 3;
   width: 100%;

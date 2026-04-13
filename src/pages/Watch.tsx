@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchMovieDetail } from '../services/api';
 import VideoPlayer from '../components/VideoPlayer';
 import { getHistoryItem, saveHistoryItem } from '../utils/history';
+import { Moon, Sun } from 'lucide-react';
 
 export default function Watch() {
   const { slug, episode } = useParams();
@@ -14,6 +15,7 @@ export default function Watch() {
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [playerKey, setPlayerKey] = useState(0);
   const [initialTime, setInitialTime] = useState(0);
+  const [isLightsOff, setIsLightsOff] = useState(false);
   const lastSavedTime = useRef(0);
 
   useEffect(() => {
@@ -98,6 +100,23 @@ export default function Watch() {
     window.scrollTo(0, 0);
   }, [slug, episode, navigate, searchParams]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isLightsOff) {
+        setIsLightsOff(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightsOff]);
+
+  const toggleLights = () => {
+    setIsLightsOff(!isLightsOff);
+    if (!isLightsOff) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleTimeUpdate = useCallback((currentTime: number, duration: number) => {
     // Only save if time has advanced enough (e.g., every 5 seconds) to avoid spamming localStorage
     if (Math.abs(currentTime - lastSavedTime.current) > 5 && movie && currentEpData) {
@@ -165,7 +184,15 @@ export default function Watch() {
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen">
+    <div className="bg-[#0a0a0a] min-h-screen relative">
+      {/* Lights Off Overlay */}
+      {isLightsOff && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[60] transition-opacity duration-500 cursor-pointer"
+          onClick={() => setIsLightsOff(false)}
+        />
+      )}
+
       <div className="container mx-auto px-4 lg:px-8 py-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
@@ -177,7 +204,12 @@ export default function Watch() {
         </div>
 
         {/* Player */}
-        <div className="w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4" style={{ paddingBottom: '56.25%' }}>
+        <div 
+          className={`w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 transition-all duration-500 ${
+            isLightsOff ? 'z-[70] ring-4 ring-red-600/20' : ''
+          }`} 
+          style={{ paddingBottom: '56.25%' }}
+        >
           <VideoPlayer
             m3u8Url={currentEpData.m3u8}
             embedUrl={currentEpData.embed}
@@ -225,6 +257,17 @@ export default function Watch() {
               className="px-4 py-2 bg-[#2b2b2b] hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
             >
               <span>🔄</span> Tải lại player
+            </button>
+            <button
+              onClick={toggleLights}
+              className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center gap-2 ${
+                isLightsOff 
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-black z-[70] relative' 
+                : 'bg-[#2b2b2b] hover:bg-gray-700 text-white'
+              }`}
+            >
+              {isLightsOff ? <Sun size={16} /> : <Moon size={16} />}
+              {isLightsOff ? 'Bật đèn' : 'Tắt đèn'}
             </button>
             {currentEpData.embed && (
               <a

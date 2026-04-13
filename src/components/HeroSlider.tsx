@@ -55,7 +55,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
 
   return (
     <div 
-      className="relative w-full h-[60vh] md:h-[80vh] overflow-hidden bg-black group"
+      className="relative w-full h-[75vh] md:h-[90vh] lg:h-[100vh] overflow-hidden bg-[#0a0a0a] group"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -63,109 +63,109 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1 }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.2}
           onDragEnd={(_, info) => {
             const threshold = 50;
-            if (info.offset.x < -threshold) {
-              nextSlide();
-            } else if (info.offset.x > threshold) {
-              prevSlide();
-            }
+            if (info.offset.x < -threshold) nextSlide();
+            else if (info.offset.x > threshold) prevSlide();
           }}
           className="absolute inset-0 cursor-grab active:cursor-grabbing"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10" />
+          {/* Netflix-style Vignette Gradients */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent w-[90%] md:w-[70%]" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/30 to-transparent h-full" />
+          <div className="absolute inset-0 z-10 bg-black/20" /> {/* Subtle overall darkening */}
+          
           <img
-            src={movie.poster_url || movie.thumb_url}
+            src={movie.thumb_url || movie.poster_url}
             alt={movie.name}
-            className="w-full h-full object-cover opacity-60 pointer-events-none"
+            className="w-full h-full object-cover object-top md:object-center"
           />
         </motion.div>
       </AnimatePresence>
 
-      <div className="absolute inset-0 z-20 flex items-center">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            key={`content-${currentIndex}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="max-w-2xl"
-          >
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-2 leading-tight">
-              {movie.name}
-            </h1>
-            <p className="text-lg md:text-xl text-gray-300 mb-4 font-medium">
-              {movie.original_name}
-            </p>
-            
-            <div className="flex flex-wrap items-center gap-3 mb-6 text-sm">
-              {movie.quality && (
-                <span className="bg-red-600 text-white px-2 py-1 rounded font-bold">
-                  {movie.quality}
-                </span>
-              )}
-              {movie.language && (
-                <span className="border border-gray-500 text-gray-300 px-2 py-1 rounded">
-                  {movie.language}
-                </span>
-              )}
-              {movie.time && (
-                <span className="text-gray-300">{movie.time}</span>
-              )}
-            </div>
+      <div className="absolute bottom-[10%] md:bottom-[25%] left-4 md:left-12 lg:left-16 z-20 w-full md:w-[60%] lg:w-[45%] pr-4 md:pr-0">
+        <motion.div
+          key={`content-${currentIndex}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="w-full"
+        >
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-white mb-3 md:mb-5 leading-tight drop-shadow-2xl">
+            {movie.name}
+          </h1>
+          
+          <div className="flex flex-wrap items-center gap-3 mb-4 text-xs md:text-sm font-semibold text-white/90 drop-shadow-md">
+            {movie.quality && (
+              <span className="border border-white/50 px-2 py-0.5 rounded-sm bg-black/30">
+                {movie.quality}
+              </span>
+            )}
+            {movie.year && (
+              <span>{movie.year}</span>
+            )}
+            {movie.time && (
+              <span>{movie.time}</span>
+            )}
+            {movie.language && (
+              <span className="border border-white/50 px-2 py-0.5 rounded-sm bg-black/30">
+                {movie.language}
+              </span>
+            )}
+          </div>
 
-            <p className="text-gray-400 text-sm md:text-base line-clamp-3 mb-8 max-w-xl leading-relaxed">
-              {movie.description?.replace(/<[^>]*>?/gm, '') || 'Đang cập nhật nội dung...'}
-            </p>
+          <p className="text-white/90 text-sm md:text-lg line-clamp-3 md:line-clamp-4 mb-6 md:mb-8 drop-shadow-md font-medium leading-relaxed">
+            {movie.description?.replace(/<[^>]*>?/gm, '') || movie.original_name || 'Đang cập nhật nội dung...'}
+          </p>
 
-            <div className="flex items-center gap-4">
-              <Link
-                to={`/phim/${movie.slug}`}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-medium flex items-center gap-2 transition-colors"
-              >
-                <Play fill="currentColor" size={20} />
-                Xem Ngay
-              </Link>
-              <Link
-                to={`/phim/${movie.slug}`}
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-6 py-3 rounded-full font-medium flex items-center gap-2 transition-colors"
-              >
-                <Info size={20} />
-                Chi Tiết
-              </Link>
-            </div>
-          </motion.div>
-        </div>
+          <div className="flex items-center gap-3 md:gap-4">
+            <Link
+              to={`/phim/${movie.slug}`}
+              className="bg-white hover:bg-white/80 text-black px-6 md:px-8 py-2 md:py-3 rounded-md font-bold flex items-center gap-2 transition-all duration-200"
+            >
+              <Play fill="currentColor" size={24} />
+              <span className="text-base md:text-lg">Phát</span>
+            </Link>
+            <Link
+              to={`/phim/${movie.slug}`}
+              className="bg-[#6d6d6e]/70 hover:bg-[#6d6d6e]/50 text-white px-6 md:px-8 py-2 md:py-3 rounded-md font-bold flex items-center gap-2 transition-all duration-200"
+            >
+              <Info size={24} />
+              <span className="text-base md:text-lg">Thông tin khác</span>
+            </Link>
+          </div>
+        </motion.div>
       </div>
 
+      {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/50 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300"
+        className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 bg-black/20 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm"
       >
-        <ChevronLeft size={24} />
+        <ChevronLeft size={32} />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/50 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300"
+        className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 bg-black/20 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm"
       >
-        <ChevronRight size={24} />
+        <ChevronRight size={32} />
       </button>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+      {/* Modern pagination indicator */}
+      <div className="absolute bottom-4 md:bottom-8 right-4 md:right-12 z-30 flex gap-2">
         {movies.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              idx === currentIndex ? 'w-8 bg-red-600' : 'bg-white/50 hover:bg-white/80'
+            className={`h-1 duration-300 transition-all ${
+              idx === currentIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
             }`}
           />
         ))}

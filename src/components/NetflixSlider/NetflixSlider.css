@@ -8,8 +8,9 @@
 /* Content */
 .netflix-content {
   position: relative;
-  height: 37vw;
+  min-height: 37vw;
   margin-top: -40px;
+  z-index: 10;
 }
 
 .netflix-content__background,
@@ -181,12 +182,25 @@
   bottom: 60px;
   font-size: 13px;
   padding: 10px 10px 5px 10px;
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
   border-radius: 4px 4px 0 0;
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.netflix-item:hover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+  z-index: 4;
+  border-radius: 0 0 6px 6px;
+  pointer-events: none;
 }
 
 
@@ -233,13 +247,22 @@
   left: 0;
   right: 0;
   opacity: 0;
-  transition: opacity 300ms ease 100ms;
+  transition: all 300ms ease;
   background: transparent;
   border: 0;
   outline: none;
   width: 100%;
   cursor: pointer;
   z-index: 20;
+}
+
+.netflix-show-details-button--active {
+  opacity: 1 !important;
+}
+
+.netflix-show-details-button--active span {
+  background-color: rgba(229, 9, 20, 0.9) !important;
+  border-color: #fff !important;
 }
 .netflix-show-details-button span {
   display: flex;
@@ -260,14 +283,14 @@
 .netflix-slide-button {
   position: absolute;
   top: 0;
-  bottom: 25px; /* Match the padding-bottom of .netflix-item to align with poster bottom */
+  bottom: 25px; 
   width: 55px;
   background: rgba(0, 0, 0, 0.5);
   border: 0;
   outline: 0;
   padding: 0;
   margin: 0; 
-  z-index: 4;
+  z-index: 8;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -308,7 +331,8 @@
   width: 100%;
 }
 
-.netflix-slider:not(.netflix-slider--open) .netflix-item:hover .netflix-show-details-button {
+.netflix-slider:not(.netflix-slider--open) .netflix-item:hover .netflix-show-details-button,
+.netflix-item--open .netflix-show-details-button {
   opacity: 1;
 }
 .netflix-slider:not(.netflix-slider--open) .netflix-item:hover {

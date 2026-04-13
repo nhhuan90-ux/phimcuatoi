@@ -7,7 +7,10 @@ import './NetflixSlider.css';
 const Mark = () => <div className="netflix-mark" />;
 
 const ShowDetailsButton = ({ onClick, isActive }: { onClick: (e: React.MouseEvent) => void; isActive: boolean }) => (
-  <button onClick={onClick} className="netflix-show-details-button">
+  <button 
+    onClick={onClick} 
+    className={`netflix-show-details-button ${isActive ? 'netflix-show-details-button--active' : ''}`}
+  >
     <span>
       {isActive ? <IconArrowUp /> : <IconArrowDown />}
     </span>

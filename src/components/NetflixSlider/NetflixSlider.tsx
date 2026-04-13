@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SliderContext } from './NetflixContext';
 import NetflixContent from './NetflixContent';
 import { IconArrowDown } from './NetflixIcons';
@@ -26,6 +26,7 @@ interface SliderProps {
 
 const NetflixSlider: React.FC<SliderProps> = ({ children, activeSlide }) => {
   const [currentSlide, setCurrentSlide] = useState<any | null>(activeSlide || null);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const { width, elementRef } = useSizeElement();
   const { handlePrev, handleNext, slideProps, containerRef, hasNext, hasPrev } = useSliding(
     width,
@@ -40,6 +41,23 @@ const NetflixSlider: React.FC<SliderProps> = ({ children, activeSlide }) => {
     setCurrentSlide(null);
   };
 
+  // Click outside and hover other movie auto-close logic
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sliderRef.current && !sliderRef.current.contains(event.target as Node)) {
+        handleClose();
+      }
+    };
+
+    if (currentSlide) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [currentSlide]);
+
   const contextValue = {
     onSelectSlide: handleSelect,
     onCloseSlide: handleClose,
@@ -49,16 +67,18 @@ const NetflixSlider: React.FC<SliderProps> = ({ children, activeSlide }) => {
 
   return (
     <SliderContext.Provider value={contextValue}>
-      <SliderWrapper>
-        <div className={`netflix-slider ${currentSlide ? 'netflix-slider--open' : ''}`}>
-          <div ref={containerRef} className="netflix-slider__container" {...slideProps}>
-            {children}
+      <div ref={sliderRef}>
+        <SliderWrapper>
+          <div className={`netflix-slider ${currentSlide ? 'netflix-slider--open' : ''}`}>
+            <div ref={containerRef} className="netflix-slider__container" {...slideProps}>
+              {children}
+            </div>
           </div>
-        </div>
-        {hasPrev && <SlideButton onClick={handlePrev} type="prev" />}
-        {hasNext && <SlideButton onClick={handleNext} type="next" />}
-      </SliderWrapper>
-      {currentSlide && <NetflixContent movie={currentSlide} onClose={handleClose} />}
+          {hasPrev && <SlideButton onClick={handlePrev} type="prev" />}
+          {hasNext && <SlideButton onClick={handleNext} type="next" />}
+        </SliderWrapper>
+        {currentSlide && <NetflixContent movie={currentSlide} onClose={handleClose} />}
+      </div>
     </SliderContext.Provider>
   );
 };

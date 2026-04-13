@@ -1,14 +1,32 @@
-import { useState, useRef, useEffect, RefObject } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export const useSizeElement = () => {
   const elementRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
-    if (elementRef.current) {
-      setWidth(elementRef.current.clientWidth);
-    }
-  }, [elementRef.current]);
+    if (!elementRef.current) return;
+
+    const updateWidth = () => {
+      if (elementRef.current) {
+        setWidth(elementRef.current.clientWidth);
+      }
+    };
+
+    // Initial width
+    updateWidth();
+
+    // Use ResizeObserver for accurate detection of size changes (e.g., zoom, media query changes)
+    const resizeObserver = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    resizeObserver.observe(elementRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return { width, elementRef };
 };
@@ -25,23 +43,46 @@ export const useSliding = (elementWidth: number, countElements: number) => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Recalculate container width and visibility when element size or container size changes
   useEffect(() => {
-    if (containerRef.current && elementWidth > 0) {
-      const w = containerRef.current.clientWidth - PADDINGS;
-      setContainerWidth(w);
-      setTotalInViewport(Math.floor(w / elementWidth));
-    }
-  }, [containerRef.current, elementWidth]);
+    if (!containerRef.current || elementWidth <= 0) return;
 
-  const handlePrev = () => {
-    setViewed(viewed - totalInViewport);
-    setDistance(distance + containerWidth);
-  };
+    const updateContainerInfo = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth - PADDINGS;
+        setContainerWidth(w);
+        setTotalInViewport(Math.floor(w / elementWidth));
+      }
+    };
 
-  const handleNext = () => {
-    setViewed(viewed + totalInViewport);
-    setDistance(distance - containerWidth);
-  };
+    updateContainerInfo();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateContainerInfo();
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [elementWidth]);
+
+  // Reset positioning if the viewport size changes significantly to avoid broken alignment
+  useEffect(() => {
+    setDistance(0);
+    setViewed(0);
+  }, [containerWidth]);
+
+  const handlePrev = useCallback(() => {
+    setViewed(prev => prev - totalInViewport);
+    setDistance(prev => prev + containerWidth);
+  }, [totalInViewport, containerWidth]);
+
+  const handleNext = useCallback(() => {
+    setViewed(prev => prev + totalInViewport);
+    setDistance(prev => prev - containerWidth);
+  }, [totalInViewport, containerWidth]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);

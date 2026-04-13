@@ -18,14 +18,14 @@ interface MovieCardProps {
 
 export default function MovieCard({ movie }: MovieCardProps) {
   return (
-    <Link to={`/phim/${movie.slug}`} className="group relative block overflow-hidden rounded-lg bg-[#1a1a1a] aspect-[2/3]">
+    <Link to={`/phim/${movie.slug}`} className="group relative block overflow-hidden rounded-lg bg-[#1a1a1a] aspect-video">
       <img
         src={movie.thumb_url || movie.poster_url}
         alt={movie.name}
         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 transition-opacity duration-300">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/20 to-transparent opacity-100 transition-opacity duration-300">
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {movie.current_episode && (
             <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-md">

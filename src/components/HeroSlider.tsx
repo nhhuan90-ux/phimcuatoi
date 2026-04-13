@@ -90,7 +90,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="absolute bottom-[10%] md:bottom-[25%] left-4 md:left-12 lg:left-16 z-20 w-full md:w-[60%] lg:w-[45%] pr-4 md:pr-0">
+      <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-12 lg:left-16 z-20 w-full md:w-[70%] lg:w-[50%] pr-4 md:pr-0">
         <motion.div
           key={`content-${currentIndex}`}
           initial={{ opacity: 0, y: 20 }}
@@ -98,7 +98,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="w-full"
         >
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-white mb-3 md:mb-5 leading-tight drop-shadow-2xl">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-3 md:mb-5 leading-tight drop-shadow-2xl line-clamp-2">
             {movie.name}
           </h1>
           

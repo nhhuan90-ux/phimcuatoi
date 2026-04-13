@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import MovieCard from './MovieCard';
+import NetflixSlider from './NetflixSlider/NetflixSlider';
+import NetflixItem from './NetflixSlider/NetflixItem';
 
 interface MovieSectionProps {
   title: string;
@@ -26,10 +27,13 @@ export default function MovieSection({ title, movies, viewAllLink }: MovieSectio
           </Link>
         )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {movies.map((movie) => (
-          <MovieCard key={movie.slug} movie={movie} />
-        ))}
+      
+      <div className="-mx-4 lg:-mx-8">
+        <NetflixSlider>
+          {movies.map((movie) => (
+            <NetflixItem key={movie.slug} movie={movie} />
+          ))}
+        </NetflixSlider>
       </div>
     </section>
   );

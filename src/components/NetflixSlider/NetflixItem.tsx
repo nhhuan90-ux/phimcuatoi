@@ -28,6 +28,23 @@ const NetflixItem: React.FC<ItemProps> = ({ movie }) => {
 
   const isActive = currentSlide && currentSlide.slug === movie.slug;
 
+  const handleItemClick = (e: React.MouseEvent) => {
+    const isMobile = window.innerWidth < 1024;
+    
+    if (isMobile) {
+      if (!isActive) {
+        // First click on mobile: Zoom/Select
+        e.preventDefault();
+        onSelectSlide(movie);
+      }
+      // If already active, let the Link handle the navigation
+    } else {
+      // Desktop: hover handles scaling, single click navigates
+      // But we can also trigger onSelectSlide if we want the info area to toggle
+      // The current implementation uses ShowDetailsButton for toggle info area.
+    }
+  };
+
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -47,11 +64,15 @@ const NetflixItem: React.FC<ItemProps> = ({ movie }) => {
   return (
     <div
       ref={elementRef as any}
-      className={`netflix-item ${isActive ? 'netflix-item--open' : ''}`}
+      className={`netflix-item ${isActive ? 'netflix-item--open is-zoomed' : ''}`}
       onMouseEnter={handleMouseEnter}
     >
       <div className="relative group/poster">
-        <Link to={`/phim/${movie.slug}`} className="block w-full h-full">
+        <Link 
+          to={`/phim/${movie.slug}`} 
+          className="block w-full h-full"
+          onClick={handleItemClick}
+        >
           <img src={movie.thumb_url || movie.poster_url} alt={movie.name} />
         </Link>
         <ShowDetailsButton onClick={handleToggle} isActive={!!isActive} />

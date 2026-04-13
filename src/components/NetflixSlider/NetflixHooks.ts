@@ -22,6 +22,9 @@ export const useSliding = (elementWidth: number, countElements: number) => {
   const [totalInViewport, setTotalInViewport] = useState(0);
   const [viewed, setViewed] = useState(0);
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   useEffect(() => {
     if (containerRef.current && elementWidth > 0) {
       const w = containerRef.current.clientWidth - PADDINGS;
@@ -40,8 +43,33 @@ export const useSliding = (elementWidth: number, countElements: number) => {
     setDistance(distance - containerWidth);
   };
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distanceThreshold = 50;
+    const isLeftSwipe = touchStart - touchEnd > distanceThreshold;
+    const isRightSwipe = touchStart - touchEnd < -distanceThreshold;
+
+    if (isLeftSwipe && (viewed + totalInViewport) < countElements) {
+      handleNext();
+    } else if (isRightSwipe && distance < 0) {
+      handlePrev();
+    }
+  };
+
   const slideProps = {
-    style: { transform: `translate3d(${distance}px, 0, 0)` }
+    style: { transform: `translate3d(${distance}px, 0, 0)` },
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd
   };
 
   const hasPrev = distance < 0;

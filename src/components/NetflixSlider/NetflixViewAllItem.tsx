@@ -21,6 +21,9 @@ const NetflixViewAllItem: React.FC<Props> = ({ link }) => {
         </div>
         <span className="text-white font-bold text-sm md:text-base">Xem tất cả</span>
       </Link>
+      <div className="netflix-item__title invisible">
+        Spacer
+      </div>
     </div>
   );
 };

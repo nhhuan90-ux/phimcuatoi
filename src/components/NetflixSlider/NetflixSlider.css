@@ -304,8 +304,8 @@
 }
 
 .netflix-item-view-all {
-  aspect-ratio: 2/3;
   display: flex;
+  flex-direction: column;
 }
 
 .netflix-item-view-all a {
@@ -314,6 +314,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100% !important;
+  width: 100% !important;
+  aspect-ratio: 2/3;
   border: 2px dashed rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
 }
+

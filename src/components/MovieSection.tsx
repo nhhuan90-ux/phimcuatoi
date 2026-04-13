@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import NetflixSlider from './NetflixSlider/NetflixSlider';
 import NetflixItem from './NetflixSlider/NetflixItem';
+import NetflixViewAllItem from './NetflixSlider/NetflixViewAllItem';
 
 interface MovieSectionProps {
   title: string;
@@ -33,6 +34,9 @@ export default function MovieSection({ title, movies, viewAllLink }: MovieSectio
           {movies.map((movie) => (
             <NetflixItem key={movie.slug} movie={movie} />
           ))}
+          {viewAllLink && (
+            <NetflixViewAllItem link={viewAllLink} />
+          )}
         </NetflixSlider>
       </div>
     </section>

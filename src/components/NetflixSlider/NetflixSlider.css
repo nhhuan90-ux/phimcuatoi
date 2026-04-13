@@ -179,7 +179,7 @@
 }
 
 .netflix-item:hover .netflix-item__title {
-  bottom: 45px;
+  bottom: 0px;
   font-size: 13px;
   padding: 10px 10px 5px 10px;
   background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%);
@@ -258,6 +258,11 @@
 
 .netflix-show-details-button--active {
   opacity: 1 !important;
+}
+
+.netflix-item:hover .netflix-show-details-button {
+  bottom: -30px;
+  opacity: 1;
 }
 
 .netflix-show-details-button--active span {

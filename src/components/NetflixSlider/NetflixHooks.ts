@@ -31,8 +31,6 @@ export const useSizeElement = () => {
   return { width, elementRef };
 };
 
-const PADDINGS = 110;
-
 export const useSliding = (elementWidth: number, countElements: number) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -49,9 +47,12 @@ export const useSliding = (elementWidth: number, countElements: number) => {
 
     const updateContainerInfo = () => {
       if (containerRef.current) {
-        const w = containerRef.current.clientWidth - PADDINGS;
+        const computedStyle = window.getComputedStyle(containerRef.current);
+        const pLeft = parseFloat(computedStyle.paddingLeft) || 0;
+        const pRight = parseFloat(computedStyle.paddingRight) || 0;
+        const w = containerRef.current.clientWidth - (pLeft + pRight);
         setContainerWidth(w);
-        setTotalInViewport(Math.floor(w / elementWidth));
+        setTotalInViewport(Math.round(w / elementWidth));
       }
     };
 
@@ -90,13 +91,30 @@ export const useSliding = (elementWidth: number, countElements: number) => {
 
   // Reactive distance based on viewed elements
   useEffect(() => {
-    if (totalInViewport > 0) {
+    if (totalInViewport > 0 && containerRef.current) {
       const itemWidth = containerWidth / totalInViewport;
-      setDistance(-viewed * itemWidth);
+      let targetDistance = -viewed * itemWidth;
+
+      // Ensure we don't scroll past the actual physical boundary of the flex container
+      const maxScroll = containerRef.current.scrollWidth - containerRef.current.clientWidth;
+      if (maxScroll > 0) {
+        // If target distance is more negative than what's physically possible, clamp it
+        if (targetDistance < -maxScroll) {
+          targetDistance = -maxScroll;
+        }
+        
+        // Also force maxViewed to snap exactly to maxScroll
+        const maxViewed = Math.max(0, countElements - totalInViewport);
+        if (viewed >= maxViewed) {
+          targetDistance = -maxScroll;
+        }
+      }
+
+      setDistance(targetDistance);
     } else {
       setDistance(0);
     }
-  }, [viewed, containerWidth, totalInViewport]);
+  }, [viewed, containerWidth, totalInViewport, countElements]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);

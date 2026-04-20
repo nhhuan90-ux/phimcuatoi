@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 export const useSizeElement = () => {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -70,19 +70,33 @@ export const useSliding = (elementWidth: number, countElements: number) => {
 
   // Reset positioning if the viewport size changes significantly to avoid broken alignment
   useEffect(() => {
-    setDistance(0);
     setViewed(0);
   }, [containerWidth]);
 
   const handlePrev = useCallback(() => {
-    setViewed(prev => prev - totalInViewport);
-    setDistance(prev => prev + containerWidth);
-  }, [totalInViewport, containerWidth]);
+    setViewed(prev => {
+      let nextViewed = prev - totalInViewport;
+      return nextViewed < 0 ? 0 : nextViewed;
+    });
+  }, [totalInViewport]);
 
   const handleNext = useCallback(() => {
-    setViewed(prev => prev + totalInViewport);
-    setDistance(prev => prev - containerWidth);
-  }, [totalInViewport, containerWidth]);
+    setViewed(prev => {
+      let nextViewed = prev + totalInViewport;
+      const maxViewed = Math.max(0, countElements - totalInViewport);
+      return nextViewed > maxViewed ? maxViewed : nextViewed;
+    });
+  }, [totalInViewport, countElements]);
+
+  // Reactive distance based on viewed elements
+  useEffect(() => {
+    if (totalInViewport > 0) {
+      const itemWidth = containerWidth / totalInViewport;
+      setDistance(-viewed * itemWidth);
+    } else {
+      setDistance(0);
+    }
+  }, [viewed, containerWidth, totalInViewport]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);

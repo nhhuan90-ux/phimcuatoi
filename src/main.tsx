@@ -2,10 +2,14 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './tv.css';
+import { TVProvider } from './contexts/TVContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <TVProvider>
+      <App />
+    </TVProvider>
   </StrictMode>,
 );
 

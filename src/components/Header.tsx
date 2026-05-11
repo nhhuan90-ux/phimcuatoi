@@ -48,6 +48,25 @@ export default function Header() {
   }, []);
 
   const handleInstallClick = async () => {
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroidTV = ua.includes('android') && (
+      ua.includes('tv') || ua.includes('aft') || ua.includes('shield') || 
+      ua.includes('chromecast') || ua.includes('nexus player') || 
+      ua.includes('mi box') || ua.includes('bravia') || ua.includes('smart-tv') || 
+      ua.includes('smarttv') || ua.includes('philips') || ua.includes('hbbtv')
+    );
+
+    if (isAndroidTV) {
+      // Download APK directly
+      const a = document.createElement('a');
+      a.href = '/PhimCuaToi-TV.apk';
+      a.download = 'PhimCuaToi-TV.apk';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;

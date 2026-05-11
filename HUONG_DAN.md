@@ -20,8 +20,12 @@ Dự án được cấu trúc theo chuẩn React hiện đại:
 
 **Logic hoạt động:**
 - Khi ứng dụng khởi chạy, hệ thống sẽ phát hiện thiết bị (thông qua user-agent hoặc kích thước màn hình).
-- Nếu phát hiện Android TV (hoặc được mở dưới dạng TV app), hệ thống kích hoạt tính năng **Spatial Navigation** (điều hướng D-pad) qua Context, và chuyển sang sử dụng bộ components/pages trong thư mục `tv/`.
+- Nếu phát hiện Android TV (kể cả khi mở bằng trình duyệt web trên tivi hoặc mở ứng dụng cài đặt), hệ thống sẽ:
+  - **Tự động điều hướng** (redirect) người dùng sang các trang dành riêng cho TV (đường dẫn bắt đầu bằng `/tv`).
+  - Kích hoạt tính năng **Spatial Navigation** (điều hướng D-pad) hỗ trợ điều khiển bằng Remote (các phím điều hướng, OK, Back).
 - Nếu là Web thông thường, ứng dụng sẽ dùng bộ layout Web truyền thống có hỗ trợ chạm (touch/swipe) cho mobile và click cho desktop.
+- **Tương thích TV cũ:** Mã nguồn đã được cấu hình Vite (`build.target`) để hoạt động tốt trên các trình duyệt/WebView cũ (từ Chrome 60) nhằm tránh lỗi màn hình đen trên tivi.
+- **Quyền riêng tư (SEO):** Website được thiết lập tệp `robots.txt` và thẻ `meta robots` (`noindex, nofollow`) để chặn hoàn toàn các công cụ tìm kiếm (Google, Bing...), đảm bảo tính riêng tư, chỉ những ai có link mới truy cập được.
 
 ## 2. Cài đặt và Chạy môi trường phát triển (Local)
 
@@ -57,9 +61,17 @@ Dự án đã được cấu hình sẵn cho các nền tảng deploy phổ bi�
 **Deploy lên Netlify hoặc các nền tảng khác:**
 - Tương tự như trên, hãy đảm bảo bạn trỏ "Publish Directory" về thư mục `dist` và "Build Command" là `npm run build`.
 
-## 4. Đóng gói cho Android TV (Capacitor)
+## 4. Sử dụng trên Android TV
 
-Dự án được cấu hình sẵn Capacitor (có file `capacitor.config.ts`) để bọc ứng dụng web thành ứng dụng Native.
+Ứng dụng hiện hỗ trợ 2 phương thức để sử dụng trên Android TV:
+
+### Phương thức 1: Truy cập trực tiếp qua trình duyệt web trên TV (Nhanh nhất)
+Bạn **không cần** phải cài đặt app. Chỉ cần mở trình duyệt web trên tivi (ví dụ: TV Bro, Puffin TV, Chrome) và nhập tên miền trang web.
+Website sẽ tự động phát hiện tivi, chuyển hướng sang giao diện tivi và cho phép sử dụng Remote (D-Pad) để thao tác như một ứng dụng Native thực thụ.
+
+### Phương thức 2: Đóng gói thành ứng dụng cài đặt (APK bằng Capacitor)
+
+Dự án được cấu hình sẵn Capacitor (có file `capacitor.config.ts`) để bọc ứng dụng web thành ứng dụng Native. Nếu bạn muốn cài đặt app hiển thị ở màn hình chính của tivi:
 
 **Các bước thực hiện:**
 1. Cài đặt các thư viện cần thiết (nếu chưa có):

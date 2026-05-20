@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useTVMode } from './contexts/TVContext';
 import Layout from './components/Layout';
@@ -18,19 +19,29 @@ import TVSearch from './pages/tv/TVSearch';
 import TVHistory from './pages/tv/TVHistory';
 
 function RouteController({ children }: { children: React.ReactNode }) {
-  const { isTVMode } = useTVMode();
+  const { isTVMode, setTVMode } = useTVMode();
   const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tvParam = params.get('tv');
+    if (tvParam === '1' && !isTVMode) {
+      setTVMode(true);
+    } else if (tvParam === '0' && isTVMode) {
+      setTVMode(false);
+    }
+  }, [location.search, isTVMode, setTVMode]);
 
   // Redirect to TV routes if TV mode is detected and we're not already on a TV route
   if (isTVMode && !location.pathname.startsWith('/tv')) {
     const newPath = location.pathname === '/' ? '/tv' : `/tv${location.pathname}`;
-    return <Navigate to={newPath} replace />;
+    return <Navigate to={newPath + location.search} replace />;
   }
 
   // Redirect to web routes if NOT in TV mode and we are on a TV route
   if (!isTVMode && location.pathname.startsWith('/tv')) {
     const newPath = location.pathname.replace(/^\/tv/, '') || '/';
-    return <Navigate to={newPath} replace />;
+    return <Navigate to={newPath + location.search} replace />;
   }
 
   return <>{children}</>;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Film, Tv, Flame, Search, Clock } from 'lucide-react';
+import { Home, Film, Tv, Flame, Search, Clock, Globe } from 'lucide-react';
 import TVFocusable from './TVFocusable';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { name: 'Phim Hot', path: '/tv/danh-sach/phim-chieu-rap', icon: Flame },
   { name: 'Tìm kiếm', path: '/tv/tim-kiem', icon: Search },
   { name: 'Lịch sử', path: '/tv/lich-su', icon: Clock },
+  { name: 'Giao diện Web', path: '/?tv=0', icon: Globe },
 ];
 
 export default function TVHeader() {

@@ -60,7 +60,11 @@ function findBestCandidate(
 ): HTMLElement | null {
   const candidates = Array.from(
     container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-  ).filter((el) => el !== current && el.offsetParent !== null);
+  ).filter((el) => {
+    if (el === current) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  });
 
   if (candidates.length === 0) return null;
 

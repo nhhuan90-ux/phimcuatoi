@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, X, Download, Clock } from 'lucide-react';
+import { Search, Menu, X, Download, Clock, Tv } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -132,6 +132,13 @@ export default function Header() {
                 CÀI APP
               </button>
             )}
+            <Link
+              to="/tv?tv=1"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-[11px] font-bold rounded-full hover:bg-blue-700 transition-all hover:scale-105 shadow-lg shadow-blue-600/40 border border-blue-500"
+            >
+              <Tv size={13} />
+              GIAO DIỆN TV
+            </Link>
             <form onSubmit={handleSearch} className="hidden md:flex relative">
               <input
                 type="text"
@@ -155,6 +162,13 @@ export default function Header() {
                   APP
                 </button>
               )}
+              <Link
+                to="/tv?tv=1"
+                className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-[9px] font-bold rounded-full hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/30 border border-blue-500"
+              >
+                <Tv size={10} />
+                TV MODE
+              </Link>
               <button
                 className="text-gray-300 hover:text-white"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -179,6 +193,14 @@ export default function Header() {
                 TẢI APP PHIMCUATOI
               </button>
             )}
+            <Link
+              to="/tv?tv=1"
+              className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white text-sm font-bold rounded-md hover:bg-blue-700 transition-colors border border-blue-500"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Tv size={18} />
+              CHUYỂN GIAO DIỆN TV
+            </Link>
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"

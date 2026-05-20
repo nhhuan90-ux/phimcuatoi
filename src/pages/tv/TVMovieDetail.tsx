@@ -41,7 +41,7 @@ export default function TVMovieDetail() {
   if (loading) return <div className="tv-loading"><div className="tv-spinner" /><p style={{color:'#888',fontSize:18}}>Đang tải...</p></div>;
 
   if (!movie) return (
-    <div style={{padding:'120px 48px',textAlign:'center'}}>
+    <div style={{padding:'120px var(--tv-safe-padding)',textAlign:'center'}}>
       <h1 style={{fontSize:32,fontWeight:800,marginBottom:16}}>Không tìm thấy phim</h1>
       <TVFocusable link="/tv" className="tv-btn tv-btn-primary" focusClassName="tv-btn-focus" autoFocus>Trang chủ</TVFocusable>
     </div>
@@ -56,7 +56,7 @@ export default function TVMovieDetail() {
         <img src={movie.poster_url||movie.thumb_url} alt={movie.name} style={{width:'100%',height:'100%',objectFit:'cover',opacity:0.4,filter:'blur(4px)'}} />
       </div>
 
-      <div style={{position:'relative',zIndex:10,marginTop:'-40vh',padding:'0 48px',display:'flex',gap:40}}>
+      <div style={{position:'relative',zIndex:10,marginTop:'-40vh',padding:'0 var(--tv-safe-padding)',display:'flex',gap:40}} className="tv-fade-in">
         <div className="tv-detail-poster">
           <img src={movie.thumb_url||movie.poster_url} alt={movie.name} style={{width:'100%',aspectRatio:'2/3',objectFit:'cover',display:'block'}} />
         </div>

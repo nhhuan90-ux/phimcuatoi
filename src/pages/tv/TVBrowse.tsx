@@ -45,20 +45,20 @@ export default function TVBrowse({ type = 'danh-sach' }: { type?: string }) {
   }, [actualSlug, type, page]);
 
   return (
-    <div style={{ padding: '100px 48px 48px' }}>
+    <div style={{ padding: '100px var(--tv-safe-padding) 48px' }} className="tv-fade-in">
       <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 32, borderLeft: '4px solid #dc2626', paddingLeft: 16 }}>
         {title}
       </h1>
 
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 20 }}>
+        <div className="tv-movie-grid">
           {[...Array(18)].map((_, i) => (
             <div key={i} style={{ background: '#1a1a1a', borderRadius: 12, aspectRatio: '2/3.5', animation: 'tv-fade-in 0.5s ease' }} />
           ))}
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 20 }}>
+          <div className="tv-movie-grid">
             {movies.map((movie, idx) => (
               <TVMovieCard key={movie.slug} movie={movie} index={idx} />
             ))}

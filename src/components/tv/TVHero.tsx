@@ -87,7 +87,7 @@ export default function TVHero({ movies }: TVHeroProps) {
       </div>
 
       {/* Pagination dots */}
-      <div style={{ position: 'absolute', bottom: 32, right: 48, zIndex: 30, display: 'flex', gap: 8 }}>
+      <div style={{ position: 'absolute', bottom: 32, right: 'var(--tv-safe-padding)', zIndex: 30, display: 'flex', gap: 8 }}>
         {movies.slice(0, 10).map((_, idx) => (
           <div
             key={idx}

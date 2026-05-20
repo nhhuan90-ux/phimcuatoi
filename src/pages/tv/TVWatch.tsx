@@ -104,7 +104,7 @@ export default function TVWatch() {
   if (loading) return <div className="tv-loading"><div className="tv-spinner" /><p style={{color:'#888',fontSize:18}}>Đang tải phim...</p></div>;
 
   if (errorInfo || !movie || !currentEpData) return (
-    <div style={{padding:'120px 48px',textAlign:'center'}}>
+    <div style={{padding:'120px var(--tv-safe-padding)',textAlign:'center'}}>
       <h1 style={{fontSize:28,fontWeight:800,marginBottom:16,color:'#dc2626'}}>Lỗi</h1>
       <p style={{color:'#888',marginBottom:24}}>{errorInfo||'Không tìm thấy tập phim.'}</p>
       <TVFocusable onPress={()=>window.location.reload()} className="tv-btn tv-btn-primary" focusClassName="tv-btn-focus" autoFocus>Thử lại</TVFocusable>

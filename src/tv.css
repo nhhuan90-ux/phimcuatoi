@@ -4,6 +4,7 @@
 
 /* Base TV mode overrides */
 .tv-mode {
+  --tv-safe-padding: 6vw;
   cursor: none !important;
   user-select: none;
   overflow-x: hidden;
@@ -82,7 +83,7 @@
 
 .tv-header {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
-  padding: 20px 48px;
+  padding: 20px var(--tv-safe-padding);
   position: fixed;
   top: 0;
   left: 0;
@@ -104,7 +105,7 @@
 }
 
 .tv-nav-item {
-  padding: 8px 24px;
+  padding: 8px 16px;
   border-radius: 8px;
   font-size: 18px;
   font-weight: 600;
@@ -263,17 +264,17 @@
   font-size: 24px;
   font-weight: 800;
   color: #fff;
-  padding: 0 48px;
+  padding: 0 var(--tv-safe-padding);
   margin-bottom: 16px;
   border-left: 4px solid #dc2626;
   padding-left: 16px;
-  margin-left: 32px;
+  margin-left: 0;
 }
 
 .tv-movie-row-scroll {
   display: flex;
   gap: 16px;
-  padding: 16px 48px;
+  padding: 16px var(--tv-safe-padding);
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -402,7 +403,7 @@
 .tv-search-container {
   display: flex;
   gap: 32px;
-  padding: 120px 48px 48px;
+  padding: 120px var(--tv-safe-padding) 48px;
   height: 100vh;
 }
 
@@ -411,7 +412,7 @@
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   align-content: start;
-  width: 360px;
+  width: 100%;
   flex-shrink: 0;
 }
 
@@ -467,7 +468,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 48px;
+  padding: 40px var(--tv-safe-padding);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -573,4 +574,230 @@
 .tv-server-btn.active {
   background: #dc2626;
   color: #fff;
+}
+
+/* TV Web Toggle Button specific styling */
+.tv-nav-web-toggle {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
+  color: #eee !important;
+}
+
+.tv-nav-web-toggle:hover, .tv-nav-web-toggle.tv-focused {
+  background: rgba(220, 38, 38, 0.95) !important;
+  border-color: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* =============================================
+   TV Responsive Styles
+   ============================================= */
+
+@media (max-width: 1280px) {
+  .tv-header {
+    padding: 14px var(--tv-safe-padding);
+  }
+  .tv-header-logo {
+    height: 32px;
+  }
+  .tv-nav-item {
+    padding: 6px 14px;
+    font-size: 15px;
+  }
+  .tv-movie-row-title {
+    font-size: 20px;
+    padding: 0 var(--tv-safe-padding);
+    padding-left: 12px;
+    margin-left: 0;
+  }
+  .tv-movie-row-scroll {
+    padding: 12px var(--tv-safe-padding);
+    gap: 12px;
+  }
+  .tv-movie-card {
+    width: 180px;
+  }
+  .tv-hero {
+    height: 70vh;
+  }
+  .tv-hero-content {
+    left: var(--tv-safe-padding);
+    bottom: 10%;
+    max-width: 60%;
+  }
+  .tv-hero-title {
+    font-size: 38px;
+  }
+  .tv-hero-desc {
+    font-size: 15px;
+  }
+  .tv-btn {
+    padding: 10px 24px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 960px) {
+  .tv-header {
+    padding: 10px var(--tv-safe-padding);
+  }
+  .tv-header-logo {
+    height: 28px;
+  }
+  .tv-nav-item {
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+  .tv-movie-row-title {
+    font-size: 18px;
+    padding: 0 var(--tv-safe-padding);
+    padding-left: 10px;
+    margin-left: 0;
+    margin-bottom: 8px;
+  }
+  .tv-movie-row-scroll {
+    padding: 8px var(--tv-safe-padding);
+    gap: 8px;
+  }
+  .tv-movie-card {
+    width: 140px;
+  }
+  .tv-hero {
+    height: 60vh;
+  }
+  .tv-hero-content {
+    left: var(--tv-safe-padding);
+    bottom: 8%;
+    max-width: 80%;
+  }
+  .tv-hero-title {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .tv-hero-desc {
+    display: none; /* Hide desc on very small TV resolutions to save space */
+  }
+  .tv-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* =============================================
+   TV Calibration & Responsive Classes
+   ============================================= */
+
+/* Utility text hiding class for smaller TV screens to avoid overflow */
+@media (max-width: 1100px) {
+  .tv-nav-text-utility {
+    display: none !important;
+  }
+  .tv-header {
+    gap: 20px;
+  }
+}
+
+/* Movie Grid for TVBrowse page */
+.tv-movie-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1400px) {
+  .tv-movie-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .tv-movie-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tv-movie-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+}
+
+/* TV Search calibration */
+.tv-search-sidebar {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1280px) {
+  .tv-search-sidebar {
+    width: 300px;
+  }
+  .tv-search-results-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .tv-key {
+    padding: 10px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .tv-search-sidebar {
+    width: 260px;
+  }
+  .tv-search-results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .tv-key {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* TV Movie Detail Responsive Calibration */
+.tv-detail-poster {
+  width: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+  .tv-detail-poster {
+    width: 220px;
+  }
+  .tv-detail-title {
+    font-size: 32px;
+  }
+  .tv-detail-original {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .tv-detail-poster {
+    width: 160px;
+    border-radius: 10px;
+  }
+  .tv-detail-title {
+    font-size: 24px;
+  }
+  .tv-detail-original {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
 }

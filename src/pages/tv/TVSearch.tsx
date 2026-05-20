@@ -45,9 +45,9 @@ export default function TVSearch() {
   const addSpace = () => setQuery(prev => prev + ' ');
 
   return (
-    <div className="tv-search-container">
+    <div className="tv-search-container tv-fade-in">
       {/* Left: Keyboard */}
-      <div style={{ width: 400, flexShrink: 0 }}>
+      <div className="tv-search-sidebar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Search size={24} style={{ color: '#dc2626' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800 }}>Tìm kiếm</h2>
@@ -98,7 +98,7 @@ export default function TVSearch() {
             Không tìm thấy phim nào cho "{query}"
           </div>
         ) : results.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          <div className="tv-search-results-grid">
             {results.map((movie, idx) => (
               <TVMovieCard key={movie.slug} movie={movie} index={idx} />
             ))}

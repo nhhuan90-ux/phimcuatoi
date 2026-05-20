@@ -21,14 +21,17 @@ export default function TVMovieRow({ title, movies }: TVMovieRowProps) {
         if (card) {
           const containerRect = container.getBoundingClientRect();
           const cardRect = card.getBoundingClientRect();
+          
+          // Calculate safe area padding matching the css 6vw variable
+          const safePadding = Math.round(window.innerWidth * 0.06);
 
           // Scroll left if card is partially hidden on the left
-          if (cardRect.left < containerRect.left + 48) {
-            container.scrollLeft -= (containerRect.left + 48 - cardRect.left + 100);
+          if (cardRect.left < containerRect.left + safePadding) {
+            container.scrollLeft -= (containerRect.left + safePadding - cardRect.left + 100);
           }
           // Scroll right if card is partially hidden on the right
-          if (cardRect.right > containerRect.right - 48) {
-            container.scrollLeft += (cardRect.right - containerRect.right + 148);
+          if (cardRect.right > containerRect.right - safePadding) {
+            container.scrollLeft += (cardRect.right - containerRect.right + safePadding + 100);
           }
         }
       }

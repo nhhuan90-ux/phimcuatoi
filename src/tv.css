@@ -2,9 +2,12 @@
    TV Mode Styles — Android TV / 10-foot UI
    ============================================= */
 
+:root {
+  --tv-safe-padding: 6vw;
+}
+
 /* Base TV mode overrides */
 .tv-mode {
-  --tv-safe-padding: 6vw;
   cursor: none !important;
   user-select: none;
   overflow-x: hidden;

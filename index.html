@@ -10,10 +10,91 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="robots" content="noindex, nofollow" />
     <title>PhimCuaToi.Online - Xem phim trực tuyến miễn phí</title>
+    
+    <!-- TV Debug Console Script -->
+    <script>
+      (function() {
+        var logs = [];
+        window.tvDebugLogs = logs;
+        function appendLog(type, msg) {
+          var logLine = '[' + new Date().toISOString().substring(11, 19) + '] [' + type + '] ' + msg;
+          logs.push(logLine);
+          var el = document.getElementById('debug-log');
+          if (el) {
+            el.textContent = logs.join('\n');
+            el.scrollTop = el.scrollHeight;
+          }
+          if (type.indexOf('ERROR') !== -1) {
+            var panel = document.getElementById('debug-console');
+            if (panel) panel.style.display = 'block';
+          }
+        }
+        
+        window.onerror = function(message, source, lineno, colno, error) {
+          appendLog('ERROR', message + ' (' + (source ? source.substring(source.lastIndexOf('/') + 1) : '') + ':' + lineno + ':' + colno + ')');
+          return false;
+        };
+        
+        window.addEventListener('unhandledrejection', function(event) {
+          appendLog('ERROR-REJECTION', event.reason ? (event.reason.message || event.reason) : 'Promise rejection');
+        });
+
+        var orgError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          appendLog('CONSOLE-ERROR', args.join(' '));
+          orgError.apply(console, arguments);
+        };
+
+        var orgLog = console.log;
+        console.log = function() {
+          var args = Array.prototype.slice.call(arguments);
+          appendLog('INFO', args.join(' '));
+          orgLog.apply(console, arguments);
+        };
+
+        // Press number '0' 5 times to toggle debug console
+        var zeroCount = 0;
+        window.addEventListener('keydown', function(e) {
+          var code = e.keyCode || e.which;
+          appendLog('KEY', 'Pressed keycode: ' + code);
+          if (code === 48 || code === 96) { // '0' key
+            zeroCount++;
+            if (zeroCount >= 5) {
+              var panel = document.getElementById('debug-console');
+              if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+              zeroCount = 0;
+            }
+          } else {
+            zeroCount = 0;
+          }
+        });
+        
+        // Click top-left 5 times to toggle debug console
+        var clickCount = 0;
+        window.addEventListener('click', function(e) {
+          if (e.clientX < 60 && e.clientY < 60) {
+            clickCount++;
+            if (clickCount >= 5) {
+              var panel = document.getElementById('debug-console');
+              if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+              clickCount = 0;
+            }
+          } else {
+            clickCount = 0;
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
+    <!-- TV Debug Console UI Overlay -->
+    <div id="debug-console" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);color:#0f0;z-index:999999;padding:20px;font-family:monospace;font-size:12px;overflow:auto;">
+      <h3 style="margin:0 0 10px 0;color:#fff;border-bottom:1px solid #333;padding-bottom:5px;">TV Debug Console</h3>
+      <pre id="debug-log" style="white-space:pre-wrap;margin:0;"></pre>
+      <button onclick="document.getElementById('debug-console').style.display='none'" style="position:fixed;top:10px;right:10px;background:#c00;color:#fff;border:none;padding:5px 10px;font-weight:bold;cursor:pointer;z-index:1000000;">Close</button>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

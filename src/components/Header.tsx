@@ -107,7 +107,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center transition-transform hover:scale-105 active:scale-95">
-              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-8 md:h-10 w-auto object-contain" />
+              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-8 md:h-10 w-auto object-contain" style={{ height: '36px', width: 'auto', maxHeight: '36px' }} />
             </Link>
             <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map((link) => (

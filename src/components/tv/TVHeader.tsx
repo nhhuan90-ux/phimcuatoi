@@ -30,7 +30,7 @@ export default function TVHeader() {
   return (
     <div className={`tv-header ${isScrolled ? 'scrolled' : ''}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'nowrap' }}>
-        <img src="/logo.png" alt="PhimCuaToi" className="tv-header-logo" />
+        <img src="/logo.png" alt="PhimCuaToi" className="tv-header-logo" style={{ height: '40px', width: 'auto', maxHeight: '40px' }} />
         <nav style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'nowrap' }}>
           {mainNavItems.map((item) => {
             const isActive = location.pathname === item.path ||

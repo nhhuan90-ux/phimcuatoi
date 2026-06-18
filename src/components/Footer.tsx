@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="inline-block mb-4 transition-transform hover:scale-105 active:scale-95">
-              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-10 w-auto object-contain" />
+              <img src="/logo.png" alt="PhimCuaToi.Online" className="h-10 w-auto object-contain" style={{ height: '40px', width: 'auto', maxHeight: '40px' }} />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed max-w-md">
               PhimCuaToi.Online - Trang web xem phim trực tuyến miễn phí chất lượng cao với giao diện trực quan, tốc độ tải trang nhanh, cùng kho phim khổng lồ được cập nhật liên tục.

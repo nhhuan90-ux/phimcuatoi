@@ -5,16 +5,22 @@
 const PHIMAPI_URL = 'https://phimapi.com';
 const PHIMAPI_IMG = 'https://phimimg.com';
 
-const fixImageUrl = (url: any): string => {
+export const getOptimizedImageUrl = (url: string | undefined, width: number = 300, quality: number = 70): string => {
   if (!url || typeof url !== 'string') return '';
-  if (url.startsWith('http')) return url;
-  return `${PHIMAPI_IMG}/${url}`;
+  // Wrap with wsrv.nl CDN for resizing, WebP conversion, and Cloudflare caching
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${width}&q=${quality}&output=webp&il`;
 };
 
-const ophimFixImageUrl = (url: any): string => {
+const fixImageUrl = (url: any, width: number = 300): string => {
   if (!url || typeof url !== 'string') return '';
-  if (url.startsWith('http')) return url;
-  return `https://img.ophim.live/uploads/movies/${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${PHIMAPI_IMG}/${url}`;
+  return getOptimizedImageUrl(fullUrl, width);
+};
+
+const ophimFixImageUrl = (url: any, width: number = 300): string => {
+  if (!url || typeof url !== 'string') return '';
+  const fullUrl = url.startsWith('http') ? url : `https://img.ophim.live/uploads/movies/${url}`;
+  return getOptimizedImageUrl(fullUrl, width);
 };
 
 export const normalizeName = (name: string | undefined): string => {
@@ -45,8 +51,8 @@ const phimapiNormalizeListItem = (item: any) => ({
   name: item.name,
   slug: item.slug,
   original_name: item.origin_name,
-  thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
-  poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+  thumb_url: fixImageUrl(item.thumb_url, 150) || fixImageUrl(item.poster_url, 150),
+  poster_url: fixImageUrl(item.poster_url, 250) || fixImageUrl(item.thumb_url, 250),
   year: item.year,
   _source: 'PhimAPI',
 });
@@ -102,8 +108,8 @@ const phimapiFetchDetail = async (slug: string) => {
       slug: movie.slug,
       original_name: movie.origin_name,
       description: movie.content,
-      thumb_url: fixImageUrl(movie.thumb_url),
-      poster_url: fixImageUrl(movie.poster_url),
+      thumb_url: fixImageUrl(movie.thumb_url, 300),
+      poster_url: fixImageUrl(movie.poster_url, 450),
       quality: movie.quality,
       language: movie.lang,
       time: movie.time,
@@ -144,8 +150,8 @@ const nguoncFetchList = async (endpoint: string, page: number) => {
       name: item.name,
       slug: item.slug,
       original_name: item.original_name,
-      thumb_url: item.thumb_url,
-      poster_url: item.poster_url,
+      thumb_url: getOptimizedImageUrl(item.thumb_url, 150),
+      poster_url: getOptimizedImageUrl(item.poster_url, 250),
       year: item.year,
       _source: 'NguonC',
     })),
@@ -174,6 +180,8 @@ const nguoncFetchDetail = async (slug: string) => {
   return {
     movie: {
       ...movie,
+      thumb_url: getOptimizedImageUrl(movie.thumb_url, 300),
+      poster_url: getOptimizedImageUrl(movie.poster_url, 450),
       episodes,
       _source: 'NguonC'
     }
@@ -232,8 +240,8 @@ const vsmovFetchList = async (endpoint: string, page: number) => {
       name: item.name,
       slug: item.slug,
       original_name: item.origin_name || item.original_name,
-      thumb_url: item.thumb_url,
-      poster_url: item.poster_url,
+      thumb_url: getOptimizedImageUrl(item.thumb_url, 150),
+      poster_url: getOptimizedImageUrl(item.poster_url, 250),
       year: item.year,
       _source: 'VSMov',
     })),
@@ -268,8 +276,8 @@ const vsmovFetchDetail = async (slug: string) => {
       slug: movie.slug,
       original_name: movie.origin_name || movie.original_name,
       description: movie.content || movie.description,
-      thumb_url: movie.thumb_url,
-      poster_url: movie.poster_url,
+      thumb_url: getOptimizedImageUrl(movie.thumb_url, 300),
+      poster_url: getOptimizedImageUrl(movie.poster_url, 450),
       quality: movie.quality,
       language: movie.lang || movie.language,
       time: movie.time,
@@ -336,8 +344,8 @@ const ophimFetchList = async (endpoint: string, page: number) => {
       name: item.name,
       slug: item.slug,
       original_name: item.origin_name,
-      thumb_url: ophimFixImageUrl(item.thumb_url) || ophimFixImageUrl(item.poster_url),
-      poster_url: ophimFixImageUrl(item.poster_url) || ophimFixImageUrl(item.thumb_url),
+      thumb_url: ophimFixImageUrl(item.thumb_url, 150) || ophimFixImageUrl(item.poster_url, 150),
+      poster_url: ophimFixImageUrl(item.poster_url, 250) || ophimFixImageUrl(item.thumb_url, 250),
       year: item.year,
       _source: 'OPhim',
     })),
@@ -369,8 +377,8 @@ const ophimFetchDetail = async (slug: string) => {
       slug: movie.slug,
       original_name: movie.origin_name,
       description: movie.content,
-      thumb_url: ophimFixImageUrl(movie.thumb_url),
-      poster_url: ophimFixImageUrl(movie.poster_url),
+      thumb_url: ophimFixImageUrl(movie.thumb_url, 300),
+      poster_url: ophimFixImageUrl(movie.poster_url, 450),
       quality: movie.quality,
       language: movie.lang,
       time: movie.time,
@@ -436,8 +444,8 @@ const obbFetchList = async (endpoint: string, page: number) => {
       name: item.name,
       slug: item.slug,
       original_name: item.origin_name,
-      thumb_url: fixImageUrl(item.thumb_url) || fixImageUrl(item.poster_url),
-      poster_url: fixImageUrl(item.poster_url) || fixImageUrl(item.thumb_url),
+      thumb_url: fixImageUrl(item.thumb_url, 150) || fixImageUrl(item.poster_url, 150),
+      poster_url: fixImageUrl(item.poster_url, 250) || fixImageUrl(item.thumb_url, 250),
       year: item.year,
       _source: 'OBB',
     })),
@@ -469,8 +477,8 @@ const obbFetchDetail = async (slug: string) => {
       slug: movie.slug,
       original_name: movie.origin_name,
       description: movie.content,
-      thumb_url: fixImageUrl(movie.thumb_url),
-      poster_url: fixImageUrl(movie.poster_url),
+      thumb_url: fixImageUrl(movie.thumb_url, 300),
+      poster_url: fixImageUrl(movie.poster_url, 450),
       quality: movie.quality,
       language: movie.lang,
       time: movie.time,

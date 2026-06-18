@@ -1,4 +1,3 @@
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import path from 'path';
@@ -9,7 +8,6 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [
       react(),
-      tailwindcss(),
       legacy({
         targets: ['chrome >= 38', 'safari >= 11', 'not IE 11'],
       }),

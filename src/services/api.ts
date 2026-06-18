@@ -5,22 +5,21 @@
 const PHIMAPI_URL = 'https://phimapi.com';
 const PHIMAPI_IMG = 'https://phimimg.com';
 
-export const getOptimizedImageUrl = (url: string | undefined, width: number = 300, quality: number = 80): string => {
+export const getOptimizedImageUrl = (url: string | undefined, width?: number, quality?: number): string => {
   if (!url || typeof url !== 'string') return '';
-  // Wrap with wsrv.nl CDN for resizing, WebP conversion, and Cloudflare caching
-  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${width}&q=${quality}&output=webp&il`;
+  return url;
 };
 
-const fixImageUrl = (url: any, width: number = 400): string => {
+const fixImageUrl = (url: any, width?: number): string => {
   if (!url || typeof url !== 'string') return '';
-  const fullUrl = url.startsWith('http') ? url : `${PHIMAPI_IMG}/${url}`;
-  return getOptimizedImageUrl(fullUrl, width);
+  if (url.startsWith('http')) return url;
+  return `${PHIMAPI_IMG}/${url}`;
 };
 
-const ophimFixImageUrl = (url: any, width: number = 400): string => {
+const ophimFixImageUrl = (url: any, width?: number): string => {
   if (!url || typeof url !== 'string') return '';
-  const fullUrl = url.startsWith('http') ? url : `https://img.ophim.live/uploads/movies/${url}`;
-  return getOptimizedImageUrl(fullUrl, width);
+  if (url.startsWith('http')) return url;
+  return `https://img.ophim.live/uploads/movies/${url}`;
 };
 
 export const normalizeName = (name: string | undefined): string => {

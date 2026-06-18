@@ -49,6 +49,16 @@ export default function TVMovieDetail() {
 
   const firstEp = movie.episodes?.[0]?.items?.[0];
 
+  const genres = movie ? (Array.isArray(movie.category) 
+    ? movie.category 
+    : (Array.isArray(movie.category?.[2]?.list) ? movie.category[2].list : [])) : [];
+
+  const countries = movie ? (Array.isArray(movie.country) 
+    ? movie.country 
+    : (Array.isArray(movie.category?.[4]?.list) ? movie.category[4].list : [])) : [];
+
+  const releaseYear = movie ? (movie.year || (Array.isArray(movie.category?.[3]?.list) ? movie.category[3].list[0]?.name : null) || 'N/A') : 'N/A';
+
   return (
     <div style={{paddingBottom:64}}>
       <div className="tv-detail-backdrop">
@@ -58,7 +68,7 @@ export default function TVMovieDetail() {
 
       <div style={{position:'relative',zIndex:10,marginTop:'-40vh',padding:'0 var(--tv-safe-padding)',display:'flex',gap:40}} className="tv-fade-in">
         <div className="tv-detail-poster">
-          <img src={movie.thumb_url||movie.poster_url} alt={movie.name} style={{width:'100%',aspectRatio:'2/3',objectFit:'cover',display:'block'}} />
+          <img src={movie.thumb_url||movie.poster_url} alt={movie.name} style={{width:'100%',height:'420px',objectFit:'cover',display:'block'}} />
         </div>
 
         <div className="tv-detail-info">
@@ -84,10 +94,10 @@ export default function TVMovieDetail() {
           </div>
 
           <div className="tv-detail-meta">
-            <div className="tv-detail-meta-item"><Calendar size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Năm</div><div className="tv-detail-meta-value">{movie.category?.[3]?.list?.[0]?.name||'N/A'}</div></div></div>
+            <div className="tv-detail-meta-item"><Calendar size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Năm</div><div className="tv-detail-meta-value">{releaseYear}</div></div></div>
             <div className="tv-detail-meta-item"><Clock size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Thời lượng</div><div className="tv-detail-meta-value">{movie.time||'N/A'}</div></div></div>
-            <div className="tv-detail-meta-item"><Globe size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Quốc gia</div><div className="tv-detail-meta-value">{movie.category?.[4]?.list?.map((c:any)=>c.name).join(', ')||'N/A'}</div></div></div>
-            <div className="tv-detail-meta-item"><Film size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Thể loại</div><div className="tv-detail-meta-value">{movie.category?.[2]?.list?.map((g:any)=>g.name).join(', ')||'N/A'}</div></div></div>
+            <div className="tv-detail-meta-item"><Globe size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Quốc gia</div><div className="tv-detail-meta-value">{countries.map((c:any)=>c.name).join(', ')||'N/A'}</div></div></div>
+            <div className="tv-detail-meta-item"><Film size={18} style={{color:'#888',marginTop:2}} /><div><div className="tv-detail-meta-label">Thể loại</div><div className="tv-detail-meta-value">{genres.map((g:any)=>g.name).join(', ')||'N/A'}</div></div></div>
           </div>
 
           <div style={{marginBottom:32}}>

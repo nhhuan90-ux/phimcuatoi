@@ -34,7 +34,7 @@ const TVHistoryRow = () => {
             link={`/tv/xem-phim/${item.movieSlug}/${item.epSlug}?id=0`}
             className="tv-movie-card"
             focusClassName="tv-card-focus"
-            style={{ width: 200 }}
+            style={{ width: 180 }}
           >
             <div style={{ position: 'relative' }}>
               <img src={item.posterUrl} alt={item.movieName} className="poster" />

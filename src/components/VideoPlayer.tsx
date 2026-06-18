@@ -8,9 +8,10 @@ interface VideoPlayerProps {
   playerKey: number;
   initialTime?: number;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  forceEmbed?: boolean;
 }
 
-export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initialTime = 0, onTimeUpdate }: VideoPlayerProps) {
+export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initialTime = 0, onTimeUpdate, forceEmbed = false }: VideoPlayerProps) {
   const [iframeError, setIframeError] = useState(false);
   const [isPlayingNative, setIsPlayingNative] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -88,7 +89,7 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
   };
 
   const safeEmbed = embedUrl?.replace(/^http:\/\//i, 'https://');
-  const showNativePlayer = m3u8Url && isPlayingNative;
+  const showNativePlayer = m3u8Url && isPlayingNative && !forceEmbed;
 
   if (showNativePlayer) {
     return (
@@ -131,7 +132,6 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
         allowFullScreen
         allow="autoplay; fullscreen; encrypted-media"
         title={title}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
         onError={() => setIframeError(true)}
       ></iframe>
     );

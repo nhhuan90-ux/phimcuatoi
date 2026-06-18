@@ -14,6 +14,7 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [playerKey, setPlayerKey] = useState(0);
+  const [useEmbed, setUseEmbed] = useState(false);
   const [initialTime, setInitialTime] = useState(0);
   const [isLightsOff, setIsLightsOff] = useState(false);
   const lastSavedTime = useRef(0);
@@ -217,6 +218,7 @@ export default function Watch() {
             playerKey={playerKey}
             initialTime={initialTime}
             onTimeUpdate={handleTimeUpdate}
+            forceEmbed={useEmbed}
           />
         </div>
 
@@ -257,6 +259,14 @@ export default function Watch() {
               className="px-4 py-2 bg-[#2b2b2b] hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
             >
               <span>🔄</span> Tải lại player
+            </button>
+            <button
+              onClick={() => setUseEmbed(prev => !prev)}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
+                useEmbed ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#2b2b2b] hover:bg-gray-700 text-white'
+              }`}
+            >
+              <span>📺</span> {useEmbed ? 'Dùng Trình phát HLS' : 'Dùng Trình phát Dự phòng'}
             </button>
             <button
               onClick={toggleLights}

@@ -89,7 +89,7 @@ export function useSpatialNavigation(containerRef?: React.RefObject<HTMLElement 
 
   const focusElement = useCallback((el: HTMLElement) => {
     el.focus({ preventScroll: false });
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
     lastFocused.current = el;
 
     // Dispatch custom event for components to react

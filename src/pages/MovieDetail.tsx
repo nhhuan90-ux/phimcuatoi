@@ -75,6 +75,16 @@ export default function MovieDetail() {
 
   const firstEpisode = movie.episodes?.[0]?.items?.[0];
 
+  const genres = movie ? (Array.isArray(movie.category) 
+    ? movie.category 
+    : (Array.isArray(movie.category?.[2]?.list) ? movie.category[2].list : [])) : [];
+
+  const countries = movie ? (Array.isArray(movie.country) 
+    ? movie.country 
+    : (Array.isArray(movie.category?.[4]?.list) ? movie.category[4].list : [])) : [];
+
+  const releaseYear = movie ? (movie.year || (Array.isArray(movie.category?.[3]?.list) ? movie.category[3].list[0]?.name : null) || 'Đang cập nhật') : 'Đang cập nhật';
+
   return (
     <div className="pb-12">
       {/* Backdrop */}
@@ -152,7 +162,7 @@ export default function MovieDetail() {
                 <Calendar className="text-gray-400 mt-0.5" size={18} />
                 <div>
                   <span className="text-gray-400 block mb-1">Năm phát hành</span>
-                  <span className="font-medium">{movie.category?.[3]?.list?.[0]?.name || 'Đang cập nhật'}</span>
+                  <span className="font-medium">{releaseYear}</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -166,7 +176,7 @@ export default function MovieDetail() {
                 <Globe className="text-gray-400 mt-0.5" size={18} />
                 <div>
                   <span className="text-gray-400 block mb-1">Quốc gia</span>
-                  <span className="font-medium">{movie.category?.[4]?.list?.map((c: any) => c.name).join(', ') || 'Đang cập nhật'}</span>
+                  <span className="font-medium">{countries.map((c: any) => c.name).join(', ') || 'Đang cập nhật'}</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -174,11 +184,13 @@ export default function MovieDetail() {
                 <div>
                   <span className="text-gray-400 block mb-1">Thể loại</span>
                   <div className="flex flex-wrap gap-1">
-                    {movie.category?.[2]?.list?.map((g: any) => (
-                      <Link key={g.id} to={`/the-loai/${g.slug}`} className="text-red-500 hover:underline">
-                        {g.name}
-                      </Link>
-                    )).reduce((prev: any, curr: any) => [prev, ', ', curr]) || 'Đang cập nhật'}
+                    {genres.length > 0 ? (
+                      genres.map((g: any) => (
+                        <Link key={g.id || g.slug} to={`/the-loai/${g.slug}`} className="text-red-500 hover:underline">
+                          {g.name}
+                        </Link>
+                      )).reduce((prev: any, curr: any) => [prev, ', ', curr])
+                    ) : 'Đang cập nhật'}
                   </div>
                 </div>
               </div>

@@ -128,7 +128,7 @@
    ============================================= */
 
 .tv-hero {
-  height: 80vh;
+  height: 60vh;
   position: relative;
   overflow: hidden;
 }
@@ -200,7 +200,7 @@
 
 .tv-movie-card {
   flex-shrink: 0;
-  width: 220px;
+  width: 180px;
   border-radius: 12px;
   overflow: hidden;
   background: #1a1a1a;
@@ -210,6 +210,7 @@
 
 .tv-movie-card .poster {
   width: 100%;
+  height: 270px;
   aspect-ratio: 2/3;
   object-fit: cover;
   display: block;

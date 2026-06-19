@@ -8,6 +8,8 @@ import MovieDetail from './pages/MovieDetail';
 import Watch from './pages/Watch';
 import Search from './pages/Search';
 import History from './pages/History';
+import Phim18Plus from './pages/Phim18Plus';
+import Phim18Player from './pages/Phim18Player';
 
 // TV Components
 import TVLayout from './components/tv/TVLayout';
@@ -76,7 +78,10 @@ function App() {
           <Route path="xem-phim/:slug/:episode" element={<Watch />} />
           <Route path="tim-kiem" element={<Search />} />
           <Route path="lich-su" element={<History />} />
+          <Route path="phim-18" element={<Phim18Plus />} />
         </Route>
+        {/* === Phim 18+ Player (fullscreen, no layout) === */}
+        <Route path="/phim-18/player" element={<Phim18Player />} />
       </Routes>
       </RouteController>
     </BrowserRouter>

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
-const PHIM18_API = 'http://localhost:3000';
+const PHIM18_API = '';
 
 export default function Phim18Player() {
-  const { source, id } = useParams();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get('source');
+  const id = searchParams.get('id');
 
   useEffect(() => {
     if (source && id) {
@@ -17,7 +19,7 @@ export default function Phim18Player() {
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 bg-[#111] border-b border-gray-800">
-        <a href="/phim-18" className="text-white text-sm hover:text-red-500 transition-colors">&larr; Quay lại</a>
+        <a href="/the-loai/phim-18?tab=adult" className="text-white text-sm hover:text-red-500 transition-colors">&larr; Quay lại</a>
         <span className="text-gray-400 text-xs">Phim 18+</span>
       </div>
       <div className="flex-1">

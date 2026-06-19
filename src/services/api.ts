@@ -358,11 +358,13 @@ const ophimFetchDetail = async (slug: string) => {
   const res = await fetch(`${OPHIM_URL}/phim/${slug}`);
   if (!res.ok) throw new Error(`ophim detail ${res.status}`);
   const data = await res.json();
-  if (!data.status || !data.movie || data.movie === '') {
+  
+  // OPhim v1 API response places movie details in data.item under the data root key
+  const movie = data.data?.item;
+  if (!movie) {
     throw new Error(`ophim detail not found`);
   }
-  const movie = data.movie;
-  const episodes = (data.episodes || []).map((server: any) => ({
+  const episodes = (movie.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'OPhim',
     items: (server.server_data || []).map((ep: any) => ({
       name: ep.name,
@@ -459,11 +461,13 @@ const obbFetchDetail = async (slug: string) => {
   const res = await fetch(`${OBB_URL}/phim/${slug}`);
   if (!res.ok) throw new Error(`obb detail ${res.status}`);
   const data = await res.json();
-  if (!data.status || !data.movie || data.movie === '') {
+  
+  // OBB v1 API response places movie details in data.item under the data root key
+  const movie = data.data?.item;
+  if (!movie) {
     throw new Error(`obb detail not found`);
   }
-  const movie = data.movie;
-  const episodes = (data.episodes || []).map((server: any) => ({
+  const episodes = (movie.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'OBB',
     items: (server.server_data || []).map((ep: any) => ({
       name: ep.name,

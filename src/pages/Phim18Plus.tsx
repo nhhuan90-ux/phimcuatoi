@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, Film, Play, Search, X } from 'lucide-react';
 
 const PHIM18_API = '';
@@ -35,8 +36,21 @@ function AgeGate({ onConfirm }: { onConfirm: () => void }) {
   );
 }
 
-export default function Phim18Plus() {
-  const [verified, setVerified] = useState(false);
+export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolean }) {
+  const [verified, setVerified] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('age-verified') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleVerify = () => {
+    try {
+      localStorage.setItem('age-verified', 'true');
+    } catch (e) {}
+    setVerified(true);
+  };
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState('all');
@@ -75,14 +89,33 @@ export default function Phim18Plus() {
 
   return (
     <>
-      {!verified && <AgeGate onConfirm={() => setVerified(true)} />}
-      <div className="container mx-auto px-4 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white border-l-4 border-red-600 pl-3 flex items-center gap-3">
-            <Film className="text-red-500" size={28} />
-            Phim 18+
-          </h1>
-        </div>
+      {!verified && <AgeGate onConfirm={handleVerify} />}
+      <div className={`container mx-auto px-4 lg:px-8 ${hideHeader ? 'pb-8' : 'py-8'}`}>
+        {!hideHeader && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl md:text-3xl font-bold text-white border-l-4 border-red-600 pl-3 flex items-center gap-3">
+                <Film className="text-red-500" size={28} />
+                Phim 18+
+              </h1>
+            </div>
+
+            <div className="flex gap-4 mb-8 border-b border-gray-800 pb-3">
+              <Link
+                to="/the-loai/phim-18"
+                className="text-sm font-medium text-gray-400 hover:text-white pb-2 px-1 transition-colors"
+              >
+                Phim 18+ Thông thường
+              </Link>
+              <Link
+                to="/phim-18"
+                className="text-sm font-bold text-red-500 border-b-2 border-red-500 pb-2 px-1"
+              >
+                Phim người lớn
+              </Link>
+            </div>
+          </>
+        )}
 
         {/* Toolbar */}
         <div className="flex flex-wrap gap-3 mb-6">

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchMovies } from '../services/api';
 import MovieCard from '../components/MovieCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Phim18Plus from './Phim18Plus';
 
 export default function Browse({ type }: { type: string }) {
   const { slug, year } = useParams();
@@ -13,6 +14,21 @@ export default function Browse({ type }: { type: string }) {
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [title, setTitle] = useState('');
+
+  const activeTab = slug === 'phim-18' && searchParams.get('tab') === 'adult' ? 'adult' : 'normal';
+
+  const handleTabChange = (tab: 'normal' | 'adult') => {
+    setSearchParams(prev => {
+      const nextParams = new URLSearchParams(prev);
+      if (tab === 'adult') {
+        nextParams.set('tab', 'adult');
+      } else {
+        nextParams.delete('tab');
+      }
+      nextParams.delete('page');
+      return nextParams;
+    });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -59,15 +75,71 @@ export default function Browse({ type }: { type: string }) {
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setSearchParams({ page: newPage.toString() });
+      setSearchParams(prev => {
+        const nextParams = new URLSearchParams(prev);
+        nextParams.set('page', newPage.toString());
+        return nextParams;
+      });
     }
   };
 
+  if (slug === 'phim-18' && activeTab === 'adult') {
+    return (
+      <div className="py-8">
+        <div className="container mx-auto px-4 lg:px-8 mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 border-l-4 border-red-600 pl-3">
+            {title}
+          </h1>
+          <div className="flex gap-4 border-b border-gray-800 pb-3">
+            <button
+              onClick={() => handleTabChange('normal')}
+              className="text-sm font-medium text-gray-400 hover:text-white pb-2 px-1 cursor-pointer transition-colors focus:outline-none"
+            >
+              Phim 18+ Thông thường
+            </button>
+            <button
+              onClick={() => handleTabChange('adult')}
+              className="text-sm font-bold text-red-500 border-b-2 border-red-500 pb-2 px-1 cursor-pointer transition-colors focus:outline-none"
+            >
+              Phim người lớn
+            </button>
+          </div>
+        </div>
+        <Phim18Plus hideHeader={true} />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 lg:px-8 py-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-white mb-8 border-l-4 border-red-600 pl-3">
+      <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 border-l-4 border-red-600 pl-3">
         {title}
       </h1>
+
+      {slug === 'phim-18' && (
+        <div className="flex gap-4 mb-8 border-b border-gray-800 pb-3">
+          <button
+            onClick={() => handleTabChange('normal')}
+            className={`text-sm font-bold pb-2 px-1 cursor-pointer transition-colors focus:outline-none ${
+              activeTab === 'normal'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Phim 18+ Thông thường
+          </button>
+          <button
+            onClick={() => handleTabChange('adult')}
+            className={`text-sm font-bold pb-2 px-1 cursor-pointer transition-colors focus:outline-none ${
+              activeTab === 'adult'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Phim người lớn
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center min-h-[40vh]">

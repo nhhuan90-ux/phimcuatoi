@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev:all": "concurrently \"npm run dev\" \"node server/server.js\"",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -33,6 +34,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-legacy": "^6.1.1",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^10.0.3",
     "postcss": "^8.5.15",
     "postcss-css-variables": "^0.19.0",
     "tailwindcss": "^4.1.14",

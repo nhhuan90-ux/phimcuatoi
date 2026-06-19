@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  const registerSW = () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
         console.log('SW registered: ', registration);
@@ -32,8 +32,6 @@ if ('serviceWorker' in navigator) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 console.log('New content available; please refresh.');
-                // We could prompt the user here, but for now we'll just log
-                // or force reload if we are feeling aggressive.
               }
             });
           }
@@ -42,7 +40,13 @@ if ('serviceWorker' in navigator) {
       .catch(registrationError => {
         console.log('SW registration failed: ', registrationError);
       });
-  });
+  };
+
+  if (document.readyState === 'complete') {
+    registerSW();
+  } else {
+    window.addEventListener('load', registerSW);
+  }
 
   // Handle redundant controllers after update
   let refreshing = false;

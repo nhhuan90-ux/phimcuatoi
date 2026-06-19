@@ -37,18 +37,31 @@ self.addEventListener('activate', (event) => {
 
 // Fetch: Network-First for HTML, Stale-While-Revalidate for others
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests and http/https protocols
+  if (event.request.method !== 'GET') return;
+
+  try {
+    const url = new URL(event.request.url);
+    if (!url.protocol.startsWith('http')) return;
+  } catch (e) {
+    return;
+  }
+
+  const acceptHeader = event.request.headers.get('accept');
   const isHtml = event.request.mode === 'navigate' || 
-                 (event.request.method === 'GET' && event.request.headers.get('accept').includes('text/html'));
+                 (acceptHeader && acceptHeader.includes('text/html'));
 
   if (isHtml) {
     // Network-First for navigation requests
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, resClone);
-          });
+          if (response.status === 200 || response.status === 0) {
+            const resClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, resClone);
+            });
+          }
           return response;
         })
         .catch(() => caches.match(event.request))
@@ -58,9 +71,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-          });
+          if (networkResponse.status === 200 || networkResponse.status === 0) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, networkResponse.clone());
+            });
+          }
           return networkResponse;
         });
         return cachedResponse || fetchPromise;

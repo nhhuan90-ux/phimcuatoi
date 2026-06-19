@@ -325,10 +325,10 @@ export default function Watch() {
         {movie.episodes && movie.episodes.length > 0 && currentEpData && (
           <div className="bg-[#141414] p-6 rounded-lg border border-gray-800">
             <h3 className="text-xl font-bold mb-6 text-white border-l-4 border-red-600 pl-3">
-              Danh sách tập - {movie.episodes[currentEpData.currentServerIdx]?.server_name}
+              Danh sách tập - {movie.episodes?.[currentEpData?.currentServerIdx]?.server_name}
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-              {movie.episodes[currentEpData.currentServerIdx]?.items.map((ep: any, epIdx: number) => {
+              {movie.episodes?.[currentEpData?.currentServerIdx]?.items?.map((ep: any, epIdx: number) => {
                 const isActive = ep.slug === episode;
                 return (
                   <Link

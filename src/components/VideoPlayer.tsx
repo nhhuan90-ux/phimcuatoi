@@ -21,34 +21,44 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
     // Attempt native player if we have m3u8.
     if (m3u8Url && videoRef.current) {
       if (Hls.isSupported()) {
-        const hls = new Hls({ maxMaxBufferLength: 100 });
-        hls.loadSource(m3u8Url);
-        hls.attachMedia(videoRef.current);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          setIsPlayingNative(true);
-          hasSeekedOnce.current = false;
-        });
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                hls.recoverMediaError();
-                break;
-              default:
-                hls.destroy();
-                setIsPlayingNative(false);
-                break;
+        try {
+          const hls = new Hls({ maxMaxBufferLength: 100 });
+          hls.loadSource(m3u8Url);
+          hls.attachMedia(videoRef.current);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            setIsPlayingNative(true);
+            hasSeekedOnce.current = false;
+          });
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  hls.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  hls.recoverMediaError();
+                  break;
+                default:
+                  hls.destroy();
+                  setIsPlayingNative(false);
+                  break;
+              }
             }
-          }
-        });
-        return () => hls.destroy();
+          });
+          return () => hls.destroy();
+        } catch (hlsError) {
+          console.error("Hls.js initialization failed:", hlsError);
+          setIsPlayingNative(false);
+        }
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-        // Fallback for Safari natively supporting HLS
-        videoRef.current.src = m3u8Url;
-        setIsPlayingNative(true);
+        try {
+          // Fallback for Safari natively supporting HLS
+          videoRef.current.src = m3u8Url;
+          setIsPlayingNative(true);
+        } catch (srcError) {
+          console.error("Native HLS source assignment failed:", srcError);
+          setIsPlayingNative(false);
+        }
       } else {
         setIsPlayingNative(false);
       }
@@ -61,9 +71,13 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
 
     const handleLoadedMetadata = () => {
       if (!hasSeekedOnce.current && initialTime > 0) {
-        // Only seek if initialTime is greater than 0 and we haven't seeked yet for this video load
-        video.currentTime = initialTime;
-        hasSeekedOnce.current = true;
+        try {
+          // Only seek if initialTime is greater than 0 and we haven't seeked yet for this video load
+          video.currentTime = initialTime;
+          hasSeekedOnce.current = true;
+        } catch (seekError) {
+          console.warn("Setting currentTime on loadedmetadata failed:", seekError);
+        }
       }
     };
 
@@ -84,7 +98,11 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
 
   const handleSkip = (seconds: number) => {
     if (videoRef.current) {
-      videoRef.current.currentTime += seconds;
+      try {
+        videoRef.current.currentTime += seconds;
+      } catch (skipError) {
+        console.warn("Skip operation failed:", skipError);
+      }
     }
   };
 

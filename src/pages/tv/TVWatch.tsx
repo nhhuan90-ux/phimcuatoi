@@ -139,7 +139,8 @@ export default function TVWatch() {
           {/* Server buttons */}
           {movie.episodes?.map((srv: any, idx: number) => {
             const isActive = currentEpData?.currentServerIdx === idx;
-            const epInSrv = srv.items.find((i: any) => i.slug === episode) || srv.items[0];
+            const epInSrv = srv.items?.find((i: any) => i.slug === episode) || srv.items?.[0];
+            if (!epInSrv) return null;
             return (
               <TVFocusable
                 key={idx}
@@ -156,9 +157,9 @@ export default function TVWatch() {
         </div>
 
         {/* Episode row */}
-        {movie.episodes?.[currentEpData.currentServerIdx]?.items?.length > 1 && (
+        {movie.episodes?.[currentEpData?.currentServerIdx]?.items?.length > 1 && (
           <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',maxHeight:60,overflow:'hidden'}}>
-            {movie.episodes[currentEpData.currentServerIdx].items.map((ep: any, i: number) => (
+            {movie.episodes?.[currentEpData?.currentServerIdx]?.items?.map((ep: any, i: number) => (
               <TVFocusable key={`${ep.slug}-${i}`} link={`/tv/xem-phim/${movie.slug}/${ep.slug}?id=${currentEpData.currentServerIdx}`}
                 className={`tv-ep-btn ${ep.slug===episode?'active':''}`} focusClassName="tv-ep-focus"
                 style={{padding:'6px 12px',fontSize:13,minWidth:48}}>

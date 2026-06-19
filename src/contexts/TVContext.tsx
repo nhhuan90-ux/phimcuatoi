@@ -39,6 +39,20 @@ function detectTVMode(): boolean {
     ua.includes('hbbtv') ||
     ua.includes('tizen') ||
     ua.includes('webos') ||
+    ua.includes('web0s') || // LG webOS older typo
+    ua.includes('netcast') || // LG NetCast
+    ua.includes('orsay') || // Samsung Orsay
+    ua.includes('dtv') || // Digital TV
+    ua.includes('viera') || // Panasonic Viera
+    ua.includes('nettv') || // Philips NetTV
+    ua.includes('aquos') || // Sharp Aquos
+    ua.includes('opera tv') || // Opera TV
+    ua.includes('opera.tv') ||
+    ua.includes('maple') || // Samsung Orsay maple browser
+    ua.includes('toshiba') ||
+    ua.includes('vestel') ||
+    ua.includes('sanyo') ||
+    ua.includes('sharp') ||
     ua.includes('aft') || // Amazon Fire TV
     ua.includes('firetv') || // Fire TV
     ua.includes('shield') || // Nvidia Shield
@@ -53,14 +67,25 @@ function detectTVMode(): boolean {
     ua.includes('crkey') || // Chromecast
     ua.includes('dlnadoc');
 
-  // 4. Check if running in Capacitor
+  // 4. Check for global Smart TV API objects injected by TV browsers
+  const hasTVGlobals = typeof window !== 'undefined' && (
+    !!(window as any).tizen ||
+    !!(window as any).webOS ||
+    !!(window as any).webOSDev ||
+    !!(window as any).LG ||
+    !!(window as any).Samsung ||
+    !!(window as any).Common ||
+    !!(window as any).apis
+  );
+
+  // 5. Check if running in Capacitor
   const isCapacitor = !!(window as any).Capacitor;
 
-  // 5. Large screen with no touch
+  // 6. Large screen with no touch
   const isLargeScreen = window.screen.width >= 960 && window.screen.height >= 540;
   const noTouch = !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
 
-  return isTV || (isCapacitor && isLargeScreen && noTouch);
+  return isTV || hasTVGlobals || (isCapacitor && isLargeScreen && noTouch);
 }
 
 export function TVProvider({ children }: { children: ReactNode }) {

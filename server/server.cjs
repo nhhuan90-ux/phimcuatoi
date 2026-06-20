@@ -223,11 +223,49 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
+  const JAVSUB_PROXY_URL = process.env.JAVSUB_PROXY_URL || '';
+  const targetUrl = 'https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong';
+  let proxyStatus = 'Not Set';
+  let proxyError = null;
+  let proxyHtmlLength = 0;
+  let proxyHasSources = false;
+
+  if (JAVSUB_PROXY_URL) {
+    proxyStatus = 'Set (URL: ' + JAVSUB_PROXY_URL.slice(0, 35) + '...)';
+    try {
+      const separator = JAVSUB_PROXY_URL.includes('?') ? '&' : '?';
+      const proxyFetchUrl = `${JAVSUB_PROXY_URL}${separator}url=${encodeURIComponent(targetUrl)}`;
+      const response = await axios.get(proxyFetchUrl, { timeout: 15000 });
+      proxyHtmlLength = response.data ? response.data.length : 0;
+      proxyHasSources = response.data ? response.data.includes('set-player-source') : false;
+      if (!proxyHasSources) {
+        proxyError = 'Proxy returned HTML without set-player-source. Sample: ' + (response.data ? response.data.slice(0, 300) : 'empty');
+      }
+    } catch (e) {
+      proxyError = e.message;
+    }
+  }
+
   try {
-    const html = await fetchHtml('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
-    res.json({ status: 200, length: html.length, hasSources: html.includes('set-player-source') });
+    const html = await fetchHtml(targetUrl);
+    res.json({
+      proxyStatus,
+      proxyError,
+      proxyHtmlLength,
+      proxyHasSources,
+      fallbackStatus: 200,
+      fallbackLength: html.length,
+      fallbackHasSources: html.includes('set-player-source')
+    });
   } catch (e) {
-    res.status(500).json({ error: e.message, stack: e.stack });
+    res.status(500).json({
+      proxyStatus,
+      proxyError,
+      proxyHtmlLength,
+      proxyHasSources,
+      error: e.message,
+      stack: e.stack
+    });
   }
 });
 

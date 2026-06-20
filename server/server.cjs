@@ -208,12 +208,25 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
+  const targetUrl = 'https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong';
+  let curlResult = null;
+  let h2Result = null;
+
   try {
-    const html = await fetchHtml('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
-    res.json({ status: 200, length: html.length, hasSources: html.includes('set-player-source') });
+    const curlHtml = await fetchHtmlWithCurl(targetUrl);
+    curlResult = { success: true, length: curlHtml.length, hasSources: curlHtml.includes('set-player-source') };
   } catch (e) {
-    res.status(500).json({ error: e.message, stack: e.stack });
+    curlResult = { success: false, error: e.message };
   }
+
+  try {
+    const h2Html = await fetchHtmlWithHttp2(targetUrl);
+    h2Result = { success: true, length: h2Html.length, hasSources: h2Html.includes('set-player-source') };
+  } catch (e) {
+    h2Result = { success: false, error: e.message };
+  }
+
+  res.json({ curlResult, h2Result });
 });
 
 app.get('/api/movies', (req, res) => {

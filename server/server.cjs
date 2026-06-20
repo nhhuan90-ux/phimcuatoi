@@ -126,6 +126,18 @@ async function getPhimxyzVideoUrl(id) {
 }
 
 // ============ API ROUTES ============
+app.get('/api/test-javsub', async (req, res) => {
+  try {
+    const response = await axios.get('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong', {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    res.json({ status: response.status, length: response.data.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message, responseStatus: e.response ? e.response.status : null, data: e.response ? e.response.data.slice(0, 500) : null });
+  }
+});
+
 app.get('/api/movies', (req, res) => {
   const { source, search, page = 1, limit = 50 } = req.query;
   let list = moviesData.all || [];

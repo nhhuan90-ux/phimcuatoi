@@ -57,7 +57,6 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const limit = 50;
 
   useEffect(() => {
@@ -80,10 +79,6 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
     };
     fetchMovies();
   }, [verified, source, page, search]);
-
-  const openPlayer = (movie: any) => {
-    setPlayerUrl(`/phim-18/player?source=${movie.source}&id=${movie.id}`);
-  };
 
   const totalPages = Math.ceil(total / limit);
 
@@ -153,9 +148,9 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {movies.map((m: any) => (
-              <button
+              <Link
                 key={m.source + '-' + m.id}
-                onClick={() => openPlayer(m)}
+                to={`/phim-18/player?source=${m.source}&id=${m.id}`}
                 className="group relative block overflow-hidden rounded-lg bg-[#1a1a1a] aspect-video text-left cursor-pointer hover:outline hover:outline-2 hover:outline-red-500 transition-all"
               >
                 <img
@@ -177,7 +172,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
                     {m.views && <p className="text-gray-400 text-[10px] mt-0.5">{m.views} lượt xem</p>}
                   </div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         )}
@@ -197,19 +192,6 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
             })}
             <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="px-3 py-1.5 rounded bg-[#2b2b2b] text-gray-300 text-sm disabled:opacity-40 hover:bg-red-600 hover:text-white transition-colors">&#8250;</button>
             <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className="px-3 py-1.5 rounded bg-[#2b2b2b] text-gray-300 text-sm disabled:opacity-40 hover:bg-red-600 hover:text-white transition-colors">&#187;</button>
-          </div>
-        )}
-
-        {/* Player Modal */}
-        {playerUrl && (
-          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 bg-[#111] border-b border-gray-800">
-              <span className="text-white text-sm font-medium truncate">Đang phát</span>
-              <button onClick={() => setPlayerUrl(null)} className="text-gray-400 hover:text-white p-1"><X size={20} /></button>
-            </div>
-            <div className="flex-1">
-              <iframe src={playerUrl} className="w-full h-full border-0" allow="autoplay;fullscreen" allowFullScreen />
-            </div>
           </div>
         )}
       </div>

@@ -209,24 +209,31 @@ async function getPhimxyzVideoUrl(id) {
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
   const targetUrl = 'https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong';
-  let curlResult = null;
-  let h2Result = null;
-
-  try {
-    const curlHtml = await fetchHtmlWithCurl(targetUrl);
-    curlResult = { success: true, length: curlHtml.length, hasSources: curlHtml.includes('set-player-source') };
-  } catch (e) {
-    curlResult = { success: false, error: e.message };
+  const uas = {
+    chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    googlebot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    facebook: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    discord: 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+    yandex: 'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)'
+  };
+  
+  const results = {};
+  for (const [name, ua] of Object.entries(uas)) {
+    try {
+      const args = ['-s', '-L', '-H', `user-agent: ${ua}`, targetUrl];
+      const html = await new Promise((resolve, reject) => {
+        execFile('curl', args, { timeout: 10000 }, (err, stdout) => {
+          if (err) reject(err);
+          else resolve(stdout);
+        });
+      });
+      results[name] = { success: true, length: html.length, hasSources: html.includes('set-player-source') };
+    } catch (e) {
+      results[name] = { success: false, error: e.message };
+    }
   }
 
-  try {
-    const h2Html = await fetchHtmlWithHttp2(targetUrl);
-    h2Result = { success: true, length: h2Html.length, hasSources: h2Html.includes('set-player-source') };
-  } catch (e) {
-    h2Result = { success: false, error: e.message };
-  }
-
-  res.json({ curlResult, h2Result });
+  res.json(results);
 });
 
 app.get('/api/movies', (req, res) => {

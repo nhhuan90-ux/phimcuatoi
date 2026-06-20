@@ -22,5 +22,5 @@ if (Test-Path $pidFile) {
     }
   }
 }
-Start-Process -WindowStyle Hidden -FilePath "node" -ArgumentList "server.js" -WorkingDirectory $PSScriptRoot
+Start-Process -WindowStyle Hidden -FilePath "node" -ArgumentList "server.cjs" -WorkingDirectory $PSScriptRoot
 Write-Output "Server restarted"

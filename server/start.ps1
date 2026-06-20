@@ -1,5 +1,5 @@
 $serverJob = Start-Job -ScriptBlock {
-  node "C:\Users\nhhua\AppData\Local\Temp\opencode\phim-server\server.js"
+  node "C:\Users\nhhua\AppData\Local\Temp\opencode\phim-server\server.cjs"
 }
 Start-Sleep -Seconds 3
 

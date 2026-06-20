@@ -2,9 +2,9 @@
   "name": "phim-tong-hop",
   "version": "1.0.0",
   "description": "Phim tổng hợp từ JAVHDz & VLXX",
-  "main": "server.js",
+  "main": "server.cjs",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.cjs",
     "crawl": "node crawler.js"
   },
   "dependencies": {

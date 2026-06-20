@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/index.cjs": {
+    "api/index.js": {
       "includeFiles": "server/movies.json"
     }
   },

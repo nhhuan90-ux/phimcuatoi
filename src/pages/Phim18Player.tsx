@@ -18,10 +18,6 @@ export default function Phim18Player() {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#111] border-b border-gray-800">
-        <a href="/the-loai/phim-18?tab=adult" className="text-white text-sm hover:text-red-500 transition-colors">&larr; Quay lại</a>
-        <span className="text-gray-400 text-xs">Phim 18+</span>
-      </div>
       <div className="flex-1">
         {embedUrl ? (
           <iframe src={embedUrl} className="w-full h-full border-0" allow="autoplay;fullscreen" allowFullScreen />

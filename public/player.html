@@ -41,7 +41,7 @@
 <body>
 <div class="header">
   <a href="/" class="logo">Phim<span>HD</span></a>
-  <a href="/">&larr; Quay lại</a>
+  <a href="/the-loai/phim-18?tab=adult" onclick="goBack(); return false;">&larr; Quay lại</a>
   <span id="movieBreadcrumb" style="color:#666;font-size:13px;"></span>
 </div>
 
@@ -61,6 +61,21 @@
 </div>
 
 <script>
+function goBack() {
+  const fallbackUrl = '/the-loai/phim-18?tab=adult';
+  if (window.parent && window.parent !== window) {
+    window.parent.history.back();
+    setTimeout(() => {
+      window.parent.location.href = fallbackUrl;
+    }, 150);
+  } else {
+    window.history.back();
+    setTimeout(() => {
+      window.location.href = fallbackUrl;
+    }, 150);
+  }
+}
+
 const params = new URLSearchParams(window.location.search);
 const source = params.get('source');
 const id = params.get('id');
@@ -99,7 +114,7 @@ const serverList = {
 
 async function loadMovie() {
   if (!source || !id) {
-    document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Thiếu thông tin phim. <a href="/" style="color:#e94560;">Quay lại</a></div>';
+    document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Thiếu thông tin phim. <a href="/the-loai/phim-18?tab=adult" onclick="goBack(); return false;" style="color:#e94560;">Quay lại</a></div>';
     return;
   }
 

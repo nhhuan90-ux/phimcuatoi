@@ -213,9 +213,11 @@ async function loadVideo(server) {
       if (src) {
         container.innerHTML = `<iframe src="${src}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
       } else if (data.url) {
-        // Fallback: crop iframe to show only the player area (hide header/footer)
-        container.innerHTML = `<div style="width:100%;height:70vh;overflow:hidden;position:relative;border-radius:8px;">
-          <iframe src="${data.url}" allow="autoplay;fullscreen" allowfullscreen style="position:absolute;top:-80px;left:0;width:100%;height:calc(70vh + 300px);border:none;background:#000;"></iframe>
+        // Fallback: show button to open on JAVSub directly (can't embed due to cross-origin)
+        container.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:50vh;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;gap:20px;">
+          <div style="font-size:48px;">🎬</div>
+          <p style="color:#ccc;font-size:16px;text-align:center;max-width:400px;">Server đang bảo trì. Nhấn nút bên dưới để xem trực tiếp trên trang nguồn.</p>
+          <a href="${data.url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 15px rgba(231,76,60,0.4);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">▶ Xem trên JAVSub</a>
         </div>`;
       } else {
         container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;

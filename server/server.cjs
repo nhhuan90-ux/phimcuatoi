@@ -180,6 +180,13 @@ async function getVlxxVideoUrl(id, server = 1) {
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id) {
+  // First: check for pre-cached embed URLs in movies.json
+  const movie = moviesData.javsub.find(m => m.id === id);
+  if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
+    return { sources: movie.embedUrls, type: 'iframe' };
+  }
+
+  // Fallback: try to fetch at runtime (works on local/residential IPs, may fail on cloud)
   try {
     const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
     const $ = cheerio.load(html);
@@ -191,10 +198,9 @@ async function getJavsubVideoUrl(id) {
     if (sources.length > 0) {
       return { sources, type: 'iframe' };
     }
-    // Fallback: return the original page URL for direct browser iframe loading
+    // No sources found - return original URL for new-tab fallback
     return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
-    // Even on error, return the original URL so the user's browser can try directly
     return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   }
 }

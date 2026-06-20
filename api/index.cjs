@@ -1,15 +1,6 @@
-let app;
-try {
-  app = require('../server/server.js');
-} catch (error) {
-  const express = require('express');
-  app = express();
-  app.all('*', (req, res) => {
-    res.status(500).json({
-      error: "Initialization failed",
-      message: error.message,
-      stack: error.stack
-    });
-  });
-}
+const express = require('express');
+const app = express();
+app.get('/api/movies', (req, res) => {
+  res.json({ message: "Hello from serverless!" });
+});
 module.exports = app;

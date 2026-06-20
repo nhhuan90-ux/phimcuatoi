@@ -213,8 +213,10 @@ async function loadVideo(server) {
       if (src) {
         container.innerHTML = `<iframe src="${src}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
       } else if (data.url) {
-        // Fallback: load the original JAVSub page directly in the user's browser
-        container.innerHTML = `<iframe src="${data.url}" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:70vh;border:none;background:#000;"></iframe>`;
+        // Fallback: crop iframe to show only the player area (hide header/footer)
+        container.innerHTML = `<div style="width:100%;height:70vh;overflow:hidden;position:relative;border-radius:8px;">
+          <iframe src="${data.url}" allow="autoplay;fullscreen" allowfullscreen style="position:absolute;top:-80px;left:0;width:100%;height:calc(70vh + 300px);border:none;background:#000;"></iframe>
+        </div>`;
       } else {
         container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
       }

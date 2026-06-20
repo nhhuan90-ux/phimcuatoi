@@ -21,7 +21,9 @@ app.use((req, res, next) => {
   next();
 });
 const PORT = process.env.PORT || 3001;
-const DATA_FILE = path.join(__dirname, 'movies.json');
+const DATA_FILE = fs.existsSync(path.join(__dirname, 'movies.json'))
+  ? path.join(__dirname, 'movies.json')
+  : path.join(process.cwd(), 'server', 'movies.json');
 
 const ALL_SOURCES = ['javhdz','vlxx','javsub','javtiful','phimxyz'];
 

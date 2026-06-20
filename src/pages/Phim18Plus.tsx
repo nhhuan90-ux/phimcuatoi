@@ -39,7 +39,7 @@ function AgeGate({ onConfirm }: { onConfirm: () => void }) {
 export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolean }) {
   const [verified, setVerified] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('age-verified') === 'true';
+      return sessionStorage.getItem('age-verified') === 'true';
     } catch (e) {
       return false;
     }
@@ -47,7 +47,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
 
   const handleVerify = () => {
     try {
-      localStorage.setItem('age-verified', 'true');
+      sessionStorage.setItem('age-verified', 'true');
     } catch (e) {}
     setVerified(true);
   };

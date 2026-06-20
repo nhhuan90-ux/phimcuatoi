@@ -6,6 +6,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const http2 = require('http2');
 const { URL } = require('url');
+const { execFile } = require('child_process');
 
 function fetchHtmlWithHttp2(targetUrl) {
   return new Promise((resolve, reject) => {
@@ -51,6 +52,38 @@ function fetchHtmlWithHttp2(targetUrl) {
       reject(e);
     }
   });
+}
+
+function fetchHtmlWithCurl(targetUrl) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '-s',
+      '-L',
+      '-H', 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      '-H', 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      targetUrl
+    ];
+    execFile('curl', args, { timeout: 15000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
+}
+
+async function fetchHtml(targetUrl) {
+  try {
+    return await fetchHtmlWithCurl(targetUrl);
+  } catch (curlError) {
+    console.error('Curl fetch failed, falling back to HTTP/2:', curlError.message);
+    try {
+      return await fetchHtmlWithHttp2(targetUrl);
+    } catch (h2Error) {
+      throw new Error(`All fetch methods failed: Curl (${curlError.message}), HTTP/2 (${h2Error.message})`);
+    }
+  }
 }
 
 const PID_FILE = path.join(__dirname, 'server.pid');
@@ -133,7 +166,7 @@ async function getVlxxVideoUrl(id, server = 1) {
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id) {
   try {
-    const html = await fetchHtmlWithHttp2(`https://javsub.blog/phim-sex/${id}`);
+    const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
     const $ = cheerio.load(html);
     const sources = [];
     $('button.set-player-source').each((i, btn) => {
@@ -176,7 +209,7 @@ async function getPhimxyzVideoUrl(id) {
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
   try {
-    const html = await fetchHtmlWithHttp2('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
+    const html = await fetchHtml('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
     res.json({ status: 200, length: html.length, hasSources: html.includes('set-player-source') });
   } catch (e) {
     res.status(500).json({ error: e.message, stack: e.stack });

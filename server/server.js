@@ -6,7 +6,11 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const PID_FILE = path.join(__dirname, 'server.pid');
-fs.writeFileSync(PID_FILE, String(process.pid));
+try {
+  fs.writeFileSync(PID_FILE, String(process.pid));
+} catch (e) {
+  // Ignored in read-only filesystems (e.g. Vercel Serverless)
+}
 
 const app = express();
 

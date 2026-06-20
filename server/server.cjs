@@ -74,6 +74,21 @@ function fetchHtmlWithCurl(targetUrl) {
 }
 
 async function fetchHtml(targetUrl) {
+  const JAVSUB_PROXY_URL = process.env.JAVSUB_PROXY_URL || '';
+  if (JAVSUB_PROXY_URL) {
+    try {
+      const separator = JAVSUB_PROXY_URL.includes('?') ? '&' : '?';
+      const proxyFetchUrl = `${JAVSUB_PROXY_URL}${separator}url=${encodeURIComponent(targetUrl)}`;
+      const res = await axios.get(proxyFetchUrl, { timeout: 15000 });
+      if (res.data && res.data.length > 5000 && res.data.includes('set-player-source')) {
+        return res.data;
+      }
+      console.warn('Proxy returned page without video sources, falling back to local methods.');
+    } catch (proxyError) {
+      console.error('GAS Proxy fetch failed, falling back to local methods:', proxyError.message);
+    }
+  }
+
   try {
     return await fetchHtmlWithCurl(targetUrl);
   } catch (curlError) {
@@ -208,32 +223,12 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
-  const targetUrl = 'https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong';
-  const uas = {
-    chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    googlebot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-    facebook: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-    discord: 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
-    yandex: 'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)'
-  };
-  
-  const results = {};
-  for (const [name, ua] of Object.entries(uas)) {
-    try {
-      const args = ['-s', '-L', '-H', `user-agent: ${ua}`, targetUrl];
-      const html = await new Promise((resolve, reject) => {
-        execFile('curl', args, { timeout: 10000 }, (err, stdout) => {
-          if (err) reject(err);
-          else resolve(stdout);
-        });
-      });
-      results[name] = { success: true, length: html.length, hasSources: html.includes('set-player-source') };
-    } catch (e) {
-      results[name] = { success: false, error: e.message };
-    }
+  try {
+    const html = await fetchHtml('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
+    res.json({ status: 200, length: html.length, hasSources: html.includes('set-player-source') });
+  } catch (e) {
+    res.status(500).json({ error: e.message, stack: e.stack });
   }
-
-  res.json(results);
 });
 
 app.get('/api/movies', (req, res) => {

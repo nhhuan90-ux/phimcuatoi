@@ -93,7 +93,9 @@ async function getJavsubVideoUrl(id) {
       if (src) { src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, ''); sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` }); }
     });
     return { sources, type: 'iframe' };
-  } catch (e) { return null; }
+  } catch (e) {
+    return { error: 'Javsub fetch failed: ' + e.message };
+  }
 }
 
 // ============ JavTiful ============

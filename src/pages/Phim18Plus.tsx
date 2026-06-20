@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Film, Play, Search, X } from 'lucide-react';
 
-const PHIM18_API = import.meta.env.VITE_PHIM18_API || (import.meta.env.DEV ? '' : 'http://localhost:3001');
+const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 const SOURCE_NAMES: Record<string, string> = {
   javhdz: 'JAVHDz', vlxx: 'VLXX', javsub: 'JAVSub',
   javtiful: 'JavTiful', phimxyz: 'PhimXYZ'

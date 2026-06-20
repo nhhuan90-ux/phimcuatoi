@@ -227,17 +227,21 @@ async function checkForUpdates() {
   lastCheck = new Date().toISOString(); checkCount++;
 }
 
-const UPDATE_INTERVAL = 24 * 60 * 60 * 1000;
-setInterval(() => { checkForUpdates().catch(e => console.error('[AutoUpdate] Error:', e.message)); }, UPDATE_INTERVAL);
-setTimeout(() => { checkForUpdates().catch(e => console.error('[AutoUpdate] Error:', e.message)); }, 2 * 60 * 1000);
+if (require.main === module) {
+  const UPDATE_INTERVAL = 24 * 60 * 60 * 1000;
+  setInterval(() => { checkForUpdates().catch(e => console.error('[AutoUpdate] Error:', e.message)); }, UPDATE_INTERVAL);
+  setTimeout(() => { checkForUpdates().catch(e => console.error('[AutoUpdate] Error:', e.message)); }, 2 * 60 * 1000);
 
-const server = app.listen(PORT, () => {
-  console.log(`=== PHIM TONG HOP (5 SOURCES) ===`);
-  console.log(`Server: http://localhost:${PORT}`);
-  console.log(`Movies: ${(moviesData.all||[]).length} total`);
-  ALL_SOURCES.forEach(k => console.log(`  ${k}: ${(moviesData[k]||[]).length}`));
-  console.log(`Auto-update: every 24h`);
-});
+  const server = app.listen(PORT, () => {
+    console.log(`=== PHIM TONG HOP (5 SOURCES) ===`);
+    console.log(`Server: http://localhost:${PORT}`);
+    console.log(`Movies: ${(moviesData.all||[]).length} total`);
+    ALL_SOURCES.forEach(k => console.log(`  ${k}: ${(moviesData[k]||[]).length}`));
+    console.log(`Auto-update: every 24h`);
+  });
 
-process.on('SIGINT', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
-process.on('SIGTERM', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
+  process.on('SIGINT', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
+  process.on('SIGTERM', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
+}
+
+module.exports = app;

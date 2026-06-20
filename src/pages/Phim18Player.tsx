@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-const PHIM18_API = import.meta.env.VITE_PHIM18_API || (import.meta.env.DEV ? '' : 'http://localhost:3001');
+const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 
 export default function Phim18Player() {
   const [searchParams] = useSearchParams();

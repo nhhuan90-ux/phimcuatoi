@@ -188,9 +188,14 @@ async function getJavsubVideoUrl(id) {
       let src = $(btn).attr('data-source');
       if (src) { src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, ''); sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` }); }
     });
-    return { sources, type: 'iframe' };
+    if (sources.length > 0) {
+      return { sources, type: 'iframe' };
+    }
+    // Fallback: return the original page URL for direct browser iframe loading
+    return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
-    return { error: 'Javsub fetch failed: ' + e.message };
+    // Even on error, return the original URL so the user's browser can try directly
+    return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   }
 }
 

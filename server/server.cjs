@@ -4,6 +4,54 @@ const path = require('path');
 const http = require('http');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const http2 = require('http2');
+const { URL } = require('url');
+
+function fetchHtmlWithHttp2(targetUrl) {
+  return new Promise((resolve, reject) => {
+    try {
+      const parsed = new URL(targetUrl);
+      const client = http2.connect(parsed.origin);
+
+      client.on('error', (err) => {
+        reject(err);
+      });
+
+      const req = client.request({
+        ':path': parsed.pathname + parsed.search,
+        ':method': 'GET',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'accept-language': 'en-US,en;q=0.9,vi;q=0.8'
+      });
+
+      req.setTimeout(10000, () => {
+        req.close();
+        client.close();
+        reject(new Error('HTTP/2 request timeout'));
+      });
+
+      let data = '';
+      req.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      req.on('end', () => {
+        client.close();
+        resolve(data);
+      });
+
+      req.on('error', (err) => {
+        client.close();
+        reject(err);
+      });
+
+      req.end();
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
 
 const PID_FILE = path.join(__dirname, 'server.pid');
 try {
@@ -85,8 +133,8 @@ async function getVlxxVideoUrl(id, server = 1) {
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id) {
   try {
-    const res = await axios.get(`https://javsub.blog/phim-sex/${id}`, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(res.data);
+    const html = await fetchHtmlWithHttp2(`https://javsub.blog/phim-sex/${id}`);
+    const $ = cheerio.load(html);
     const sources = [];
     $('button.set-player-source').each((i, btn) => {
       let src = $(btn).attr('data-source');
@@ -128,13 +176,10 @@ async function getPhimxyzVideoUrl(id) {
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
   try {
-    const response = await axios.get('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong', {
-      timeout: 10000,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    res.json({ status: response.status, length: response.data.length });
+    const html = await fetchHtmlWithHttp2('https://javsub.blog/phim-sex/xoac-co-nang-tung-thich-minh-nhung-gio-da-co-chong');
+    res.json({ status: 200, length: html.length, hasSources: html.includes('set-player-source') });
   } catch (e) {
-    res.status(500).json({ error: e.message, responseStatus: e.response ? e.response.status : null, data: e.response ? e.response.data.slice(0, 500) : null });
+    res.status(500).json({ error: e.message, stack: e.stack });
   }
 });
 

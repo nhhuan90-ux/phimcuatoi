@@ -63,7 +63,20 @@ async function getVlxxVideoUrl(id, server = 1) {
     const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     if (data.player) {
       const $ = cheerio.load(data.player);
-      return { url: $('iframe').first().attr('src') || '', type: 'iframe' };
+      const iframeUrl = $('iframe').first().attr('src');
+      if (iframeUrl) {
+        // Fetch the iframe html to extract the direct stream URL
+        const iframeRes = await axios.get(iframeUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vlxx.moi/' }, timeout: 15000 });
+        const match = iframeRes.data.match(/window\.__SRC\s*=\s*([^;]+);/);
+        if (match) {
+          const srcData = JSON.parse(match[1]);
+          if (srcData && srcData[0] && srcData[0].file) {
+            return { videoUrl: srcData[0].file, type: 'hls' };
+          }
+        }
+        // Fallback to iframe if extraction fails
+        return { url: iframeUrl, type: 'iframe' };
+      }
     }
     return { error: 'No player data' };
   } catch (e) { return null; }

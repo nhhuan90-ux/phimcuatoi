@@ -90,7 +90,11 @@ export default function TVMovieDetail() {
               <TVFocusable link={`/tv/xem-phim/${movie.slug}/${firstEp.slug}?id=0`} className="tv-btn tv-btn-primary" focusClassName="tv-btn-focus" autoFocus>
                 <Play fill="currentColor" size={20} /> XEM PHIM
               </TVFocusable>
-            ) : null}
+            ) : (
+              <div style={{background:'rgba(217,119,6,0.2)',border:'1px solid rgba(217,119,6,0.5)',color:'#f59e0b',padding:'12px 20px',borderRadius:8,fontSize:16,fontWeight:600}}>
+                ⚠️ Phim chưa có nguồn phát (Trạng thái: {movie.status === 'trailer' ? 'Chỉ có Trailer' : 'Đang cập nhật'})
+              </div>
+            )}
           </div>
 
           <div className="tv-detail-meta">

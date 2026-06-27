@@ -137,6 +137,11 @@ export default function MovieDetail() {
                  TIẾP TỤC: TẬP {historyEp.epName}
                </Link>
               )}
+              {!firstEpisode && (
+                <div className="mt-4 w-full bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 py-3 px-4 rounded-lg text-sm font-semibold text-center leading-relaxed">
+                  ⚠️ Phim chưa có nguồn phát (Trạng thái: {movie.status === 'trailer' ? 'Chỉ có Trailer' : 'Đang cập nhật'})
+                </div>
+              )}
             </div>
 
           {/* Info */}

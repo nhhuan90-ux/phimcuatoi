@@ -63,38 +63,61 @@
 </div>
 
 <script>
+function getQueryParam(name) {
+  var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function ajaxGet(url, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          callback(null, JSON.parse(xhr.responseText));
+        } catch (e) {
+          callback(e);
+        }
+      } else {
+        callback(new Error('Status: ' + xhr.status));
+      }
+    }
+  };
+  xhr.send();
+}
+
 function goBack() {
-  const fallbackUrl = '/the-loai/phim-18?tab=adult';
+  var fallbackUrl = '/the-loai/phim-18?tab=adult';
   if (window.parent && window.parent !== window) {
     window.parent.history.back();
-    setTimeout(() => {
+    setTimeout(function() {
       window.parent.location.href = fallbackUrl;
     }, 150);
   } else {
     window.history.back();
-    setTimeout(() => {
+    setTimeout(function() {
       window.location.href = fallbackUrl;
     }, 150);
   }
 }
 
-const params = new URLSearchParams(window.location.search);
-const source = params.get('source');
-const id = params.get('id');
-let currentServer = 1;
-let hlsInstance = null;
+var source = getQueryParam('source');
+var id = getQueryParam('id');
+var currentServer = 1;
+var hlsInstance = null;
 
-const serverList = {
+var serverList = {
   javhdz: [
     { label: 'Xem tại JAVHDz', id: 'embed' }
   ],
   vlxx: [
     { label: 'Server #1', id: 1 },
-    { label: 'Server #2', id: 2 },
+    { label: 'Server #2', id: 2 }
   ],
   javsub: [
     { label: 'StreamQQ', id: 1 },
-    { label: 'PlayHQ', id: 2 },
+    { label: 'PlayHQ', id: 2 }
   ],
   missav: [
     { label: 'Server chính', id: 'embed' }
@@ -104,7 +127,7 @@ const serverList = {
   ],
   supjav: [
     { label: 'Server #1', id: 1 },
-    { label: 'Server #2', id: 2 },
+    { label: 'Server #2', id: 2 }
   ],
   phimxyz: [
     { label: 'Server m3u8', id: 1 }
@@ -114,62 +137,75 @@ const serverList = {
   ]
 };
 
-async function loadMovie() {
+function loadMovie() {
   if (!source || !id) {
     document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Thiếu thông tin phim. <a href="/the-loai/phim-18?tab=adult" onclick="goBack(); return false;" style="color:#e94560;">Quay lại</a></div>';
     return;
   }
 
-  // Fetch movie info
-  try {
-    const infoRes = await fetch(`/api/movie/${source}/${id}`);
-    if (!infoRes.ok) throw new Error('Not found');
-    const movie = await infoRes.json();
+  ajaxGet('/api/movie/' + source + '/' + id, function(err, movie) {
+    if (err) {
+      document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Không tìm thấy phim</div>';
+      return;
+    }
+
     document.getElementById('movieTitle').textContent = movie.title;
     document.getElementById('movieBreadcrumb').textContent = movie.title;
-    const sourceNames = 
-{javhdz:'JAVHDz',vlxx:'VLXX',javsub:'JAVSub',missav:'MissAV',javtiful:'JavTiful',supjav:'SupJav',phimxyz:'PhimXYZ',njav:'NJAV',bestjav:'BestJAV'};
-    document.getElementById('movieMeta').innerHTML = `
-      <span class="tag">${movie.tag || movie.source}</span>
-      <span style="margin-left:10px;">${sourceNames[movie.source] || movie.source}</span>
-      ${movie.views ? '<span style="margin-left:10px;">&#128065; ' + movie.views + '</span>' : ''}
-    `;
-    document.title = movie.title + ' - Phim Tổng Hợp';
     
-    // Dynamically override server list if embedded URLs exist
+    var sourceNames = {
+      javhdz: 'JAVHDz',
+      vlxx: 'VLXX',
+      javsub: 'JAVSub',
+      missav: 'MissAV',
+      javtiful: 'JavTiful',
+      supjav: 'SupJav',
+      phimxyz: 'PhimXYZ',
+      njav: 'NJAV',
+      bestjav: 'BestJAV'
+    };
+
+    document.getElementById('movieMeta').innerHTML = 
+      '<span class="tag">' + (movie.tag || movie.source) + '</span>' +
+      '<span style="margin-left:10px;">' + (sourceNames[movie.source] || movie.source) + '</span>' +
+      (movie.views ? '<span style="margin-left:10px;">&#128065; ' + movie.views + '</span>' : '');
+
+    document.title = movie.title + ' - Phim Tổng Hợp';
+
     if (movie.embedUrls && movie.embedUrls.length > 0) {
-      serverList[source] = movie.embedUrls.map((s, idx) => ({
-        label: s.label || `Server #${idx + 1}`,
-        id: idx + 1
-      }));
+      serverList[source] = movie.embedUrls.map(function(s, idx) {
+        return {
+          label: s.label || ('Server #' + (idx + 1)),
+          id: idx + 1
+        };
+      });
     }
-  } catch (e) {
-    document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Không tìm thấy phim</div>';
-    return;
-  }
 
-  // Build server bar
-  buildServerBar();
-
-  loadVideo(currentServer);
+    buildServerBar();
+    loadVideo(currentServer);
+  });
 }
 
 function buildServerBar() {
-  const bar = document.getElementById('serverBar');
-  const servers = serverList[source];
+  var bar = document.getElementById('serverBar');
+  var servers = serverList[source];
   if (!servers || servers.length <= 1) {
     bar.style.display = 'none';
     return;
   }
   bar.style.display = 'flex';
   bar.innerHTML = '<span class="label">Server:</span>';
-  servers.forEach(s => {
-    const btn = document.createElement('button');
-    btn.className = 'server-btn' + (s.id === currentServer ? ' active' : '');
-    btn.textContent = s.label;
-    btn.onclick = () => switchServer(s.id);
-    bar.appendChild(btn);
-  });
+  
+  for (var i = 0; i < servers.length; i++) {
+    (function(s) {
+      var btn = document.createElement('button');
+      btn.className = 'server-btn' + (s.id === currentServer ? ' active' : '');
+      btn.textContent = s.label;
+      btn.onclick = function() {
+        switchServer(s.id);
+      };
+      bar.appendChild(btn);
+    })(servers[i]);
+  }
 }
 
 function switchServer(s) {
@@ -178,128 +214,133 @@ function switchServer(s) {
   loadVideo(s);
 }
 
-async function loadVideo(server) {
+function loadVideo(server) {
   document.getElementById('playerLoading').style.display = 'block';
   document.getElementById('playerContainer').style.display = 'none';
 
-  try {
-    const needsServer = ['vlxx','javsub','supjav'].includes(source);
-    const url = `/api/video/${source}/${id}` + (needsServer ? `?server=${server}` : '');
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Video not found');
-    const data = await res.json();
+  var needsServer = ['vlxx', 'javsub', 'supjav'].indexOf(source) !== -1;
+  var url = '/api/video/' + source + '/' + id + (needsServer ? '?server=' + server : '');
+
+  ajaxGet(url, function(err, data) {
+    if (err) {
+      document.getElementById('playerLoading').innerHTML = 
+        '<div class="error-msg">' +
+        '<p>Lỗi tải video. Video có thể đã bị gỡ hoặc link lỗi thời.</p>' +
+        '<button onclick="loadVideo(' + server + ')" style="padding:8px 20px;border-radius:6px;background:#e94560;color:#fff;border:none;cursor:pointer;margin-top:10px;">Thử lại</button>' +
+        '</div>';
+      return;
+    }
 
     document.getElementById('playerLoading').style.display = 'none';
-    const container = document.getElementById('playerContainer');
+    var container = document.getElementById('playerContainer');
     container.style.display = 'block';
 
     if (source === 'javhdz') {
-      const embedUrl = `/api/embed/javhdz/${id}`;
-      container.innerHTML = `<iframe src="${embedUrl}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:70vh;border:none;background:#000;"></iframe>`;
+      var embedUrl = '/api/embed/javhdz/' + id;
+      container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:70vh;border:none;background:#000;"></iframe>';
     } else if (source === 'vlxx') {
       if (data.videoUrl) {
-        container.innerHTML = `<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>`;
-        const video = document.getElementById('videoPlayer');
-        const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(data.videoUrl)}`;
-        if (Hls.isSupported()) {
+        container.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>';
+        var video = document.getElementById('videoPlayer');
+        var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
           hlsInstance = new Hls({ maxBufferLength: 30 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
-          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play();
+          });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = `<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>`;
+          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
         }
       } else if (data.url) {
-        container.innerHTML = `<iframe src="${data.url}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
+        container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else if (source === 'javsub') {
-      const src = data.sources && data.sources[server - 1] ? data.sources[server - 1].url : '';
+      var src = data.sources && data.sources[server - 1] ? data.sources[server - 1].url : '';
       if (src) {
-        container.innerHTML = `<iframe src="${src}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
+        container.innerHTML = '<iframe src="' + src + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
       } else if (data.url) {
-        // Fallback: show button to open on JAVSub directly (can't embed due to cross-origin)
-        container.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:50vh;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;gap:20px;">
-          <div style="font-size:48px;">🎬</div>
-          <p style="color:#ccc;font-size:16px;text-align:center;max-width:400px;">Server đang bảo trì. Nhấn nút bên dưới để xem trực tiếp trên trang nguồn.</p>
-          <a href="${data.url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 15px rgba(231,76,60,0.4);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">▶ Xem trên JAVSub</a>
-        </div>`;
+        container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:50vh;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;gap:20px;">' +
+          '<div style="font-size:48px;">🎬</div>' +
+          '<p style="color:#ccc;font-size:16px;text-align:center;max-width:400px;">Server đang bảo trì. Nhấn nút bên dưới để xem trực tiếp trên trang nguồn.</p>' +
+          '<a href="' + data.url + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 15px rgba(231,76,60,0.4);" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">▶ Xem trên JAVSub</a>' +
+          '</div>';
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else if (source === 'phimxyz') {
       if (data.videoUrl) {
-        container.innerHTML = `<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>`;
-        const video = document.getElementById('videoPlayer');
-        const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(data.videoUrl)}`;
-        if (Hls.isSupported()) {
+        container.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>';
+        var video = document.getElementById('videoPlayer');
+        var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
           hlsInstance = new Hls({ maxBufferLength: 30 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
-          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play();
+          });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = `<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>`;
+          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
         }
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else if (source === 'missav') {
       if (data.videoUrl) {
-        container.innerHTML = `<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>`;
-        const video = document.getElementById('videoPlayer');
-        const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(data.videoUrl)}`;
-        if (Hls.isSupported()) {
+        container.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>';
+        var video = document.getElementById('videoPlayer');
+        var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
           hlsInstance = new Hls({ maxBufferLength: 30 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
-          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play();
+          });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = `<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>`;
+          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
         }
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else if (source === 'javtiful') {
-      container.innerHTML = `<iframe src="${data.url || ''}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
+      container.innerHTML = '<iframe src="' + (data.url || '') + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
     } else if (source === 'supjav') {
       if (data.sources && data.sources[0]) {
-        const srcUrl = data.sources[server - 1] ? data.sources[server - 1].url : data.sources[0].url;
-        container.innerHTML = `<iframe src="${srcUrl}" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>`;
+        var srcUrl = data.sources[server - 1] ? data.sources[server - 1].url : data.sources[0].url;
+        container.innerHTML = '<iframe src="' + srcUrl + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
       } else if (data.url) {
-        container.innerHTML = `<p style="text-align:center;padding:40px;color:#888;">SupJav không hỗ trợ xem trực tiếp qua player.<br><br><a href="${data.url}" target="_blank" style="padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;">Mở tại SupJav &rarr;</a></p>`;
+        container.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">SupJav không hỗ trợ xem trực tiếp qua player.<br><br><a href="' + data.url + '" target="_blank" style="padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;">Mở tại SupJav &rarr;</a></p>';
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else if (source === 'njav' || source === 'bestjav') {
-      const link = data.url || '';
+      var link = data.url || '';
       if (link) {
-        container.innerHTML = `<p style="text-align:center;padding:40px;color:#888;">Nguồn này không hỗ trợ xem trực tiếp qua player.<br><br><a href="${link}" target="_blank" style="padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;">Mở tại trang chính &rarr;</a></p>`;
+        container.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">Nguồn này không hỗ trợ xem trực tiếp qua player.<br><br><a href="' + link + '" target="_blank" style="padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;">Mở tại trang chính &rarr;</a></p>';
       } else {
-        container.innerHTML = `<div class="error-msg">Không lấy được link phát.</div>`;
+        container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
     } else {
-      container.innerHTML = `<div class="error-msg">Nguồn không hỗ trợ</div>`;
+      container.innerHTML = '<div class="error-msg">Nguồn không hỗ trợ</div>';
     }
-
-  } catch (e) {
-    document.getElementById('playerLoading').innerHTML = `<div class="error-msg">
-      <p>Lỗi tải video. Video có thể đã bị gỡ hoặc link lỗi thời.</p>
-      <button onclick="loadVideo(${server})" style="padding:8px 20px;border-radius:6px;background:#e94560;color:#fff;border:none;cursor:pointer;margin-top:10px;">Thử lại</button>
-    </div>`;
-  }
+  });
 }
 
 loadMovie();

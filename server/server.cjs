@@ -193,7 +193,11 @@ async function getJavsubVideoUrl(id) {
     const sources = [];
     $('button.set-player-source').each((i, btn) => {
       let src = $(btn).attr('data-source');
-      if (src) { src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, ''); sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` }); }
+      if (src) {
+        src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+        src = src.replace('e.streamqq.com', 'byzamlan.top').replace('trivonix.top', 'byzamlan.top');
+        sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` });
+      }
     });
     if (sources.length > 0) {
       return { sources, type: 'iframe' };
@@ -383,7 +387,34 @@ async function checkNew(source, urlFn, parser) {
     try {
       const pageUrl = urlFn(p); const res = await axios.get(pageUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
       const items = parser(res.data, p);
-      for (const item of items) { if (item.id && !seen.has(item.id)) { item.source = source; moviesData[source].push(item); seen.add(item.id); added++; } }
+      for (const item of items) {
+        if (item.id && !seen.has(item.id)) {
+          item.source = source;
+          if (source === 'javsub') {
+            try {
+              const html = await fetchHtml(item.link);
+              const $ = cheerio.load(html);
+              const sources = [];
+              $('button.set-player-source').each((i, btn) => {
+                let src = $(btn).attr('data-source');
+                if (src) {
+                  src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+                  src = src.replace('e.streamqq.com', 'byzamlan.top').replace('trivonix.top', 'byzamlan.top');
+                  sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` });
+                }
+              });
+              if (sources.length > 0) {
+                item.embedUrls = sources;
+              }
+            } catch (err) {
+              console.error(`Failed to fetch JAVSub embedUrls for new movie ${item.id}:`, err.message);
+            }
+          }
+          moviesData[source].push(item);
+          seen.add(item.id);
+          added++;
+        }
+      }
     } catch (e) {}
   }
   return added;
@@ -421,4 +452,5 @@ if (require.main === module) {
   process.on('SIGTERM', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
 }
 
+app.checkForUpdates = checkForUpdates;
 module.exports = app;

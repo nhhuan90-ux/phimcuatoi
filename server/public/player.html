@@ -135,6 +135,14 @@ async function loadMovie() {
       ${movie.views ? '<span style="margin-left:10px;">&#128065; ' + movie.views + '</span>' : ''}
     `;
     document.title = movie.title + ' - Phim Tổng Hợp';
+    
+    // Dynamically override server list if embedded URLs exist
+    if (movie.embedUrls && movie.embedUrls.length > 0) {
+      serverList[source] = movie.embedUrls.map((s, idx) => ({
+        label: s.label || `Server #${idx + 1}`,
+        id: idx + 1
+      }));
+    }
   } catch (e) {
     document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Không tìm thấy phim</div>';
     return;

@@ -106,7 +106,10 @@ export default function VideoPlayer({ m3u8Url, embedUrl, title, playerKey, initi
     }
   };
 
-  const safeEmbed = embedUrl?.replace(/^http:\/\//i, 'https://');
+  const localPlayerUrl = m3u8Url ? `/player.html?url=${encodeURIComponent(m3u8Url)}&title=${encodeURIComponent(title)}` : '';
+  const safeEmbed = forceEmbed
+    ? (embedUrl?.replace(/^http:\/\//i, 'https://'))
+    : (localPlayerUrl || embedUrl?.replace(/^http:\/\//i, 'https://'));
   const showNativePlayer = m3u8Url && isPlayingNative && !forceEmbed;
 
   if (showNativePlayer) {

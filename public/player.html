@@ -137,7 +137,48 @@ var serverList = {
   ]
 };
 
+function loadDirectVideo(videoUrl) {
+  document.getElementById('playerLoading').style.display = 'none';
+  var container = document.getElementById('playerContainer');
+  container.style.display = 'block';
+
+  container.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>';
+  var video = document.getElementById('videoPlayer');
+  
+  if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+    if (hlsInstance) hlsInstance.destroy();
+    hlsInstance = new Hls({ maxBufferLength: 30 });
+    hlsInstance.loadSource(videoUrl);
+    hlsInstance.attachMedia(video);
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+      video.play();
+    });
+  } else if (video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL')) {
+    video.src = videoUrl;
+    video.play();
+  } else {
+    video.src = videoUrl;
+    video.play();
+  }
+}
+
 function loadMovie() {
+  var directUrl = getQueryParam('url');
+  var movieTitle = getQueryParam('title');
+
+  if (directUrl) {
+    document.getElementById('movieTitle').textContent = movieTitle || 'Xem Phim';
+    document.getElementById('movieBreadcrumb').textContent = movieTitle || 'Xem Phim';
+    document.getElementById('movieMeta').innerHTML = '<span class="tag">Direct Play</span>';
+    document.title = (movieTitle || 'Xem Phim') + ' - Phim Tổng Hợp';
+    
+    var bar = document.getElementById('serverBar');
+    if (bar) bar.style.display = 'none';
+    
+    loadDirectVideo(directUrl);
+    return;
+  }
+
   if (!source || !id) {
     document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Thiếu thông tin phim. <a href="/the-loai/phim-18?tab=adult" onclick="goBack(); return false;" style="color:#e94560;">Quay lại</a></div>';
     return;

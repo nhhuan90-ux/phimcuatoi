@@ -121,7 +121,7 @@ const DATA_FILE = fs.existsSync(path.join(__dirname, 'movies.json'))
   ? path.join(__dirname, 'movies.json')
   : path.join(process.cwd(), 'server', 'movies.json');
 
-const ALL_SOURCES = ['javhdz','vlxx','javsub','javtiful','phimxyz'];
+const ALL_SOURCES = ['javhdz','vlxx','javsub','javtiful','phimxyz','subjav'];
 
 let moviesData = {};
 ALL_SOURCES.forEach(k => moviesData[k] = []);
@@ -253,6 +253,18 @@ async function getPhimxyzVideoUrl(id) {
   } catch (e) { return null; }
 }
 
+// ============ SubJAV ============
+async function getSubjavVideoUrl(id) {
+  try {
+    const res = await axios.get(`https://subjav.sbs/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const video = res.data.video || res.data;
+    if (video && video.video_url) {
+      return { videoUrl: video.video_url, type: 'hls' };
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
 
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
@@ -322,7 +334,14 @@ app.get('/api/movie/:source/:id', (req, res) => {
 app.get('/api/video/:source/:id', async (req, res) => {
   const { source, id } = req.params;
   const server = req.query.server || 1;
-  const handlers = { javhdz: () => getJavhdzVideoUrl(id), vlxx: () => getVlxxVideoUrl(id, server), javsub: () => getJavsubVideoUrl(id, server), javtiful: () => getJavtifulVideoUrl(id), phimxyz: () => getPhimxyzVideoUrl(id) };
+  const handlers = {
+    javhdz: () => getJavhdzVideoUrl(id),
+    vlxx: () => getVlxxVideoUrl(id, server),
+    javsub: () => getJavsubVideoUrl(id, server),
+    javtiful: () => getJavtifulVideoUrl(id),
+    phimxyz: () => getPhimxyzVideoUrl(id),
+    subjav: () => getSubjavVideoUrl(id)
+  };
   const result = await (handlers[source] || (() => null))();
   if (!result) return res.status(404).json({ error: 'Video not found' });
   res.json(result);
@@ -377,7 +396,8 @@ app.get('/api/proxy/segment', async (req, res) => {
     let referer = 'https://javhdz.mobi/';
     let targetUrl = url;
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
-      referer = 'https://javsub.blog/';
+      const urlObj = new URL(url);
+      referer = urlObj.origin + '/';
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }
@@ -468,7 +488,24 @@ async function checkForUpdates() {
     checkNew('vlxx', p => p===1?'https://vlxx.moi/':`https://vlxx.moi/new/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('.video-item').each((i,el)=>{const t=$(el).find('.video-name a').text().trim();const h=$(el).find('.video-name a').attr('href');const m=h?h.match(/\/video\/[^/]+\/(\d+)\//):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.video-image').attr('data-original')||'',link:'https://vlxx.moi'+h,tag:$(el).find('.ribbon').text().trim(),views:''})}); return items; }),
     checkNew('javsub', p => p===1?'https://javsub.blog/':`https://javsub.blog/?page=${p}`, (html) => { const $=cheerio.load(html); const items=[]; $('.item').each((i,el)=>{const t=$(el).find('.item__title h4').text().trim();const h=$(el).find('.item__thumbnail').attr('href');const m=h?h.match(/phim-sex\/([^/]+)$/):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.item__thumbnail img').attr('src')||'',link:h,tag:$(el).find('.item__labels span').map((j,sp)=>$(sp).text().trim()).get().join(', ')||'Sub',views:''})}); return items; }),
     checkNew('javtiful', p => p===1?'https://javtiful.blog/':`https://javtiful.blog/page/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/video/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href) return; const m=href.match(/\/video\/([^/]+)/); if(!m) return; const id=m[1]; const title=$(el).find('img').attr('alt')||$(el).text().trim()||id; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title,img,link:'https://javtiful.blog/video/'+id,tag:'',views:''})}); return items; }),
-    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/jav':`https://i.phimxyz.blog/the-loai/jav?page=${p}`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/phim/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href||!href.match(/\/phim\/(.+)$/)) return; const id=href.match(/\/phim\/(.+)$/)[1]; const alt=$(el).find('img').attr('alt')||''; if(!alt||alt==='Nhật Bản'||alt==='Trung Quốc'||alt==='Châu Âu'||alt==='Phim Sex HD') return; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title:alt,img:img.startsWith('http')?img:'https://i.phimxyz.blog'+img,link:href.startsWith('http')?href:'https://i.phimxyz.blog'+href,tag:'',views:''})}); return items; }),
+    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/jav':`https://i.phimxyz.blog/the-loai/jav?page=${p}`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/phim/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href||!href.match(/\/phim\/(.+)$/)) return; const id=href.match(/\/phim\/(.+)$/)[1]; const alt=$(el).find('img').attr('alt')||';'; if(!alt||alt==='Nhật Bản'||alt==='Trung Quốc'||alt==='Châu Âu'||alt==='Phim Sex HD'||alt===';') return; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title:alt,img:img.startsWith('http')?img:'https://i.phimxyz.blog'+img,link:href.startsWith('http')?href:'https://i.phimxyz.blog'+href,tag:'',views:''})}); return items; }),
+    checkNew('subjav', p => `https://subjav.sbs/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
+      const items = [];
+      const videos = data.videos || [];
+      videos.forEach(v => {
+        if (v.id) {
+          items.push({
+            id: String(v.id),
+            title: v.title || ('Phim ' + v.id),
+            img: v.thumbnail || '',
+            link: 'https://subjav.sbs/phim-sex-viet/video/' + v.id + '/',
+            tag: 'Vietsub',
+            views: v.like_count ? (v.like_count + ' likes') : ''
+          });
+        }
+      });
+      return items;
+    }),
   ]);
   const totalAdded = results.reduce((a,b)=>a+b,0);
   if (totalAdded > 0) { saveData(); console.log(`[AutoUpdate] Added ${totalAdded}`); }

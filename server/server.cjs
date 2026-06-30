@@ -261,8 +261,20 @@ async function getSubjavVideoUrl(id) {
     if (video && video.video_url) {
       return { videoUrl: video.video_url, type: 'hls' };
     }
-    return null;
-  } catch (e) { return null; }
+  } catch (e) {}
+
+  try {
+    const res = await axios.get(`https://subjav.sbs/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (res.data && res.data.success && res.data.data) {
+      const html = res.data.data;
+      const match = html.match(/file:\s*['"]([^'"]+)['"]/);
+      if (match) {
+        return { videoUrl: match[1], type: 'hls' };
+      }
+    }
+  } catch (e) {}
+
+  return null;
 }
 
 
@@ -483,12 +495,61 @@ async function checkNew(source, urlFn, parser) {
 
 async function checkForUpdates() {
   console.log(`[AutoUpdate] Checking...`);
+  const javhdzParser = (html) => {
+    const $=cheerio.load(html); const items=[];
+    $('.movie-item.m-block').each((i,el)=>{
+      const t=$(el).find('.movie-title-1').text().trim();
+      const h=$(el).attr('href');
+      const m=h?h.match(/-(\d+)\.html$/):null;
+      if(t&&h&&m) items.push({
+        id:m[1], title:t,
+        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.mobi'+$(el).find('.public-film-item-thumb').attr('src'):'',
+        link:'https://javhdz.mobi'+h, tag:$(el).find('.ribbon-sub').text().trim(),
+        views:$(el).find('.ribbon-viewed').text().trim()
+      });
+    });
+    return items;
+  };
+
+  const phimxyzParser = (html) => {
+    const $=cheerio.load(html); const items=[];
+    $('a[href*="/phim/"]').each((i,el)=>{
+      const href=$(el).attr('href'); if(!href||!href.match(/\/phim\/(.+)$/)) return;
+      const id=href.match(/\/phim\/(.+)$/)[1];
+      const alt=$(el).find('img').attr('alt')||';';
+      if(!alt||alt==='Nhật Bản'||alt==='Trung Quốc'||alt==='Châu Âu'||alt==='Phim Sex HD'||alt===';') return;
+      const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||'';
+      items.push({
+        id, title:alt,
+        img:img.startsWith('http')?img:'https://i.phimxyz.blog'+img,
+        link:href.startsWith('http')?href:'https://i.phimxyz.blog'+href,
+        tag:'', views:''
+      });
+    });
+    return items;
+  };
+
   const results = await Promise.all([
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, (html) => { const $=cheerio.load(html); const items=[]; $('.movie-item.m-block').each((i,el)=>{const t=$(el).find('.movie-title-1').text().trim();const h=$(el).attr('href');const m=h?h.match(/-(\d+)\.html$/):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.mobi'+$(el).find('.public-film-item-thumb').attr('src'):'',link:'https://javhdz.mobi'+h,tag:$(el).find('.ribbon-sub').text().trim(),views:$(el).find('.ribbon-viewed').text().trim()})}); return items; }),
+    // JAVHDz (3 categories)
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
+
+    // VLXX (Homepage new)
     checkNew('vlxx', p => p===1?'https://vlxx.moi/':`https://vlxx.moi/new/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('.video-item').each((i,el)=>{const t=$(el).find('.video-name a').text().trim();const h=$(el).find('.video-name a').attr('href');const m=h?h.match(/\/video\/[^/]+\/(\d+)\//):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.video-image').attr('data-original')||'',link:'https://vlxx.moi'+h,tag:$(el).find('.ribbon').text().trim(),views:''})}); return items; }),
+
+    // JAVSub (Homepage feed)
     checkNew('javsub', p => p===1?'https://javsub.blog/':`https://javsub.blog/?page=${p}`, (html) => { const $=cheerio.load(html); const items=[]; $('.item').each((i,el)=>{const t=$(el).find('.item__title h4').text().trim();const h=$(el).find('.item__thumbnail').attr('href');const m=h?h.match(/phim-sex\/([^/]+)$/):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.item__thumbnail img').attr('src')||'',link:h,tag:$(el).find('.item__labels span').map((j,sp)=>$(sp).text().trim()).get().join(', ')||'Sub',views:''})}); return items; }),
+
+    // JavTiful (Homepage feed)
     checkNew('javtiful', p => p===1?'https://javtiful.blog/':`https://javtiful.blog/page/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/video/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href) return; const m=href.match(/\/video\/([^/]+)/); if(!m) return; const id=m[1]; const title=$(el).find('img').attr('alt')||$(el).text().trim()||id; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title,img,link:'https://javtiful.blog/video/'+id,tag:'',views:''})}); return items; }),
-    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/jav':`https://i.phimxyz.blog/the-loai/jav?page=${p}`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/phim/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href||!href.match(/\/phim\/(.+)$/)) return; const id=href.match(/\/phim\/(.+)$/)[1]; const alt=$(el).find('img').attr('alt')||';'; if(!alt||alt==='Nhật Bản'||alt==='Trung Quốc'||alt==='Châu Âu'||alt==='Phim Sex HD'||alt===';') return; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title:alt,img:img.startsWith('http')?img:'https://i.phimxyz.blog'+img,link:href.startsWith('http')?href:'https://i.phimxyz.blog'+href,tag:'',views:''})}); return items; }),
+
+    // PhimXYZ (3 categories)
+    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/jav':`https://i.phimxyz.blog/the-loai/jav?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/phim-sex-viet-sub':`https://i.phimxyz.blog/the-loai/phim-sex-viet-sub?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/khong-che':`https://i.phimxyz.blog/the-loai/khong-che?page=${p}`, phimxyzParser),
+
+    // SubJAV (TikTok Shorts + 3 categories of normal videos)
     checkNew('subjav', p => `https://subjav.sbs/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
       const items = [];
       const videos = data.videos || [];
@@ -499,10 +560,40 @@ async function checkForUpdates() {
             title: v.title || ('Phim ' + v.id),
             img: v.thumbnail || '',
             link: 'https://subjav.sbs/phim-sex-viet/video/' + v.id + '/',
-            tag: 'Vietsub',
+            tag: 'Shorts',
             views: v.like_count ? (v.like_count + ' likes') : ''
           });
         }
+      });
+      return items;
+    }),
+    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/jav-vietsub/' : `https://subjav.sbs/jav-vietsub/page/${p}/`, (html) => {
+      const $=cheerio.load(html); const items=[];
+      $('.item-video').each((i,el)=>{
+        const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
+        const id=match[1]; const a=$(el).find('a').last(); const href=a.attr('href')||'';
+        const title=$(el).find('img').attr('alt')||a.text().trim(); const img=$(el).find('img').attr('src')||'';
+        if(id&&href) items.push({ id: String(id), title: title||('Phim '+id), img: img||'', link: href, tag: 'Vietsub', views: '' });
+      });
+      return items;
+    }),
+    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/jav-khong-che/' : `https://subjav.sbs/jav-khong-che/page/${p}/`, (html) => {
+      const $=cheerio.load(html); const items=[];
+      $('.item-video').each((i,el)=>{
+        const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
+        const id=match[1]; const a=$(el).find('a').last(); const href=a.attr('href')||'';
+        const title=$(el).find('img').attr('alt')||a.text().trim(); const img=$(el).find('img').attr('src')||'';
+        if(id&&href) items.push({ id: String(id), title: title||('Phim '+id), img: img||'', link: href, tag: 'Không Che', views: '' });
+      });
+      return items;
+    }),
+    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/phim-sex-trung-quoc/' : `https://subjav.sbs/phim-sex-trung-quoc/page/${p}/`, (html) => {
+      const $=cheerio.load(html); const items=[];
+      $('.item-video').each((i,el)=>{
+        const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
+        const id=match[1]; const a=$(el).find('a').last(); const href=a.attr('href')||'';
+        const title=$(el).find('img').attr('alt')||a.text().trim(); const img=$(el).find('img').attr('src')||'';
+        if(id&&href) items.push({ id: String(id), title: title||('Phim '+id), img: img||'', link: href, tag: 'Trung Quốc', views: '' });
       });
       return items;
     }),

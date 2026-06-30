@@ -179,35 +179,50 @@ async function getVlxxVideoUrl(id, server = 1) {
 }
 
 // ============ JAVSub ============
-async function getJavsubVideoUrl(id) {
-  // First: check for pre-cached embed URLs in movies.json
-  const movie = moviesData.javsub.find(m => m.id === id);
-  if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
-    return { sources: movie.embedUrls, type: 'iframe' };
-  }
-
-  // Fallback: try to fetch at runtime (works on local/residential IPs, may fail on cloud)
+async function getJavsubVideoUrl(id, server = 1) {
   try {
-    const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
-    const $ = cheerio.load(html);
-    const sources = [];
-    $('button.set-player-source').each((i, btn) => {
-      let src = $(btn).attr('data-source');
-      if (src) {
-        src = src.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
-        src = src.replace('e.streamqq.com', 'byzamlan.top').replace('trivonix.top', 'byzamlan.top');
-        sources.push({ url: src, label: $(btn).attr('data-cdn-name') || `Server #${i+1}` });
-      }
-    });
-    if (sources.length > 0) {
-      return { sources, type: 'iframe' };
+    const movie = moviesData.javsub.find(m => m.id === id);
+    let playUrl = '';
+    
+    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
+      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
+      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
     }
-    // No sources found - return original URL for new-tab fallback
-    return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
+    
+    if (!playUrl) {
+      const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
+      const $ = cheerio.load(html);
+      const buttons = $('button.set-player-source');
+      if (buttons.length > 0) {
+        const idx = Math.min(Math.max(0, parseInt(server) - 1), buttons.length - 1);
+        playUrl = $(buttons[idx]).attr('data-source') || $(buttons[0]).attr('data-source');
+      }
+    }
+    
+    if (playUrl) {
+      let activeUrl = playUrl
+        .replace(/&adTag=[^&]*/g, '')
+        .replace(/\?adTag=[^&]*/g, '')
+        .replace(/e\.streamqq\.com/gi, 'byzamlan.top')
+        .replace(/trivonix\.top/gi, 'byzamlan.top');
+        
+      if (activeUrl.includes('playheovl.xyz')) {
+        return { url: activeUrl, type: 'iframe' };
+      } else {
+        let m3u8Url = activeUrl;
+        if (activeUrl.includes('/videos/') && activeUrl.includes('/play')) {
+          m3u8Url = activeUrl.replace(/\/play\??.*/, '/master.m3u8');
+        }
+        const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
+        return { videoUrl: proxiedUrl, type: 'hls' };
+      }
+    }
+    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
-    return { sources: [], url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
+    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   }
 }
+
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
@@ -223,18 +238,21 @@ async function getJavtifulVideoUrl(id) {
 
 // ============ PhimXYZ ============
 async function getPhimxyzVideoUrl(id) {
-  const movie = moviesData.phimxyz.find(m => m.id === id);
-  if (!movie) return null;
   try {
-    const res = await axios.get(movie.link, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const match = res.data.match(/data-link=["']([^"']+)["']/);
-    if (match) {
-      const p = match[1];
-      return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://i.phimxyz.blog' + p, type: 'hls' };
+    const movie = moviesData.phimxyz.find(m => m.id === id);
+    const link = movie?.link || `https://i.phimxyz.blog/phim/${id}`;
+    const html = await fetchHtml(link);
+    const $ = cheerio.load(html);
+    let p = $('[data-link]').first().attr('data-link') || '';
+    if (!p) {
+      const match = html.match(/data-link=["']([^"']+)["']/);
+      if (match) p = match[1];
     }
-    return null;
+    if (!p) return null;
+    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://i.phimxyz.blog' + p, type: 'hls' };
   } catch (e) { return null; }
 }
+
 
 // ============ API ROUTES ============
 app.get('/api/test-javsub', async (req, res) => {
@@ -304,7 +322,7 @@ app.get('/api/movie/:source/:id', (req, res) => {
 app.get('/api/video/:source/:id', async (req, res) => {
   const { source, id } = req.params;
   const server = req.query.server || 1;
-  const handlers = { javhdz: () => getJavhdzVideoUrl(id), vlxx: () => getVlxxVideoUrl(id, server), javsub: () => getJavsubVideoUrl(id), javtiful: () => getJavtifulVideoUrl(id), phimxyz: () => getPhimxyzVideoUrl(id) };
+  const handlers = { javhdz: () => getJavhdzVideoUrl(id), vlxx: () => getVlxxVideoUrl(id, server), javsub: () => getJavsubVideoUrl(id, server), javtiful: () => getJavtifulVideoUrl(id), phimxyz: () => getPhimxyzVideoUrl(id) };
   const result = await (handlers[source] || (() => null))();
   if (!result) return res.status(404).json({ error: 'Video not found' });
   res.json(result);
@@ -329,10 +347,26 @@ app.get('/api/admin/status', (req, res) => {
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javhdz.mobi/' }, responseType: 'text' });
+    let referer = 'https://javhdz.mobi/';
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
+      referer = 'https://javsub.blog/';
+    }
+    const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'text' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-    let data = response.data.replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|vtt))/gm, m => baseUrl + m).replace(/\.png/g, '.ts').replace(/(https:\/\/p16-ad-sg\.tiktokcdn\.com[^\s]+\.ts)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m)).replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+    let data = response.data
+      .replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|vtt))/gm, m => baseUrl + m)
+      .replace(/\.png/g, '.ts')
+      .replace(/(https:\/\/p16-ad-sg\.tiktokcdn\.com[^\s]+\.ts)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
+      .replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+      
+    // Rewrites for JAVSub stream segments and playlists
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
+      data = data
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+    }
+    
     res.send(data);
   } catch (e) { res.status(502).json({ error: 'Proxy failed: ' + e.message }); }
 });
@@ -340,7 +374,14 @@ app.get('/api/proxy/hls', async (req, res) => {
 app.get('/api/proxy/segment', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    const response = await axios.get(url.replace(/\.ts$/, '.png'), { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javhdz.mobi/' }, responseType: 'arraybuffer' });
+    let referer = 'https://javhdz.mobi/';
+    let targetUrl = url;
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
+      referer = 'https://javsub.blog/';
+    } else {
+      targetUrl = url.replace(/\.ts$/, '.png');
+    }
+    const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'arraybuffer' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'video/MP2T', 'Content-Length': response.data.length });
     res.send(response.data);
   } catch (e) { res.status(502).json({ error: 'Segment failed: ' + e.message }); }

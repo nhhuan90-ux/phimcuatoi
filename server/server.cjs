@@ -327,9 +327,23 @@ app.get('/api/test-javsub', async (req, res) => {
 });
 
 app.get('/api/movies', (req, res) => {
-  const { source, search, page = 1, limit = 50 } = req.query;
+  const { source, format, search, page = 1, limit = 50 } = req.query;
   let list = moviesData.all || [];
-  if (source && source !== 'all') list = list.filter(m => m.source === source);
+  
+  if (source && source !== 'all') {
+    list = list.filter(m => m.source === source);
+    if (source === 'subjav') {
+      if (format === 'vertical') {
+        list = list.filter(m => m.tag === 'Shorts');
+      } else if (format === 'horizontal') {
+        list = list.filter(m => m.tag !== 'Shorts');
+      }
+    }
+  } else {
+    // Exclude SubJAV vertical shorts from the combined/all listing
+    list = list.filter(m => !(m.source === 'subjav' && m.tag === 'Shorts'));
+  }
+  
   if (search) { const q = search.toLowerCase(); list = list.filter(m => m.title.toLowerCase().includes(q)); }
   const total = list.length;
   const start = (parseInt(page) - 1) * parseInt(limit);
@@ -391,11 +405,11 @@ app.get('/api/proxy/hls', async (req, res) => {
       .replace(/(https:\/\/p16-ad-sg\.tiktokcdn\.com[^\s]+\.ts)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
       .replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
       
-    // Rewrites for JAVSub stream segments and playlists
-    if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
+    // Rewrites for JAVSub and SubJAV stream segments and playlists
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com') || url.includes('subjav.sbs')) {
       data = data
-        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
-        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
     }
     
     res.send(data);
@@ -410,6 +424,8 @@ app.get('/api/proxy/segment', async (req, res) => {
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       const urlObj = new URL(url);
       referer = urlObj.origin + '/';
+    } else if (url.includes('subjav.sbs')) {
+      referer = 'https://subjav.sbs/';
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }

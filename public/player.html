@@ -333,7 +333,7 @@ function loadVideo(server) {
           container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
         }
       }
-    } else if (source === 'phimxyz') {
+    } else if (source === 'phimxyz' || source === 'subjav') {
       if (data.videoUrl) {
         container.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;max-height:70vh;background:#000;"></video>';
         var video = document.getElementById('videoPlayer');

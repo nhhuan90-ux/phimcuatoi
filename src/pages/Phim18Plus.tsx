@@ -54,6 +54,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState('all');
+  const [subjavFormat, setSubjavFormat] = useState('horizontal');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -66,6 +67,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
       try {
         const params = new URLSearchParams({ page: String(page), limit: String(limit) });
         if (source !== 'all') params.set('source', source);
+        if (source === 'subjav') params.set('format', subjavFormat);
         if (search) params.set('search', search);
         const res = await fetch(`${PHIM18_API}/api/movies?${params}`);
         const data = await res.json();
@@ -78,7 +80,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
       }
     };
     fetchMovies();
-  }, [verified, source, page, search]);
+  }, [verified, source, subjavFormat, page, search]);
 
   const totalPages = Math.ceil(total / limit);
 
@@ -132,6 +134,31 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
           </select>
         </div>
 
+        {source === 'subjav' && (
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => { setSubjavFormat('horizontal'); setPage(1); }}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                subjavFormat === 'horizontal'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-[#2b2b2b] text-gray-400 hover:text-white'
+              }`}
+            >
+              Video Ngang (Bản Full)
+            </button>
+            <button
+              onClick={() => { setSubjavFormat('vertical'); setPage(1); }}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                subjavFormat === 'vertical'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-[#2b2b2b] text-gray-400 hover:text-white'
+              }`}
+            >
+              Video Dọc (Shorts TikTok)
+            </button>
+          </div>
+        )}
+
         {/* Stats */}
         <p className="text-gray-500 text-xs mb-4">Tổng: {total} phim (Trang {page}/{totalPages || 1})</p>
 
@@ -146,34 +173,43 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
             <p>Không tìm thấy phim nào</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-            {movies.map((m: any) => (
-              <Link
-                key={m.source + '-' + m.id}
-                to={`/phim-18/player?source=${m.source}&id=${m.id}`}
-                className="group relative block overflow-hidden rounded-lg bg-[#1a1a1a] aspect-video text-left cursor-pointer hover:outline hover:outline-2 hover:outline-red-500 transition-all"
-              >
-                <img
-                  src={m.img}
-                  alt={m.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect fill="%23333" width="240" height="180"/><text x="120" y="90" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>'; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/20 to-transparent">
-                  <div className="absolute top-2 left-2">
-                    <span className="bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">{SOURCE_NAMES[m.source] || m.source}</span>
+          <div className={`grid gap-4 mb-8 ${
+            source === 'subjav' && subjavFormat === 'vertical'
+              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7'
+              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+          }`}>
+            {movies.map((m: any) => {
+              const isVerticalCard = m.source === 'subjav' && m.tag === 'Shorts';
+              return (
+                <Link
+                  key={m.source + '-' + m.id}
+                  to={`/phim-18/player?source=${m.source}&id=${m.id}`}
+                  className={`group relative block overflow-hidden rounded-lg bg-[#1a1a1a] text-left cursor-pointer hover:outline hover:outline-2 hover:outline-red-500 transition-all ${
+                    isVerticalCard ? 'aspect-[9/16]' : 'aspect-video'
+                  }`}
+                >
+                  <img
+                    src={m.img}
+                    alt={m.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    onError={(e) => { (e.target as HTMLImageElement).src = isVerticalCard ? 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 240"><rect fill="%23333" width="180" height="240"/><text x="90" y="120" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>' : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect fill="%23333" width="240" height="180"/><text x="120" y="90" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>'; }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/20 to-transparent">
+                    <div className="absolute top-2 left-2">
+                      <span className="bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">{SOURCE_NAMES[m.source] || m.source}</span>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="bg-red-600/90 rounded-full p-3"><Play fill="white" className="text-white w-6 h-6 ml-0.5" /></div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2">
+                      <h3 className="text-white font-medium text-xs line-clamp-2">{m.title}</h3>
+                      {m.views && <p className="text-gray-400 text-[10px] mt-0.5">{m.views} lượt xem</p>}
+                    </div>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-red-600/90 rounded-full p-3"><Play fill="white" className="text-white w-6 h-6 ml-0.5" /></div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 className="text-white font-medium text-xs line-clamp-2">{m.title}</h3>
-                    {m.views && <p className="text-gray-400 text-[10px] mt-0.5">{m.views} lượt xem</p>}
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Film, Play, Search, X } from 'lucide-react';
 
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
@@ -51,14 +51,47 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
     } catch (e) {}
     setVerified(true);
   };
+  const [searchParams, setSearchParams] = useSearchParams();
+  const source = searchParams.get('source') || 'all';
+  const subjavFormat = searchParams.get('format') || 'horizontal';
+  const page = parseInt(searchParams.get('page') || '1');
+
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState('all');
-  const [subjavFormat, setSubjavFormat] = useState('horizontal');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 50;
+
+  const setSource = (newSource: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (newSource === 'all') {
+        next.delete('source');
+      } else {
+        next.set('source', newSource);
+      }
+      next.delete('format');
+      next.set('page', '1');
+      return next;
+    });
+  };
+
+  const setSubjavFormat = (newFormat: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('format', newFormat);
+      next.set('page', '1');
+      return next;
+    });
+  };
+
+  const setPage = (newPage: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(newPage));
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!verified) return;

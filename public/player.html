@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xem Phim</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #000; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -150,7 +150,7 @@ function loadDirectVideo(videoUrl) {
   
   if (typeof Hls !== 'undefined' && Hls.isSupported()) {
     if (hlsInstance) hlsInstance.destroy();
-    hlsInstance = new Hls({ maxBufferLength: 30 });
+    hlsInstance = new Hls({ maxBufferLength: 8, maxMaxBufferLength: 15, maxBufferSize: 10 * 1000 * 1000 });
     hlsInstance.loadSource(videoUrl);
     hlsInstance.attachMedia(video);
     hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -160,8 +160,13 @@ function loadDirectVideo(videoUrl) {
     video.src = videoUrl;
     video.play();
   } else {
-    video.src = videoUrl;
-    video.play();
+    // Trình duyệt không hỗ trợ HLS -> fallback sang iframe player
+    document.getElementById('playerLoading').style.display = 'none';
+    var fallbackUrl = 'https://player.phimapi.com/player/?url=' + encodeURIComponent(videoUrl);
+    container.innerHTML = '<div class="error-msg" style="padding:40px 20px;">' +
+      '<p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p>' +
+      '<a href="' + fallbackUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a>' +
+      '</div>';
   }
 }
 
@@ -289,7 +294,7 @@ function loadVideo(server) {
         var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
-          hlsInstance = new Hls({ maxBufferLength: 30 });
+          hlsInstance = new Hls({ maxBufferLength: 8, maxMaxBufferLength: 15, maxBufferSize: 10 * 1000 * 1000 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -299,7 +304,7 @@ function loadVideo(server) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
+          container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else if (data.url) {
         container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
@@ -313,7 +318,7 @@ function loadVideo(server) {
         var proxyUrl = data.videoUrl;
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
-          hlsInstance = new Hls({ maxBufferLength: 30 });
+          hlsInstance = new Hls({ maxBufferLength: 8, maxMaxBufferLength: 15, maxBufferSize: 10 * 1000 * 1000 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -323,7 +328,7 @@ function loadVideo(server) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
+          container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else {
         var src = data.url || (data.sources && data.sources[server - 1] ? data.sources[server - 1].url : '');
@@ -340,7 +345,7 @@ function loadVideo(server) {
         var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
-          hlsInstance = new Hls({ maxBufferLength: 30 });
+          hlsInstance = new Hls({ maxBufferLength: 8, maxMaxBufferLength: 15, maxBufferSize: 10 * 1000 * 1000 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -350,7 +355,7 @@ function loadVideo(server) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
+          container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else {
         container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
@@ -362,7 +367,7 @@ function loadVideo(server) {
         var proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           if (hlsInstance) hlsInstance.destroy();
-          hlsInstance = new Hls({ maxBufferLength: 30 });
+          hlsInstance = new Hls({ maxBufferLength: 8, maxMaxBufferLength: 15, maxBufferSize: 10 * 1000 * 1000 });
           hlsInstance.loadSource(proxyUrl);
           hlsInstance.attachMedia(video);
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -372,7 +377,7 @@ function loadVideo(server) {
           video.src = proxyUrl;
           video.play();
         } else {
-          container.innerHTML = '<div class="error-msg">Trình duyệt không hỗ trợ HLS</div>';
+          container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else {
         container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';

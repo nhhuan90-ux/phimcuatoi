@@ -206,10 +206,9 @@ export default function Watch() {
 
         {/* Player */}
         <div 
-          className={`w-full relative bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 transition-all duration-500 ${
+          className={`w-full bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 transition-all duration-500 ${
             isLightsOff ? 'z-[70] ring-4 ring-red-600/20' : ''
           }`} 
-          style={{ paddingBottom: '56.25%' }}
         >
           <VideoPlayer
             m3u8Url={currentEpData.m3u8}

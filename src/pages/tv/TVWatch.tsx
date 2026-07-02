@@ -114,7 +114,7 @@ export default function TVWatch() {
 
   return (
     <div className="tv-player-container">
-      <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
         <VideoPlayer m3u8Url={currentEpData.m3u8} embedUrl={currentEpData.embed} title={movie.name} playerKey={playerKey} initialTime={initialTime} onTimeUpdate={handleTimeUpdate} forceEmbed={useEmbed} />
       </div>
 

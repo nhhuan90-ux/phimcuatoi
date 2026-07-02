@@ -157,7 +157,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
           />
           <select
             value={source}
-            onChange={e => { setSource(e.target.value); setPage(1); }}
+            onChange={e => { setSource(e.target.value); }}
             className="bg-[#2b2b2b] text-white text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-600 border-0"
           >
             <option value="all">Tất cả</option>
@@ -170,7 +170,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
         {source === 'subjav' && (
           <div className="flex gap-2 mb-6">
             <button
-              onClick={() => { setSubjavFormat('horizontal'); setPage(1); }}
+              onClick={() => { setSubjavFormat('horizontal'); }}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
                 subjavFormat === 'horizontal'
                   ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
@@ -180,7 +180,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
               Video Ngang (Bản Full)
             </button>
             <button
-              onClick={() => { setSubjavFormat('vertical'); setPage(1); }}
+              onClick={() => { setSubjavFormat('vertical'); }}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
                 subjavFormat === 'vertical'
                   ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'

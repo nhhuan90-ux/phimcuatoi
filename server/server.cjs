@@ -392,7 +392,7 @@ app.get('/api/admin/status', (req, res) => {
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    let referer = 'https://javhdz.mobi/';
+    let referer = 'https://javhdz.site/';
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       referer = 'https://javsub.blog/';
     }
@@ -419,7 +419,7 @@ app.get('/api/proxy/hls', async (req, res) => {
 app.get('/api/proxy/segment', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    let referer = 'https://javhdz.mobi/';
+    let referer = 'https://javhdz.site/';
     let targetUrl = url;
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       const urlObj = new URL(url);
@@ -444,7 +444,7 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     const atobMatch = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
     const videoUrl = atobMatch ? Buffer.from(atobMatch[1], 'base64').toString('utf-8') : '';
     const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(videoUrl);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://javhdz.mobi/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://javhdz.site/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
     res.send(html);
   } catch (e) { res.status(502).send('Failed'); }
 });
@@ -519,8 +519,8 @@ async function checkForUpdates() {
       const m=h?h.match(/-(\d+)\.html$/):null;
       if(t&&h&&m) items.push({
         id:m[1], title:t,
-        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.mobi'+$(el).find('.public-film-item-thumb').attr('src'):'',
-        link:'https://javhdz.mobi'+h, tag:$(el).find('.ribbon-sub').text().trim(),
+        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.site'+$(el).find('.public-film-item-thumb').attr('src'):'',
+        link:'https://javhdz.site'+h, tag:$(el).find('.ribbon-sub').text().trim(),
         views:$(el).find('.ribbon-viewed').text().trim()
       });
     });
@@ -547,9 +547,9 @@ async function checkForUpdates() {
 
   const results = await Promise.all([
     // JAVHDz (3 categories)
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
 
     // VLXX (Homepage new)
     checkNew('vlxx', p => p===1?'https://vlxx.moi/':`https://vlxx.moi/new/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('.video-item').each((i,el)=>{const t=$(el).find('.video-name a').text().trim();const h=$(el).find('.video-name a').attr('href');const m=h?h.match(/\/video\/[^/]+\/(\d+)\//):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.video-image').attr('data-original')||'',link:'https://vlxx.moi'+h,tag:$(el).find('.ribbon').text().trim(),views:''})}); return items; }),

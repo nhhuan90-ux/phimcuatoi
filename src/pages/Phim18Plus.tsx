@@ -5,7 +5,7 @@ import { AlertTriangle, Film, Play, Search, X } from 'lucide-react';
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 const SOURCE_NAMES: Record<string, string> = {
   javhdz: 'JAVHDz', vlxx: 'VLXX', javsub: 'JAVSub',
-  javtiful: 'JavTiful', phimxyz: 'PhimXYZ (Bảo trì)', subjav: 'SubJAV (Bảo trì)'
+  javtiful: 'JavTiful', phimxyz: 'PhimXYZ', subjav: 'SubJAV'
 };
 
 function AgeGate({ onConfirm }: { onConfirm: () => void }) {

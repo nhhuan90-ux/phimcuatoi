@@ -240,7 +240,7 @@ async function getJavtifulVideoUrl(id) {
 async function getPhimxyzVideoUrl(id) {
   try {
     const movie = moviesData.phimxyz.find(m => m.id === id);
-    const link = movie?.link || `https://i.phimxyz.blog/phim/${id}`;
+    const link = movie?.link ? movie.link.replace('i.phimxyz.blog', 'i1.phimxyz.blog') : `https://i1.phimxyz.blog/phim/${id}`;
     const html = await fetchHtml(link);
     const $ = cheerio.load(html);
     let p = $('[data-link]').first().attr('data-link') || '';
@@ -249,14 +249,14 @@ async function getPhimxyzVideoUrl(id) {
       if (match) p = match[1];
     }
     if (!p) return null;
-    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://i.phimxyz.blog' + p, type: 'hls' };
+    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://i1.phimxyz.blog' + p, type: 'hls' };
   } catch (e) { return null; }
 }
 
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
   try {
-    const res = await axios.get(`https://subjav.sbs/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://subjav.men/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const video = res.data.video || res.data;
     if (video && video.video_url) {
       return { videoUrl: video.video_url, type: 'hls' };
@@ -264,7 +264,7 @@ async function getSubjavVideoUrl(id) {
   } catch (e) {}
 
   try {
-    const res = await axios.get(`https://subjav.sbs/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://subjav.men/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (res.data && res.data.success && res.data.data) {
       const html = res.data.data;
       const match = html.match(/file:\s*['"]([^'"]+)['"]/);
@@ -406,10 +406,10 @@ app.get('/api/proxy/hls', async (req, res) => {
       .replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
       
     // Rewrites for JAVSub and SubJAV stream segments and playlists
-    if (url.includes('byzamlan.top') || url.includes('streamforester.com') || url.includes('subjav.sbs')) {
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com') || url.includes('subjav.sbs') || url.includes('subjav.men')) {
       data = data
-        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
-        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs|subjav\.men)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
+        .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs|subjav\.men)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
     }
     
     res.send(data);
@@ -424,8 +424,8 @@ app.get('/api/proxy/segment', async (req, res) => {
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       const urlObj = new URL(url);
       referer = urlObj.origin + '/';
-    } else if (url.includes('subjav.sbs')) {
-      referer = 'https://subjav.sbs/';
+    } else if (url.includes('subjav.sbs') || url.includes('subjav.men')) {
+      referer = url.includes('subjav.men') ? 'https://subjav.men/' : 'https://subjav.sbs/';
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }
@@ -537,8 +537,8 @@ async function checkForUpdates() {
       const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||'';
       items.push({
         id, title:alt,
-        img:img.startsWith('http')?img:'https://i.phimxyz.blog'+img,
-        link:href.startsWith('http')?href:'https://i.phimxyz.blog'+href,
+        img:img.startsWith('http')?img:'https://i1.phimxyz.blog'+img,
+        link:href.startsWith('http')?href:'https://i1.phimxyz.blog'+href,
         tag:'', views:''
       });
     });
@@ -561,12 +561,12 @@ async function checkForUpdates() {
     checkNew('javtiful', p => p===1?'https://javtiful.blog/':`https://javtiful.blog/page/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/video/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href) return; const m=href.match(/\/video\/([^/]+)/); if(!m) return; const id=m[1]; const title=$(el).find('img').attr('alt')||$(el).text().trim()||id; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title,img,link:'https://javtiful.blog/video/'+id,tag:'',views:''})}); return items; }),
 
     // PhimXYZ (3 categories)
-    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/jav':`https://i.phimxyz.blog/the-loai/jav?page=${p}`, phimxyzParser),
-    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/phim-sex-viet-sub':`https://i.phimxyz.blog/the-loai/phim-sex-viet-sub?page=${p}`, phimxyzParser),
-    checkNew('phimxyz', p => p===1?'https://i.phimxyz.blog/the-loai/khong-che':`https://i.phimxyz.blog/the-loai/khong-che?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/jav':`https://i1.phimxyz.blog/the-loai/jav?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/phim-sex-viet-sub':`https://i1.phimxyz.blog/the-loai/phim-sex-viet-sub?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/khong-che':`https://i1.phimxyz.blog/the-loai/khong-che?page=${p}`, phimxyzParser),
 
     // SubJAV (TikTok Shorts + 3 categories of normal videos)
-    checkNew('subjav', p => `https://subjav.sbs/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
+    checkNew('subjav', p => `https://subjav.men/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
       const items = [];
       const videos = data.videos || [];
       videos.forEach(v => {
@@ -575,7 +575,7 @@ async function checkForUpdates() {
             id: String(v.id),
             title: v.title || ('Phim ' + v.id),
             img: v.thumbnail || '',
-            link: 'https://subjav.sbs/phim-sex-viet/video/' + v.id + '/',
+            link: 'https://subjav.men/phim-sex-viet/video/' + v.id + '/',
             tag: 'Shorts',
             views: v.like_count ? (v.like_count + ' likes') : ''
           });
@@ -583,7 +583,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/jav-vietsub/' : `https://subjav.sbs/jav-vietsub/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.men/jav-vietsub/' : `https://subjav.men/jav-vietsub/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -593,7 +593,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/jav-khong-che/' : `https://subjav.sbs/jav-khong-che/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.men/jav-khong-che/' : `https://subjav.men/jav-khong-che/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -603,7 +603,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.sbs/phim-sex-trung-quoc/' : `https://subjav.sbs/phim-sex-trung-quoc/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.men/phim-sex-trung-quoc/' : `https://subjav.men/phim-sex-trung-quoc/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;

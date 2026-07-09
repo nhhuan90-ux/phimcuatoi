@@ -326,6 +326,11 @@ app.get('/api/test-javsub', async (req, res) => {
   }
 });
 
+const isSubjavVertical = (m) => {
+  if (m.source !== 'subjav') return false;
+  return m.tag === 'Shorts' || (m.link && m.link.includes('/video/')) || (m.img && m.img.includes('tiktok-thumbnails'));
+};
+
 app.get('/api/movies', (req, res) => {
   const { source, format, search, page = 1, limit = 50 } = req.query;
   let list = moviesData.all || [];
@@ -334,14 +339,14 @@ app.get('/api/movies', (req, res) => {
     list = list.filter(m => m.source === source);
     if (source === 'subjav') {
       if (format === 'vertical') {
-        list = list.filter(m => m.tag === 'Shorts');
+        list = list.filter(isSubjavVertical);
       } else if (format === 'horizontal') {
-        list = list.filter(m => m.tag !== 'Shorts');
+        list = list.filter(m => !isSubjavVertical(m));
       }
     }
   } else {
     // Exclude SubJAV vertical shorts from the combined/all listing
-    list = list.filter(m => !(m.source === 'subjav' && m.tag === 'Shorts'));
+    list = list.filter(m => !isSubjavVertical(m));
   }
   
   if (search) { const q = search.toLowerCase(); list = list.filter(m => m.title.toLowerCase().includes(q)); }

@@ -212,7 +212,7 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
               : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
           }`}>
             {movies.map((m: any) => {
-              const isVerticalCard = m.source === 'subjav' && m.tag === 'Shorts';
+              const isVerticalCard = m.source === 'subjav' && (m.tag === 'Shorts' || m.link?.includes('/video/') || m.img?.includes('tiktok-thumbnails'));
               return (
                 <Link
                   key={m.source + '-' + m.id}

@@ -256,7 +256,7 @@ async function getPhimxyzVideoUrl(id) {
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
   try {
-    const res = await axios.get(`https://subjav.men/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://subjav.love/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const video = res.data.video || res.data;
     if (video && video.video_url) {
       return { videoUrl: video.video_url, type: 'hls' };
@@ -264,7 +264,7 @@ async function getSubjavVideoUrl(id) {
   } catch (e) {}
 
   try {
-    const res = await axios.get(`https://subjav.men/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://subjav.love/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (res.data && res.data.success && res.data.data) {
       const html = res.data.data;
       const match = html.match(/file:\s*['"]([^'"]+)['"]/);
@@ -397,7 +397,7 @@ app.get('/api/admin/status', (req, res) => {
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    let referer = 'https://javhdz.site/';
+    let referer = 'https://javhdz.mobi/';
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       referer = 'https://javsub.blog/';
     }
@@ -411,7 +411,7 @@ app.get('/api/proxy/hls', async (req, res) => {
       .replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
       
     // Rewrites for JAVSub and SubJAV stream segments and playlists
-    if (url.includes('byzamlan.top') || url.includes('streamforester.com') || url.includes('subjav.sbs') || url.includes('subjav.men')) {
+    if (url.includes('byzamlan.top') || url.includes('streamforester.com') || url.includes('subjav.sbs') || url.includes('subjav.love')) {
       data = data
         .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs|subjav\.men)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
         .replace(/(https:\/\/(?:byzamlan\.top|streamforester\.com|subjav\.sbs|subjav\.men)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
@@ -424,13 +424,13 @@ app.get('/api/proxy/hls', async (req, res) => {
 app.get('/api/proxy/segment', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    let referer = 'https://javhdz.site/';
+    let referer = 'https://javhdz.mobi/';
     let targetUrl = url;
     if (url.includes('byzamlan.top') || url.includes('streamforester.com')) {
       const urlObj = new URL(url);
       referer = urlObj.origin + '/';
-    } else if (url.includes('subjav.sbs') || url.includes('subjav.men')) {
-      referer = url.includes('subjav.men') ? 'https://subjav.men/' : 'https://subjav.sbs/';
+    } else if (url.includes('subjav.sbs') || url.includes('subjav.love')) {
+      referer = url.includes('subjav.love') ? 'https://subjav.love/' : 'https://subjav.sbs/';
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }
@@ -449,7 +449,7 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     const atobMatch = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
     const videoUrl = atobMatch ? Buffer.from(atobMatch[1], 'base64').toString('utf-8') : '';
     const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(videoUrl);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://javhdz.site/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://javhdz.mobi/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
     res.send(html);
   } catch (e) { res.status(502).send('Failed'); }
 });
@@ -524,8 +524,8 @@ async function checkForUpdates() {
       const m=h?h.match(/-(\d+)\.html$/):null;
       if(t&&h&&m) items.push({
         id:m[1], title:t,
-        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.site'+$(el).find('.public-film-item-thumb').attr('src'):'',
-        link:'https://javhdz.site'+h, tag:$(el).find('.ribbon-sub').text().trim(),
+        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.mobi'+$(el).find('.public-film-item-thumb').attr('src'):'',
+        link:'https://javhdz.mobi'+h, tag:$(el).find('.ribbon-sub').text().trim(),
         views:$(el).find('.ribbon-viewed').text().trim()
       });
     });
@@ -552,9 +552,9 @@ async function checkForUpdates() {
 
   const results = await Promise.all([
     // JAVHDz (3 categories)
-    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.site${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
 
     // VLXX (Homepage new)
     checkNew('vlxx', p => p===1?'https://vlxx.moi/':`https://vlxx.moi/new/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('.video-item').each((i,el)=>{const t=$(el).find('.video-name a').text().trim();const h=$(el).find('.video-name a').attr('href');const m=h?h.match(/\/video\/[^/]+\/(\d+)\//):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.video-image').attr('data-original')||'',link:'https://vlxx.moi'+h,tag:$(el).find('.ribbon').text().trim(),views:''})}); return items; }),
@@ -571,7 +571,7 @@ async function checkForUpdates() {
     checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/khong-che':`https://i1.phimxyz.blog/the-loai/khong-che?page=${p}`, phimxyzParser),
 
     // SubJAV (TikTok Shorts + 3 categories of normal videos)
-    checkNew('subjav', p => `https://subjav.men/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
+    checkNew('subjav', p => `https://subjav.love/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
       const items = [];
       const videos = data.videos || [];
       videos.forEach(v => {
@@ -580,7 +580,7 @@ async function checkForUpdates() {
             id: String(v.id),
             title: v.title || ('Phim ' + v.id),
             img: v.thumbnail || '',
-            link: 'https://subjav.men/phim-sex-viet/video/' + v.id + '/',
+            link: 'https://subjav.love/phim-sex-viet/video/' + v.id + '/',
             tag: 'Shorts',
             views: v.like_count ? (v.like_count + ' likes') : ''
           });
@@ -588,7 +588,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.men/jav-vietsub/' : `https://subjav.men/jav-vietsub/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.love/jav-vietsub/' : `https://subjav.love/jav-vietsub/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -598,7 +598,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.men/jav-khong-che/' : `https://subjav.men/jav-khong-che/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.love/jav-khong-che/' : `https://subjav.love/jav-khong-che/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -608,7 +608,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.men/phim-sex-trung-quoc/' : `https://subjav.men/phim-sex-trung-quoc/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? 'https://subjav.love/phim-sex-trung-quoc/' : `https://subjav.love/phim-sex-trung-quoc/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;

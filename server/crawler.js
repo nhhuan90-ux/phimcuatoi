@@ -20,7 +20,7 @@ async function crawlJavhdzListings() {
     for (let p = 1; p <= cat.pages; p++) {
       try {
         const url = p === 1 ? cat.url : `${cat.url}page/${p}/`;
-        const res = await axios.get(`https://javhdz.site${url}`, { timeout: 15000, headers: { 'User-Agent': UA } });
+        const res = await axios.get(`https://javhdz.mobi${url}`, { timeout: 15000, headers: { 'User-Agent': UA } });
         const $ = cheerio.load(res.data);
         let count = 0;
         $('.movie-item.m-block').each((i, el) => {
@@ -32,7 +32,7 @@ async function crawlJavhdzListings() {
           if (title && href) {
             const match = href.match(/-(\d+)\.html$/);
             const id = match ? match[1] : '';
-            RESULTS.javhdz.push({ id, title, img: img ? `https://javhdz.site${img}` : '', link: `https://javhdz.site${href}`, tag, views, source: 'javhdz' });
+            RESULTS.javhdz.push({ id, title, img: img ? `https://javhdz.mobi${img}` : '', link: `https://javhdz.mobi${href}`, tag, views, source: 'javhdz' });
             count++;
           }
         });

@@ -138,11 +138,157 @@ function loadData() {
 }
 loadData();
 
+function saveData() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(moviesData, null, 2), 'utf-8');
+    return true;
+  } catch (e) { console.error('Save error:', e.message); return false; }
+}
+
+// ============ AUTODISCOVER DOMAINS ============
+const DOMAINS_FILE = fs.existsSync(path.join(__dirname, 'domains.json'))
+  ? path.join(__dirname, 'domains.json')
+  : path.join(process.cwd(), 'server', 'domains.json');
+
+let domains = {
+  javhdz: 'javhdz.mobi',
+  subjav: 'subjav.love',
+  phimxyz: 'i1.phimxyz.blog'
+};
+
+function loadDomains() {
+  try {
+    if (fs.existsSync(DOMAINS_FILE)) {
+      domains = { ...domains, ...JSON.parse(fs.readFileSync(DOMAINS_FILE, 'utf-8')) };
+      console.log('Loaded domains:', domains);
+    }
+  } catch (e) { console.error('Load domains error:', e.message); }
+}
+loadDomains();
+
+function saveDomains() {
+  try {
+    fs.writeFileSync(DOMAINS_FILE, JSON.stringify(domains, null, 2), 'utf-8');
+    console.log('Saved domains:', domains);
+  } catch (e) { console.error('Save domains error:', e.message); }
+}
+
+function updateDatabaseDomains(source, oldDomain, newDomain) {
+  try {
+    let updatedCount = 0;
+    const processList = (list) => {
+      if (!list) return;
+      list.forEach(m => {
+        if (m.source === source) {
+          if (m.img && m.img.includes(oldDomain)) {
+            m.img = m.img.replace(oldDomain, newDomain);
+            updatedCount++;
+          }
+          if (m.link && m.link.includes(oldDomain)) {
+            m.link = m.link.replace(oldDomain, newDomain);
+          }
+        }
+      });
+    };
+    processList(moviesData[source]);
+    processList(moviesData.all);
+    if (updatedCount > 0) {
+      saveData();
+      console.log(`[AutoDiscover] Migrated database entries for ${source}: replaced ${oldDomain} with ${newDomain} (${updatedCount} items)`);
+    }
+  } catch (err) {
+    console.error(`[AutoDiscover] DB update error for ${source}:`, err.message);
+  }
+}
+
+async function autodiscoverDomain(source) {
+  console.log(`[AutoDiscover] Scanning new domains for source: ${source}...`);
+  const oldDomain = domains[source];
+  const extensions = [
+    'mobi', 'im', 'love', 'site', 'me', 'xyz', 'top', 'net', 'vip', 
+    'click', 'tv', 'club', 'pro', 'live', 'cc', 'co', 'info', 'org', 'biz'
+  ];
+  
+  if (source === 'javhdz') {
+    for (const ext of extensions) {
+      const candidate = `javhdz.${ext}`;
+      if (candidate === oldDomain) continue;
+      const url = `https://${candidate}/`;
+      try {
+        console.log(`[AutoDiscover] Checking: ${url}`);
+        const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (res.status === 200 && String(res.data).toLowerCase().includes('javhdz')) {
+          console.log(`[AutoDiscover] Found active domain for JAVHDz: ${candidate}`);
+          domains.javhdz = candidate;
+          saveDomains();
+          updateDatabaseDomains('javhdz', oldDomain, candidate);
+          return candidate;
+        }
+      } catch (e) {}
+    }
+  } 
+  else if (source === 'subjav') {
+    for (const ext of extensions) {
+      const candidate = `subjav.${ext}`;
+      if (candidate === oldDomain) continue;
+      const url = `https://${candidate}/wp-json/tiktok/v1/videos/grid?page=1&limit=1`;
+      try {
+        console.log(`[AutoDiscover] Checking: ${url}`);
+        const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (res.status === 200 && res.data && res.data.videos) {
+          console.log(`[AutoDiscover] Found active domain for SubJAV: ${candidate}`);
+          domains.subjav = candidate;
+          saveDomains();
+          updateDatabaseDomains('subjav', oldDomain, candidate);
+          return candidate;
+        }
+      } catch (e) {
+        try {
+          const mainUrl = `https://${candidate}/`;
+          const res = await axios.get(mainUrl, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+          if (res.status === 200 && String(res.data).toLowerCase().includes('subjav')) {
+            console.log(`[AutoDiscover] Found active domain for SubJAV (fallback): ${candidate}`);
+            domains.subjav = candidate;
+            saveDomains();
+            updateDatabaseDomains('subjav', oldDomain, candidate);
+            return candidate;
+          }
+        } catch (err2) {}
+      }
+    }
+  }
+  else if (source === 'phimxyz') {
+    for (const ext of extensions) {
+      const parent = `phimxyz.${ext}`;
+      const candidates = [`i1.${parent}`, `i.${parent}`, parent];
+      for (const candidate of candidates) {
+        if (candidate === oldDomain) continue;
+        const url = `https://${candidate}/the-loai/jav`;
+        try {
+          console.log(`[AutoDiscover] Checking: ${url}`);
+          const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+          if (res.status === 200 && String(res.data).includes('/phim/')) {
+            console.log(`[AutoDiscover] Found active domain for PhimXYZ: ${candidate}`);
+            domains.phimxyz = candidate;
+            saveDomains();
+            updateDatabaseDomains('phimxyz', oldDomain, candidate);
+            return candidate;
+          }
+        } catch (e) {}
+      }
+    }
+  }
+  
+  console.log(`[AutoDiscover] Completed scan for ${source}.`);
+  return null;
+}
+
 // ============ JAVHDz ============
 async function getJavhdzVideoUrl(id) {
   const movie = moviesData.javhdz.find(m => m.id === id);
   if (!movie) return null;
-  const page = await axios.get(movie.link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }).catch(() => null);
+  const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/i, domains.javhdz) : `https://${domains.javhdz}/phim-sex-...`;
+  const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }).catch(() => null);
   if (!page) return null;
   const match = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
   if (match) {
@@ -240,7 +386,7 @@ async function getJavtifulVideoUrl(id) {
 async function getPhimxyzVideoUrl(id) {
   try {
     const movie = moviesData.phimxyz.find(m => m.id === id);
-    const link = movie?.link ? movie.link.replace('i.phimxyz.blog', 'i1.phimxyz.blog') : `https://i1.phimxyz.blog/phim/${id}`;
+    const link = movie?.link ? movie.link.replace(/i\d?\.phimxyz\.[a-z]+/i, domains.phimxyz) : `https://${domains.phimxyz}/phim/${id}`;
     const html = await fetchHtml(link);
     const $ = cheerio.load(html);
     let p = $('[data-link]').first().attr('data-link') || '';
@@ -249,14 +395,14 @@ async function getPhimxyzVideoUrl(id) {
       if (match) p = match[1];
     }
     if (!p) return null;
-    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://i1.phimxyz.blog' + p, type: 'hls' };
+    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://' + domains.phimxyz + p, type: 'hls' };
   } catch (e) { return null; }
 }
 
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
   try {
-    const res = await axios.get(`https://subjav.love/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://${domains.subjav}/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const video = res.data.video || res.data;
     if (video && video.video_url) {
       return { videoUrl: video.video_url, type: 'hls' };
@@ -264,7 +410,7 @@ async function getSubjavVideoUrl(id) {
   } catch (e) {}
 
   try {
-    const res = await axios.get(`https://subjav.love/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await axios.get(`https://${domains.subjav}/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (res.data && res.data.success && res.data.data) {
       const html = res.data.data;
       const match = html.match(/file:\s*['"]([^'"]+)['"]/);
@@ -393,6 +539,24 @@ app.get('/api/admin/status', (req, res) => {
   res.json({ lastCheck, checkCount, total: (moviesData.all||[]).length, ...Object.fromEntries(ALL_SOURCES.map(k => [k, (moviesData[k]||[]).length])), updated: moviesData.updated });
 });
 
+app.get('/api/admin/autodiscover', async (req, res) => {
+  const { source } = req.query;
+  if (!source || !['javhdz', 'subjav', 'phimxyz'].includes(source)) {
+    return res.status(400).json({ error: 'Valid source parameter is required (javhdz, subjav, phimxyz)' });
+  }
+  try {
+    const newDomain = await autodiscoverDomain(source);
+    res.json({
+      status: 'completed',
+      source,
+      newDomain: newDomain || 'none',
+      currentDomain: domains[source]
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ============ HLS PROXY ============
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
@@ -509,7 +673,12 @@ async function checkNew(source, urlFn, parser) {
           added++;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      if (p === 1 && (e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT' || e.message?.includes('timeout') || e.response?.status >= 500)) {
+        console.log(`[AutoUpdate] Connection to ${source} failed (${e.message}). Triggering AutoDiscover...`);
+        autodiscoverDomain(source).catch(err => console.error('AutoDiscover error:', err.message));
+      }
+    }
   }
   return added;
 }

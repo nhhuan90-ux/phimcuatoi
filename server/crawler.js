@@ -3,7 +3,20 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 
 const DATA_FILE = './movies.json';
+const DOMAINS_FILE = './domains.json';
 const RESULTS = { javhdz: [], vlxx: [], javsub: [], missav: [], javtiful: [], supjav: [] };
+
+let domains = {
+  javhdz: 'javhdz.mobi',
+  subjav: 'subjav.love',
+  phimxyz: 'i1.phimxyz.blog'
+};
+
+try {
+  if (fs.existsSync(DOMAINS_FILE)) {
+    domains = { ...domains, ...JSON.parse(fs.readFileSync(DOMAINS_FILE, 'utf-8')) };
+  }
+} catch (e) {}
 
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
@@ -20,7 +33,7 @@ async function crawlJavhdzListings() {
     for (let p = 1; p <= cat.pages; p++) {
       try {
         const url = p === 1 ? cat.url : `${cat.url}page/${p}/`;
-        const res = await axios.get(`https://javhdz.mobi${url}`, { timeout: 15000, headers: { 'User-Agent': UA } });
+        const res = await axios.get(`https://${domains.javhdz}${url}`, { timeout: 15000, headers: { 'User-Agent': UA } });
         const $ = cheerio.load(res.data);
         let count = 0;
         $('.movie-item.m-block').each((i, el) => {
@@ -32,7 +45,7 @@ async function crawlJavhdzListings() {
           if (title && href) {
             const match = href.match(/-(\d+)\.html$/);
             const id = match ? match[1] : '';
-            RESULTS.javhdz.push({ id, title, img: img ? `https://javhdz.mobi${img}` : '', link: `https://javhdz.mobi${href}`, tag, views, source: 'javhdz' });
+            RESULTS.javhdz.push({ id, title, img: img ? `https://${domains.javhdz}${img}` : '', link: `https://${domains.javhdz}${href}`, tag, views, source: 'javhdz' });
             count++;
           }
         });

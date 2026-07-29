@@ -201,88 +201,147 @@ function updateDatabaseDomains(source, oldDomain, newDomain) {
   }
 }
 
-async function autodiscoverDomain(source) {
-  console.log(`[AutoDiscover] Scanning new domains for source: ${source}...`);
-  const oldDomain = domains[source];
-  const extensions = [
-    'red', 'city', 'blog', 'mobi', 'im', 'love', 'site', 'me', 'xyz', 'top', 'net', 'vip', 
-    'click', 'tv', 'club', 'pro', 'live', 'cc', 'co', 'info', 'org', 'biz'
-  ];
-  
-  if (source === 'javhdz') {
-    for (const ext of extensions) {
-      const candidate = `javhdz.${ext}`;
-      if (candidate === oldDomain) continue;
-      const url = `https://${candidate}/category/uncensored-3/`;
-      try {
-        console.log(`[AutoDiscover] Checking: ${url}`);
-        const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        const $ = cheerio.load(res.data);
-        if (res.status === 200 && $('.movie-item.m-block').length > 0) {
-          console.log(`[AutoDiscover] Found active domain for JAVHDz: ${candidate}`);
-          domains.javhdz = candidate;
-          saveDomains();
-          updateDatabaseDomains('javhdz', oldDomain, candidate);
-          return candidate;
-        }
-      } catch (e) {}
-    }
-  } 
-  else if (source === 'subjav') {
-    for (const ext of extensions) {
-      const candidate = `subjav.${ext}`;
-      if (candidate === oldDomain) continue;
-      const url = `https://${candidate}/wp-json/tiktok/v1/videos/grid?page=1&limit=1`;
-      try {
-        console.log(`[AutoDiscover] Checking API: ${url}`);
-        const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (res.status === 200 && res.data && res.data.videos && res.data.videos.length > 0) {
-          console.log(`[AutoDiscover] Found active domain for SubJAV: ${candidate}`);
-          domains.subjav = candidate;
-          saveDomains();
-          updateDatabaseDomains('subjav', oldDomain, candidate);
-          return candidate;
-        }
-      } catch (e) {
-        try {
-          const mainUrl = `https://${candidate}/jav-vietsub/`;
-          const res = await axios.get(mainUrl, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-          const $ = cheerio.load(res.data);
-          if (res.status === 200 && $('.item-video').length > 0) {
-            console.log(`[AutoDiscover] Found active domain for SubJAV (HTML fallback): ${candidate}`);
-            domains.subjav = candidate;
-            saveDomains();
-            updateDatabaseDomains('subjav', oldDomain, candidate);
-            return candidate;
-          }
-        } catch (err2) {}
+// ============ SEARCH ENGINE + TLD MATRIX AUTODISCOVER BOT ============
+const TLD_EXTENSIONS = [
+  'red', 'city', 'blog', 'mobi', 'im', 'love', 'site', 'me', 'xyz', 'top', 'net', 'vip', 
+  'click', 'tv', 'club', 'pro', 'live', 'cc', 'co', 'info', 'org', 'biz', 'io', 'us', 
+  'fun', 'win', 'today', 'is', 'asia', 'fit', 'one', 'lat', 'icu', 'cam', 'lol', 'ink', 'work', 'link'
+];
+
+const EXCLUDED_SEARCH_DOMAINS = [
+  'google.com', 'google.com.vn', 'bing.com', 'yahoo.com', 'duckduckgo.com',
+  'facebook.com', 'youtube.com', 'github.com', 'reddit.com', 'twitter.com',
+  'wikipedia.org', 'scam.vn', 'similarweb.com', 'semrush.com', 'builtwith.com',
+  'scamadviser.com', 'whois.com', 'siteindices.com', 'downforeveryoneorjustme.com', 'notopening.com'
+];
+
+async function fetchSearchCandidates(keyword) {
+  const candidates = new Set();
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+
+  // 1. Yahoo Search Engine Scraper
+  try {
+    const url = `https://search.yahoo.com/search?p=${encodeURIComponent(keyword)}`;
+    const res = await axios.get(url, { timeout: 5000, headers: { 'User-Agent': UA } });
+    const $ = cheerio.load(res.data);
+    $('a[href]').each((i, el) => {
+      let href = $(el).attr('href') || '';
+      if (href.includes('r.search.yahoo.com')) {
+        const match = href.match(/\/RU=([^/]+)\/RK=/);
+        if (match) href = decodeURIComponent(match[1]);
       }
-    }
-  }
-  else if (source === 'phimxyz') {
-    for (const ext of extensions) {
-      const parent = `phimxyz.${ext}`;
-      const candidates = [`i1.${parent}`, `i.${parent}`, parent];
-      for (const candidate of candidates) {
-        if (candidate === oldDomain) continue;
-        const url = `https://${candidate}/the-loai/jav`;
+      if (href.startsWith('http')) {
         try {
-          console.log(`[AutoDiscover] Checking: ${url}`);
-          const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-          const $ = cheerio.load(res.data);
-          if (res.status === 200 && $('a[href*="/phim/"]').length > 0) {
-            console.log(`[AutoDiscover] Found active domain for PhimXYZ: ${candidate}`);
-            domains.phimxyz = candidate;
-            saveDomains();
-            updateDatabaseDomains('phimxyz', oldDomain, candidate);
-            return candidate;
+          const hostname = new URL(href).hostname.toLowerCase().replace(/^www\./, '');
+          if (hostname.includes(keyword.toLowerCase().replace(/[^a-z0-9]/g, '')) && !EXCLUDED_SEARCH_DOMAINS.some(ex => hostname.includes(ex))) {
+            candidates.add(hostname);
           }
         } catch (e) {}
       }
+    });
+  } catch (e) {}
+
+  // 2. SearX Public API
+  try {
+    const url = `https://searx.be/search?q=${encodeURIComponent(keyword)}&format=json`;
+    const res = await axios.get(url, { timeout: 5000, headers: { 'User-Agent': UA } });
+    const results = res.data?.results || [];
+    results.forEach(r => {
+      if (r.url) {
+        try {
+          const hostname = new URL(r.url).hostname.toLowerCase().replace(/^www\./, '');
+          if (hostname.includes(keyword.toLowerCase().replace(/[^a-z0-9]/g, '')) && !EXCLUDED_SEARCH_DOMAINS.some(ex => hostname.includes(ex))) {
+            candidates.add(hostname);
+          }
+        } catch (e) {}
+      }
+    });
+  } catch (e) {}
+
+  // 3. TLD Matrix Generator
+  for (const ext of TLD_EXTENSIONS) {
+    if (keyword === 'phimxyz') {
+      candidates.add(`i1.phimxyz.${ext}`);
+      candidates.add(`i.phimxyz.${ext}`);
+      candidates.add(`phimxyz.${ext}`);
+    } else {
+      candidates.add(`${keyword}.${ext}`);
+    }
+  }
+
+  return Array.from(candidates);
+}
+
+async function validateDomainCandidate(source, hostname) {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+  try {
+    if (source === 'javhdz') {
+      const url = `https://${hostname}/category/uncensored-3/`;
+      const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const $ = cheerio.load(res.data);
+      if (res.status === 200 && $('.movie-item.m-block').length > 0) return true;
+    } 
+    else if (source === 'subjav') {
+      const apiUrl = `https://${hostname}/wp-json/tiktok/v1/videos/grid?page=1&limit=1`;
+      try {
+        const res = await axios.get(apiUrl, { timeout: 4000, headers: { 'User-Agent': UA } });
+        if (res.status === 200 && res.data?.videos?.length > 0) return true;
+      } catch (e) {}
+      const htmlUrl = `https://${hostname}/jav-vietsub/`;
+      const res = await axios.get(htmlUrl, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const $ = cheerio.load(res.data);
+      if (res.status === 200 && $('.item-video').length > 0) return true;
+    }
+    else if (source === 'phimxyz') {
+      const url = `https://${hostname}/the-loai/jav`;
+      const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const $ = cheerio.load(res.data);
+      if (res.status === 200 && $('a[href*="/phim/"]').length > 0) return true;
+    }
+    else if (source === 'javsub') {
+      const url = `https://${hostname}/`;
+      const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const $ = cheerio.load(res.data);
+      if (res.status === 200 && $('.item').length > 0) return true;
+    }
+    else if (source === 'javtiful') {
+      const url = `https://${hostname}/`;
+      const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const $ = cheerio.load(res.data);
+      if (res.status === 200 && $('a[href*="/video/"]').length > 0) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function autodiscoverDomain(source) {
+  console.log(`[AutoSearchBot] Searching Google/Yahoo & matrix domains for source: ${source}...`);
+  const oldDomain = domains[source];
+  
+  // First check if current domain is still valid and alive
+  if (oldDomain && await validateDomainCandidate(source, oldDomain)) {
+    console.log(`[AutoSearchBot] Current domain ${oldDomain} for ${source} is still healthy.`);
+    return oldDomain;
+  }
+
+  const candidates = await fetchSearchCandidates(source);
+  console.log(`[AutoSearchBot] Found ${candidates.length} candidates for ${source}. Validating...`);
+  
+  for (const host of candidates) {
+    if (host === oldDomain) continue;
+    const isValid = await validateDomainCandidate(source, host);
+    if (isValid) {
+      console.log(`[AutoSearchBot] FOUND NEW ACTIVE DOMAIN FOR ${source}: ${host}`);
+      domains[source] = host;
+      saveDomains();
+      if (oldDomain) {
+        updateDatabaseDomains(source, oldDomain, host);
+      }
+      return host;
     }
   }
   
-  console.log(`[AutoDiscover] Completed scan for ${source}.`);
+  console.log(`[AutoSearchBot] Search scan completed. No new domain found for ${source}.`);
   return null;
 }
 

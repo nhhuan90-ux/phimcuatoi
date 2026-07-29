@@ -151,8 +151,8 @@ const DOMAINS_FILE = fs.existsSync(path.join(__dirname, 'domains.json'))
   : path.join(process.cwd(), 'server', 'domains.json');
 
 let domains = {
-  javhdz: 'javhdz.mobi',
-  subjav: 'subjav.love',
+  javhdz: 'javhdz.red',
+  subjav: 'subjav.city',
   phimxyz: 'i1.phimxyz.blog'
 };
 
@@ -205,7 +205,7 @@ async function autodiscoverDomain(source) {
   console.log(`[AutoDiscover] Scanning new domains for source: ${source}...`);
   const oldDomain = domains[source];
   const extensions = [
-    'mobi', 'im', 'love', 'site', 'me', 'xyz', 'top', 'net', 'vip', 
+    'red', 'city', 'blog', 'mobi', 'im', 'love', 'site', 'me', 'xyz', 'top', 'net', 'vip', 
     'click', 'tv', 'club', 'pro', 'live', 'cc', 'co', 'info', 'org', 'biz'
   ];
   
@@ -213,11 +213,12 @@ async function autodiscoverDomain(source) {
     for (const ext of extensions) {
       const candidate = `javhdz.${ext}`;
       if (candidate === oldDomain) continue;
-      const url = `https://${candidate}/`;
+      const url = `https://${candidate}/category/uncensored-3/`;
       try {
         console.log(`[AutoDiscover] Checking: ${url}`);
         const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (res.status === 200 && String(res.data).toLowerCase().includes('javhdz')) {
+        const $ = cheerio.load(res.data);
+        if (res.status === 200 && $('.movie-item.m-block').length > 0) {
           console.log(`[AutoDiscover] Found active domain for JAVHDz: ${candidate}`);
           domains.javhdz = candidate;
           saveDomains();
@@ -233,9 +234,9 @@ async function autodiscoverDomain(source) {
       if (candidate === oldDomain) continue;
       const url = `https://${candidate}/wp-json/tiktok/v1/videos/grid?page=1&limit=1`;
       try {
-        console.log(`[AutoDiscover] Checking: ${url}`);
+        console.log(`[AutoDiscover] Checking API: ${url}`);
         const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (res.status === 200 && res.data && res.data.videos) {
+        if (res.status === 200 && res.data && res.data.videos && res.data.videos.length > 0) {
           console.log(`[AutoDiscover] Found active domain for SubJAV: ${candidate}`);
           domains.subjav = candidate;
           saveDomains();
@@ -244,10 +245,11 @@ async function autodiscoverDomain(source) {
         }
       } catch (e) {
         try {
-          const mainUrl = `https://${candidate}/`;
+          const mainUrl = `https://${candidate}/jav-vietsub/`;
           const res = await axios.get(mainUrl, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-          if (res.status === 200 && String(res.data).toLowerCase().includes('subjav')) {
-            console.log(`[AutoDiscover] Found active domain for SubJAV (fallback): ${candidate}`);
+          const $ = cheerio.load(res.data);
+          if (res.status === 200 && $('.item-video').length > 0) {
+            console.log(`[AutoDiscover] Found active domain for SubJAV (HTML fallback): ${candidate}`);
             domains.subjav = candidate;
             saveDomains();
             updateDatabaseDomains('subjav', oldDomain, candidate);
@@ -267,7 +269,8 @@ async function autodiscoverDomain(source) {
         try {
           console.log(`[AutoDiscover] Checking: ${url}`);
           const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-          if (res.status === 200 && String(res.data).includes('/phim/')) {
+          const $ = cheerio.load(res.data);
+          if (res.status === 200 && $('a[href*="/phim/"]').length > 0) {
             console.log(`[AutoDiscover] Found active domain for PhimXYZ: ${candidate}`);
             domains.phimxyz = candidate;
             saveDomains();
@@ -693,8 +696,8 @@ async function checkForUpdates() {
       const m=h?h.match(/-(\d+)\.html$/):null;
       if(t&&h&&m) items.push({
         id:m[1], title:t,
-        img:$(el).find('.public-film-item-thumb').attr('src')?'https://javhdz.mobi'+$(el).find('.public-film-item-thumb').attr('src'):'',
-        link:'https://javhdz.mobi'+h, tag:$(el).find('.ribbon-sub').text().trim(),
+        img:$(el).find('.public-film-item-thumb').attr('src')?`https://${domains.javhdz}`+$(el).find('.public-film-item-thumb').attr('src'):'',
+        link:`https://${domains.javhdz}`+h, tag:$(el).find('.ribbon-sub').text().trim(),
         views:$(el).find('.ribbon-viewed').text().trim()
       });
     });
@@ -711,8 +714,8 @@ async function checkForUpdates() {
       const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||'';
       items.push({
         id, title:alt,
-        img:img.startsWith('http')?img:'https://i1.phimxyz.blog'+img,
-        link:href.startsWith('http')?href:'https://i1.phimxyz.blog'+href,
+        img:img.startsWith('http')?img:`https://${domains.phimxyz}`+img,
+        link:href.startsWith('http')?href:`https://${domains.phimxyz}`+href,
         tag:'', views:''
       });
     });
@@ -721,9 +724,9 @@ async function checkForUpdates() {
 
   const results = await Promise.all([
     // JAVHDz (3 categories)
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
-    checkNew('javhdz', p => `https://javhdz.mobi${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
+    checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser),
 
     // VLXX (Homepage new)
     checkNew('vlxx', p => p===1?'https://vlxx.moi/':`https://vlxx.moi/new/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('.video-item').each((i,el)=>{const t=$(el).find('.video-name a').text().trim();const h=$(el).find('.video-name a').attr('href');const m=h?h.match(/\/video\/[^/]+\/(\d+)\//):null;if(t&&h&&m)items.push({id:m[1],title:t,img:$(el).find('.video-image').attr('data-original')||'',link:'https://vlxx.moi'+h,tag:$(el).find('.ribbon').text().trim(),views:''})}); return items; }),
@@ -735,12 +738,12 @@ async function checkForUpdates() {
     checkNew('javtiful', p => p===1?'https://javtiful.blog/':`https://javtiful.blog/page/${p}/`, (html) => { const $=cheerio.load(html); const items=[]; $('a[href*="/video/"]').each((i,el)=>{const href=$(el).attr('href'); if(!href) return; const m=href.match(/\/video\/([^/]+)/); if(!m) return; const id=m[1]; const title=$(el).find('img').attr('alt')||$(el).text().trim()||id; const img=$(el).find('img').attr('data-src')||$(el).find('img').attr('src')||''; items.push({id,title,img,link:'https://javtiful.blog/video/'+id,tag:'',views:''})}); return items; }),
 
     // PhimXYZ (3 categories)
-    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/jav':`https://i1.phimxyz.blog/the-loai/jav?page=${p}`, phimxyzParser),
-    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/phim-sex-viet-sub':`https://i1.phimxyz.blog/the-loai/phim-sex-viet-sub?page=${p}`, phimxyzParser),
-    checkNew('phimxyz', p => p===1?'https://i1.phimxyz.blog/the-loai/khong-che':`https://i1.phimxyz.blog/the-loai/khong-che?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?`https://${domains.phimxyz}/the-loai/jav`:`https://${domains.phimxyz}/the-loai/jav?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?`https://${domains.phimxyz}/the-loai/phim-sex-viet-sub`:`https://${domains.phimxyz}/the-loai/phim-sex-viet-sub?page=${p}`, phimxyzParser),
+    checkNew('phimxyz', p => p===1?`https://${domains.phimxyz}/the-loai/khong-che`:`https://${domains.phimxyz}/the-loai/khong-che?page=${p}`, phimxyzParser),
 
     // SubJAV (TikTok Shorts + 3 categories of normal videos)
-    checkNew('subjav', p => `https://subjav.love/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
+    checkNew('subjav', p => `https://${domains.subjav}/wp-json/tiktok/v1/videos/grid?page=${p}&limit=24`, (data) => {
       const items = [];
       const videos = data.videos || [];
       videos.forEach(v => {
@@ -749,7 +752,7 @@ async function checkForUpdates() {
             id: String(v.id),
             title: v.title || ('Phim ' + v.id),
             img: v.thumbnail || '',
-            link: 'https://subjav.love/phim-sex-viet/video/' + v.id + '/',
+            link: `https://${domains.subjav}/phim-sex-viet/video/` + v.id + '/',
             tag: 'Shorts',
             views: v.like_count ? (v.like_count + ' likes') : ''
           });
@@ -757,7 +760,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.love/jav-vietsub/' : `https://subjav.love/jav-vietsub/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? `https://${domains.subjav}/jav-vietsub/` : `https://${domains.subjav}/jav-vietsub/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -767,7 +770,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.love/jav-khong-che/' : `https://subjav.love/jav-khong-che/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? `https://${domains.subjav}/jav-khong-che/` : `https://${domains.subjav}/jav-khong-che/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;
@@ -777,7 +780,7 @@ async function checkForUpdates() {
       });
       return items;
     }),
-    checkNew('subjav', p => p === 1 ? 'https://subjav.love/phim-sex-trung-quoc/' : `https://subjav.love/phim-sex-trung-quoc/page/${p}/`, (html) => {
+    checkNew('subjav', p => p === 1 ? `https://${domains.subjav}/phim-sex-trung-quoc/` : `https://${domains.subjav}/phim-sex-trung-quoc/page/${p}/`, (html) => {
       const $=cheerio.load(html); const items=[];
       $('.item-video').each((i,el)=>{
         const idAttr=$(el).attr('id')||''; const match=idAttr.match(/post-(\d+)/); if(!match) return;

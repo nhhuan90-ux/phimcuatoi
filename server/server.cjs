@@ -671,13 +671,14 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
   const movie = moviesData.javhdz.find(m => m.id === req.params.eid);
   if (!movie) return res.status(404).send('Not found');
   try {
-    const page = await axios.get(movie.link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/gi, domains.javhdz) : `https://${domains.javhdz}/chi-gai-${req.params.eid}.html`;
+    const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const atobMatch = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
     const videoUrl = atobMatch ? Buffer.from(atobMatch[1], 'base64').toString('utf-8') : '';
     const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(videoUrl);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://javhdz.mobi/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://${domains.javhdz}/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
     res.send(html);
-  } catch (e) { res.status(502).send('Failed'); }
+  } catch (e) { res.status(502).send('Failed: ' + e.message); }
 });
 
 // ============ STATIC ============
@@ -690,7 +691,6 @@ function saveData() {
   try {
     moviesData.updated = new Date().toISOString();
     const all = []; ALL_SOURCES.forEach(k => { if (moviesData[k]) all.push(...moviesData[k]); });
-    all.sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
     moviesData.all = all;
     fs.writeFileSync(DATA_FILE, JSON.stringify(moviesData, null, 2));
     return true;
@@ -730,7 +730,7 @@ async function checkNew(source, urlFn, parser) {
               console.error(`Failed to fetch JAVSub embedUrls for new movie ${item.id}:`, err.message);
             }
           }
-          moviesData[source].push(item);
+          moviesData[source].unshift(item);
           seen.add(item.id);
           added++;
         }

@@ -424,19 +424,30 @@ async function getJavsubVideoUrl(id, server = 1) {
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
+  const upperId = id ? id.toUpperCase() : id;
+  // Step 1: Try upload18.org with upperId
   try {
-    const embedUrl = `https://upload18.org/play/index/${id}`;
-    const res = await axios.get(embedUrl, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' } });
+    const embedUrl = `https://upload18.org/play/index/${upperId}`;
+    const res = await axios.get(embedUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' } });
     const match = res.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
     if (match) {
       const m3u8Url = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
       const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
       return { videoUrl: proxiedUrl, type: 'hls' };
     }
-    return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
-  } catch (e) {
-    return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
-  }
+  } catch (e) {}
+
+  // Step 2: Try scraping javtiful.blog/video/${id} for iframe
+  try {
+    const pageRes = await axios.get(`https://javtiful.blog/video/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const $ = cheerio.load(pageRes.data);
+    const iframe = $('iframe').first().attr('src') || $('iframe').first().attr('data-src');
+    if (iframe) {
+      return { url: iframe, type: 'iframe' };
+    }
+  } catch (e) {}
+
+  return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
 }
 
 // ============ PhimXYZ ============
@@ -712,8 +723,9 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
 // ============ JavTiful EMBED ============
 app.get('/api/embed/javtiful/:id', async (req, res) => {
   const id = req.params.id;
+  const upperId = id ? id.toUpperCase() : id;
   try {
-    const embedUrl = `https://upload18.org/play/index/${id}`;
+    const embedUrl = `https://upload18.org/play/index/${upperId}`;
     const embedRes = await axios.get(embedUrl, {
       timeout: 15000,
       headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' }

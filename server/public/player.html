@@ -353,7 +353,7 @@ function loadVideo(server) {
       } else {
         var src = data.url || (data.sources && data.sources[server - 1] ? data.sources[server - 1].url : '');
         if (src) {
-          container.innerHTML = '<iframe src="' + src + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
+          container.innerHTML = '<iframe src="' + src + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
         } else {
           container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
         }

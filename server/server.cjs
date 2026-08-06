@@ -412,20 +412,9 @@ async function getJavsubVideoUrl(id, server = 1) {
     if (playUrl) {
       let activeUrl = playUrl
         .replace(/&adTag=[^&]*/g, '')
-        .replace(/\?adTag=[^&]*/g, '')
-        .replace(/e\.streamqq\.com/gi, 'byzamlan.top')
-        .replace(/trivonix\.top/gi, 'byzamlan.top');
+        .replace(/\?adTag=[^&]*/g, '');
         
-      if (activeUrl.includes('playheovl.xyz')) {
-        return { url: activeUrl, type: 'iframe' };
-      } else {
-        let m3u8Url = activeUrl;
-        if (activeUrl.includes('/videos/') && activeUrl.includes('/play')) {
-          m3u8Url = activeUrl.replace(/\/play\??.*/, '/master.m3u8');
-        }
-        const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
-        return { videoUrl: proxiedUrl, type: 'hls' };
-      }
+      return { url: activeUrl, type: 'iframe' };
     }
     return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
@@ -435,7 +424,19 @@ async function getJavsubVideoUrl(id, server = 1) {
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
-  return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
+  try {
+    const embedUrl = `https://upload18.org/play/index/${id}`;
+    const res = await axios.get(embedUrl, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' } });
+    const match = res.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
+    if (match) {
+      const m3u8Url = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
+      const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
+      return { videoUrl: proxiedUrl, type: 'hls' };
+    }
+    return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
+  } catch (e) {
+    return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
+  }
 }
 
 // ============ PhimXYZ ============
@@ -622,6 +623,8 @@ app.get('/api/proxy/hls', async (req, res) => {
       referer = 'https://javsub.blog/';
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
+    } else if (url.match(/(helvid|upload18)/i)) {
+      referer = 'https://upload18.org/';
     }
     const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'text' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
@@ -655,6 +658,8 @@ app.get('/api/proxy/segment', async (req, res) => {
       } catch (e) { referer = 'https://javsub.blog/'; }
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
+    } else if (url.match(/(helvid|upload18)/i)) {
+      referer = 'https://upload18.org/';
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }
@@ -706,20 +711,17 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
 
 // ============ JavTiful EMBED ============
 app.get('/api/embed/javtiful/:id', async (req, res) => {
-  const movie = moviesData.javtiful.find(m => m.id === req.params.id);
-  if (!movie) return res.status(404).send('Not found');
+  const id = req.params.id;
   try {
-    const page = await axios.get(movie.link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(page.data);
-    const iframeSrc = $('iframe').first().attr('src');
-    if (iframeSrc) {
-      const embedRes = await axios.get(iframeSrc, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' } });
-      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
-      const origin = new URL(iframeSrc).origin;
-      const html = embedRes.data.replace('<head>', `<head><base href="${origin}/">`);
-      return res.send(html);
-    }
-    res.status(404).send('Iframe embed not found on JavTiful page');
+    const embedUrl = `https://upload18.org/play/index/${id}`;
+    const embedRes = await axios.get(embedUrl, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' }
+    });
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
+    const origin = 'https://upload18.org';
+    const html = embedRes.data.replace('<head>', `<head><base href="${origin}/">`);
+    return res.send(html);
   } catch (e) {
     res.status(502).send('Failed loading JavTiful player: ' + e.message);
   }

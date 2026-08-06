@@ -413,8 +413,16 @@ async function getJavsubVideoUrl(id, server = 1) {
       let activeUrl = playUrl
         .replace(/&adTag=[^&]*/g, '')
         .replace(/\?adTag=[^&]*/g, '');
-        
-      return { url: activeUrl, type: 'iframe' };
+
+      let m3u8Url = activeUrl;
+      if (activeUrl.includes('/videos/') && activeUrl.includes('/play')) {
+        m3u8Url = activeUrl.replace(/\/play\??.*/, '/master.m3u8');
+      }
+      const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
+      const separator = activeUrl.includes('?') ? '&' : '?';
+      const fullEmbedUrl = activeUrl + separator + 'video=' + encodeURIComponent(proxiedUrl);
+
+      return { url: fullEmbedUrl, videoUrl: proxiedUrl, type: 'iframe' };
     }
     return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
@@ -718,6 +726,44 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://${domains.javhdz}/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
     res.send(html);
   } catch (e) { res.status(502).send('Failed: ' + e.message); }
+});
+
+// ============ JAVSub EMBED ============
+app.get('/api/embed/javsub/:id', async (req, res) => {
+  const movie = moviesData.javsub.find(m => m.id === req.params.id);
+  if (!movie) return res.status(404).send('Not found');
+  try {
+    let playUrl = movie.embedUrls?.[0]?.url;
+    if (!playUrl) {
+      const html = await fetchHtml(`https://javsub.blog/phim-sex/${req.params.id}`);
+      const $ = cheerio.load(html);
+      playUrl = $('button.set-player-source').first().attr('data-source');
+    }
+    if (!playUrl) return res.status(404).send('Player source not found');
+
+    const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+    let m3u8Url = cleanUrl;
+    if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
+      m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
+    }
+    const proxiedM3u8 = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
+    const separator = cleanUrl.includes('?') ? '&' : '?';
+    const targetUrl = cleanUrl + separator + 'video=' + encodeURIComponent(proxiedM3u8);
+
+    const embedRes = await axios.get(targetUrl, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javsub.blog/' }
+    });
+
+    let html = embedRes.data;
+    html = html.replace(/if\s*\(!o\.iw\)\s*return\s*document\.title\s*=\s*"BLOCKED!"[^;]*;/g, '/* bypass blocked */');
+    html = html.replace('<head>', '<head><base href="https://e.streamforester.name/">');
+
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
+    return res.send(html);
+  } catch (e) {
+    res.status(502).send('Error loading JAVSub embed: ' + e.message);
+  }
 });
 
 // ============ JavTiful EMBED ============

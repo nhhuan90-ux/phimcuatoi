@@ -226,7 +226,15 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
                     alt={m.title}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
-                    onError={(e) => { (e.target as HTMLImageElement).src = isVerticalCard ? 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 240"><rect fill="%23333" width="180" height="240"/><text x="90" y="120" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>' : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect fill="%23333" width="240" height="180"/><text x="120" y="90" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>'; }}
+                    onError={(e) => {
+                      const imgEl = e.target as HTMLImageElement;
+                      if (!imgEl.dataset.retried && m.img) {
+                        imgEl.dataset.retried = 'true';
+                        imgEl.src = '/api/proxy/image?url=' + encodeURIComponent(m.img);
+                      } else {
+                        imgEl.src = isVerticalCard ? 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 240"><rect fill="%231a1a1a" width="180" height="240"/><text x="90" y="120" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>' : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect fill="%231a1a1a" width="240" height="180"/><text x="120" y="90" text-anchor="middle" fill="%23666" font-size="14">No Img</text></svg>';
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/20 to-transparent">
                     <div className="absolute top-2 left-2">

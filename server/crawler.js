@@ -7,8 +7,8 @@ const DOMAINS_FILE = './domains.json';
 const RESULTS = { javhdz: [], vlxx: [], javsub: [], missav: [], javtiful: [], supjav: [] };
 
 let domains = {
-  javhdz: 'javhdz.mobi',
-  subjav: 'subjav.love',
+  javhdz: 'javhdz.fun',
+  subjav: 'subjav.city',
   phimxyz: 'i1.phimxyz.blog'
 };
 
@@ -63,7 +63,7 @@ async function crawlVlxxListings() {
   console.log('[VLXX] Crawling listings...');
   for (let p = 1; p <= 106; p++) {
     try {
-      const url = p === 1 ? 'https://vlxx.moi/' : `https://vlxx.moi/new/${p}/`;
+      const url = p === 1 ? 'https://vlxx.net/' : `https://vlxx.net/new/${p}/`;
       const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': UA } });
       const $ = cheerio.load(res.data);
       let count = 0;
@@ -75,7 +75,7 @@ async function crawlVlxxListings() {
         const match = href ? href.match(/\/video\/[^/]+\/(\d+)\//) : null;
         const id = match ? match[1] : '';
         if (title && href) {
-          RESULTS.vlxx.push({ id, title, img: img || '', link: `https://vlxx.moi${href}`, tag, views: '', source: 'vlxx' });
+          RESULTS.vlxx.push({ id, title, img: img || '', link: `https://vlxx.net${href}`, tag, views: '', source: 'vlxx' });
           count++;
         }
       });

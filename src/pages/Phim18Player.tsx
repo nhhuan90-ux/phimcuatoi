@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Film, Play, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Film, Play, AlertCircle, RefreshCw, Info } from 'lucide-react';
 
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 
@@ -66,7 +66,7 @@ export default function Phim18Player() {
       setError(null);
       try {
         const needsServer = ['vlxx', 'javsub', 'supjav'].includes(source);
-        const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}` : ''}`;
+        const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}` : ''}&_t=${Date.now()}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Video resolve failed');
         const data = await res.json();
@@ -113,7 +113,6 @@ export default function Phim18Player() {
           videoEl.play().catch(() => {});
         }
       } catch (e) {
-        // Fallback for native HLS
         if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
           videoEl.src = proxyUrl;
           videoEl.play().catch(() => {});
@@ -130,14 +129,12 @@ export default function Phim18Player() {
 
   if (!source || !id) {
     return (
-      <div className="fixed inset-0 bg-black z-50 flex items-center justify-center text-white p-4">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-          <p className="text-lg font-medium mb-4">Thiếu thông tin phim</p>
-          <button onClick={() => navigate('/phim-18')} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">
-            Quay lại danh sách
-          </button>
-        </div>
+      <div className="container mx-auto px-4 lg:px-8 py-16 text-center text-white">
+        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+        <p className="text-lg font-medium mb-4">Thiếu thông tin phim</p>
+        <button onClick={() => navigate('/phim-18')} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">
+          Quay lại danh sách
+        </button>
       </div>
     );
   }
@@ -147,67 +144,34 @@ export default function Phim18Player() {
     : [{ id: 1, label: 'Server chính' }];
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col select-none">
-      {/* Header bar */}
-      <div className="bg-[#141414] border-b border-gray-800 px-4 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors flex items-center gap-2 text-sm font-medium"
-          >
-            <ArrowLeft size={18} />
-            <span className="hidden sm:inline">Quay lại</span>
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-white text-sm sm:text-base font-bold truncate">
-              {movie?.title || 'Xem Phim 18+'}
-            </h1>
-            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-              <span className="bg-red-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
-                {source}
-              </span>
-              {movie?.views && <span>• {movie.views} lượt xem</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Server selector */}
-        {servers.length > 1 && (
-          <div className="flex items-center gap-2 bg-[#222] p-1 rounded-lg">
-            {servers.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setActiveServer(s.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                  activeServer === s.id
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="container mx-auto px-4 lg:px-8 py-6 max-w-6xl">
+      {/* Top Breadcrumb & Navigation */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="px-3.5 py-2 rounded-lg bg-[#2b2b2b] hover:bg-[#3a3a3a] text-white transition-colors flex items-center gap-2 text-xs sm:text-sm font-medium"
+        >
+          <ArrowLeft size={16} />
+          <span>Quay lại</span>
+        </button>
       </div>
 
-      {/* Main player area */}
-      <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+      {/* Responsive Video Container */}
+      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800 mb-4">
         {loading ? (
-          <div className="flex flex-col items-center gap-3 text-gray-400">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400">
             <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium">Đang khởi tạo trình phát video...</p>
+            <p className="text-xs sm:text-sm font-medium">Đang nạp trình phát video...</p>
           </div>
         ) : error ? (
-          <div className="text-center p-6 max-w-md">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-            <p className="text-white text-base font-semibold mb-2">{error}</p>
-            <p className="text-gray-400 text-xs mb-6">Bạn có thể thử chọn Server khác hoặc bấm Thử lại.</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
+            <p className="text-white text-sm sm:text-base font-semibold mb-2">{error}</p>
             <button
               onClick={() => setActiveServer((prev) => prev)}
-              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+              className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
             >
-              <RefreshCw size={16} /> Thử lại
+              <RefreshCw size={14} /> Thử lại
             </button>
           </div>
         ) : videoData?.type === 'hls' && videoData.videoUrl ? (
@@ -216,17 +180,65 @@ export default function Phim18Player() {
             controls
             autoPlay
             playsInline
-            className="w-full h-full max-h-[85vh] object-contain bg-black"
+            className="w-full h-full object-contain"
           />
         ) : videoData?.url ? (
           <iframe
             src={videoData.url}
             allow="autoplay; fullscreen"
             allowFullScreen
-            className="w-full h-full border-0 bg-black"
+            className="w-full h-full border-0"
           />
         ) : (
-          <div className="text-gray-500 text-sm">Không tìm thấy nguồn phát thích hợp</div>
+          <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+            Không tìm thấy nguồn phát thích hợp
+          </div>
+        )}
+      </div>
+
+      {/* Movie Details & Server Switcher */}
+      <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-white text-base sm:text-xl font-bold line-clamp-2">
+              {movie?.title || 'Xem Phim 18+'}
+            </h1>
+            <div className="flex items-center gap-3 text-xs text-gray-400 mt-1.5">
+              <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                {source}
+              </span>
+              {movie?.views && <span>{movie.views} lượt xem</span>}
+            </div>
+          </div>
+
+          {/* Server selector */}
+          {servers.length > 1 && (
+            <div className="flex items-center gap-2 bg-[#2b2b2b] p-1 rounded-lg">
+              <span className="text-xs text-gray-400 font-medium px-2">Server:</span>
+              {servers.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveServer(s.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    activeServer === s.id
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {source === 'javtiful' && (
+          <div className="mt-4 p-3 bg-red-950/40 border border-red-900/50 rounded-lg flex items-start gap-2.5 text-xs text-red-200">
+            <Info size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <span>
+              <strong>Mẹo nhỏ JavTiful:</strong> Nếu trình phát JavTiful báo lỗi &quot;Yêu cầu không chặn quảng cáo&quot;, vui lòng tạm thời tắt tiện ích chặn quảng cáo (AdBlock) trên trình duyệt của bạn để phát phim mượt mà.
+            </span>
+          </div>
         )}
       </div>
     </div>

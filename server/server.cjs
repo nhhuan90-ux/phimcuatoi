@@ -345,17 +345,40 @@ async function autodiscoverDomain(source) {
   return null;
 }
 
+async function checkAllDomainsHealthAndAutoDiscover() {
+  console.log('[AutoSearchBot] Running background health check on all source domains...');
+  const sources = ['javhdz', 'subjav', 'phimxyz', 'javsub', 'javtiful', 'vlxx'];
+  for (const src of sources) {
+    try {
+      const currentHost = domains[src] || (src === 'vlxx' ? 'vlxx.phd' : `${src}.com`);
+      const isHealthy = await validateDomainCandidate(src, currentHost);
+      if (!isHealthy) {
+        console.warn(`[AutoSearchBot] Domain ${currentHost} for ${src} is unhealthy or unreachable! Launching auto-discovery...`);
+        autodiscoverDomain(src).catch(e => console.error(`Auto-discovery error for ${src}:`, e.message));
+      }
+    } catch (e) {}
+  }
+}
+
+// Run periodic domain health check every 30 minutes
+setInterval(checkAllDomainsHealthAndAutoDiscover, 30 * 60 * 1000);
+setTimeout(checkAllDomainsHealthAndAutoDiscover, 5000);
+
 // ============ JAVHDz ============
 async function getJavhdzVideoUrl(id) {
   const movie = moviesData.javhdz.find(m => m.id === id);
   if (!movie) return null;
-  const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/i, domains.javhdz) : `https://${domains.javhdz}/phim-sex-...`;
-  const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }).catch(() => null);
-  if (!page) return null;
-  const match = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
-  if (match) {
-    const decoded = Buffer.from(match[1], 'base64').toString('utf-8');
-    return { videoUrl: decoded, type: 'hls' };
+  try {
+    const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/i, domains.javhdz) : `https://${domains.javhdz}/phim-sex-...`;
+    const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const match = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
+    if (match) {
+      const decoded = Buffer.from(match[1], 'base64').toString('utf-8');
+      return { videoUrl: decoded, type: 'hls' };
+    }
+  } catch (e) {
+    console.warn(`[JAVHDz] Fetch failed on domain ${domains.javhdz}. Triggering auto-discovery...`);
+    autodiscoverDomain('javhdz').catch(() => {});
   }
   return null;
 }

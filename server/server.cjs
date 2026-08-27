@@ -151,7 +151,7 @@ const DOMAINS_FILE = fs.existsSync(path.join(__dirname, 'domains.json'))
   : path.join(process.cwd(), 'server', 'domains.json');
 
 let domains = {
-  javhdz: 'javhdz.fun',
+  javhdz: 'javhdz.mobi',
   subjav: 'subjav.city',
   phimxyz: 'i1.phimxyz.blog'
 };
@@ -363,14 +363,14 @@ async function getJavhdzVideoUrl(id) {
 // ============ VLXX ============
 async function getVlxxVideoUrl(id, server = 1) {
   try {
-    const res = await axios.post('https://vlxx.net/ajax.php', `vlxx_server=1&id=${id}&server=${server}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Mozilla/5.0', 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://vlxx.net/' }, timeout: 15000 });
+    const res = await axios.post('https://vlxx.phd/ajax.php', `vlxx_server=1&id=${id}&server=${server}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Mozilla/5.0', 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://vlxx.phd/' }, timeout: 15000 });
     const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     if (data.player) {
       const $ = cheerio.load(data.player);
       const iframeUrl = $('iframe').first().attr('src');
       if (iframeUrl) {
         // Fetch the iframe html to extract direct stream URL
-        const iframeRes = await axios.get(iframeUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vlxx.net/' }, timeout: 15000 }).catch(() => null);
+        const iframeRes = await axios.get(iframeUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vlxx.phd/' }, timeout: 15000 }).catch(() => null);
         if (iframeRes && iframeRes.data) {
           const match = iframeRes.data.match(/window\.__SRC\s*=\s*([^;]+);/);
           if (match) {
@@ -436,7 +436,7 @@ async function getJavtifulVideoUrl(id) {
   // Step 1: Try upload18.org with upperId
   try {
     const embedUrl = `https://upload18.org/play/index/${upperId}`;
-    const res = await axios.get(embedUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' } });
+    const res = await axios.get(embedUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.fit/' } });
     const match = res.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
     if (match) {
       const m3u8Url = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
@@ -445,9 +445,9 @@ async function getJavtifulVideoUrl(id) {
     }
   } catch (e) {}
 
-  // Step 2: Try scraping javtiful.blog/video/${id} for iframe
+  // Step 2: Try scraping javtiful.fit/video/${id} for iframe
   try {
-    const pageRes = await axios.get(`https://javtiful.blog/video/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const pageRes = await axios.get(`https://javtiful.fit/video/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const $ = cheerio.load(pageRes.data);
     const iframe = $('iframe').first().attr('src') || $('iframe').first().attr('data-src');
     if (iframe) {
@@ -774,7 +774,7 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
     const embedUrl = `https://upload18.org/play/index/${upperId}`;
     const embedRes = await axios.get(embedUrl, {
       timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.blog/' }
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.fit/' }
     });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
     const origin = 'https://upload18.org';

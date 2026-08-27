@@ -7,7 +7,7 @@ const DOMAINS_FILE = './domains.json';
 const RESULTS = { javhdz: [], vlxx: [], javsub: [], missav: [], javtiful: [], supjav: [] };
 
 let domains = {
-  javhdz: 'javhdz.fun',
+  javhdz: 'javhdz.mobi',
   subjav: 'subjav.city',
   phimxyz: 'i1.phimxyz.blog'
 };
@@ -75,7 +75,7 @@ async function crawlVlxxListings() {
         const match = href ? href.match(/\/video\/[^/]+\/(\d+)\//) : null;
         const id = match ? match[1] : '';
         if (title && href) {
-          RESULTS.vlxx.push({ id, title, img: img || '', link: `https://vlxx.net${href}`, tag, views: '', source: 'vlxx' });
+          RESULTS.vlxx.push({ id, title, img: img || '', link: `https://vlxx.phd${href}`, tag, views: '', source: 'vlxx' });
           count++;
         }
       });
@@ -149,7 +149,7 @@ async function crawlJavtifulListings() {
   console.log('[JAVTIFUL] Crawling listings...');
   for (let p = 1; p <= 100; p++) {
     try {
-      const url = `https://javtiful.com/videos/?page=${p}`;
+      const url = `https://javtiful.fit/videos/?page=${p}`;
       const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': UA } });
       const $ = cheerio.load(res.data);
       let count = 0;
@@ -161,10 +161,10 @@ async function crawlJavtifulListings() {
         const code = $(el).find('.label-code').text().trim();
         const duration = $(el).find('.label-duration').text().trim();
         const hd = $(el).find('.label-hd').text().trim();
-        const match = link ? link.match(/\/video\/(\d+)/) : null;
+        const match = link ? link.match(/\/video\/([^/]+)/) : null;
         const id = match ? match[1] : '';
         if (title && link) {
-          RESULTS.javtiful.push({ id, title, img: img || '', link: `https://javtiful.com${link}`, tag: hd || (code ? 'HD' : ''), views: '', source: 'javtiful', code });
+          RESULTS.javtiful.push({ id, title, img: img || '', link: `https://javtiful.fit${link}`, tag: hd || (code ? 'HD' : ''), views: '', source: 'javtiful', code });
           count++;
         }
       });

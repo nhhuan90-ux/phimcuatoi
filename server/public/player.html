@@ -301,11 +301,11 @@ function loadVideo(server) {
           video.play();
         } else {
           var embedUrl = '/api/embed/javhdz/' + id;
-          container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:70vh;border:none;background:#000;"></iframe>';
+          container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:70vh;border:none;background:#000;"></iframe>';
         }
       } else {
         var embedUrl = '/api/embed/javhdz/' + id;
-        container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:70vh;border:none;background:#000;"></iframe>';
+        container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:70vh;border:none;background:#000;"></iframe>';
       }
     } else if (source === 'vlxx') {
       if (data.videoUrl) {
@@ -327,7 +327,7 @@ function loadVideo(server) {
           container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else if (data.url) {
-        container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
+        container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
       } else {
         container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
@@ -353,7 +353,7 @@ function loadVideo(server) {
       } else {
         var src = data.url || (data.sources && data.sources[server - 1] ? data.sources[server - 1].url : '');
         if (src) {
-          container.innerHTML = '<iframe src="' + src + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
+          container.innerHTML = '<iframe src="' + src + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
         } else {
           container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
         }
@@ -378,7 +378,7 @@ function loadVideo(server) {
           container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#e94560;"><p style="margin-bottom:16px;font-size:15px;">Trình duyệt không hỗ trợ phát HLS trực tiếp</p><a href="' + proxyUrl + '" target="_blank" style="display:inline-block;padding:12px 30px;border-radius:8px;background:#e94560;color:#fff;text-decoration:none;font-size:16px;font-weight:600;">&#9654; Xem Phim Ngay</a></div>';
         }
       } else if (data.url) {
-        container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
+        container.innerHTML = '<iframe src="' + data.url + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
       } else {
         container.innerHTML = '<div class="error-msg">Không lấy được link phát.</div>';
       }
@@ -406,7 +406,7 @@ function loadVideo(server) {
       }
     } else if (source === 'javtiful') {
       var embedUrl = data.url || ('/api/embed/javtiful/' + id);
-      container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
+      container.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:60vh;border:none;background:#000;"></iframe>';
     } else if (source === 'supjav') {
       if (data.sources && data.sources[0]) {
         var srcUrl = data.sources[server - 1] ? data.sources[server - 1].url : data.sources[0].url;

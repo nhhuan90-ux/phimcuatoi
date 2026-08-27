@@ -667,6 +667,8 @@ app.get('/api/proxy/hls', async (req, res) => {
       referer = `https://${domains.subjav}/`;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
+    } else if (url.match(/tiktokcdn/i)) {
+      referer = `https://${domains.javhdz}/`;
     }
     const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'text' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
@@ -674,8 +676,8 @@ app.get('/api/proxy/hls', async (req, res) => {
     let data = response.data
       .replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|vtt))/gm, m => baseUrl + m)
       .replace(/\.png/g, '.ts')
-      .replace(/(https:\/\/p16-ad-sg\.tiktokcdn\.com[^\s]+\.ts)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
-      .replace(/(https:\/\/sf16-sg\.tiktokcdn\.top[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
+      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m))
+      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m));
       
     // Rewrites for JAVSub and SubJAV stream segments and playlists
     if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|subjav)/i)) {
@@ -702,6 +704,8 @@ app.get('/api/proxy/segment', async (req, res) => {
       referer = `https://${domains.subjav}/`;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
+    } else if (url.match(/tiktokcdn/i)) {
+      referer = `https://${domains.javhdz}/`;
     } else {
       targetUrl = url.replace(/\.ts$/, '.png');
     }

@@ -694,7 +694,8 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     const atobMatch = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
     const videoUrl = atobMatch ? Buffer.from(atobMatch[1], 'base64').toString('utf-8') : '';
     const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(videoUrl);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://${domains.javhdz}/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play()})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play()}</script></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://${domains.javhdz}/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
     res.send(html);
   } catch (e) { res.status(502).send('Failed: ' + e.message); }
 });
@@ -702,9 +703,13 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
 // ============ JAVSub EMBED ============
 app.get('/api/embed/javsub/:id', async (req, res) => {
   const movie = moviesData.javsub.find(m => m.id === req.params.id);
-  if (!movie) return res.status(404).send('Not found');
+  const server = req.query.server || 1;
   try {
-    let playUrl = movie.embedUrls?.[0]?.url;
+    let playUrl = '';
+    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
+      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
+      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
+    }
     if (!playUrl) {
       const html = await fetchHtml(`https://javsub.blog/phim-sex/${req.params.id}`);
       const $ = cheerio.load(html);
@@ -713,24 +718,17 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
     if (!playUrl) return res.status(404).send('Player source not found');
 
     const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
-    let m3u8Url = cleanUrl;
-    if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
-      m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
-    }
-    const proxiedM3u8 = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
-    const separator = cleanUrl.includes('?') ? '&' : '?';
-    const targetUrl = cleanUrl + separator + 'video=' + encodeURIComponent(proxiedM3u8);
-
-    const embedRes = await axios.get(targetUrl, {
+    const embedRes = await axios.get(cleanUrl, {
       timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javsub.blog/' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javsub.blog/' }
     });
 
     let html = embedRes.data;
     html = html.replace(/if\s*\(!o\.iw\)\s*return\s*document\.title\s*=\s*"BLOCKED!"[^;]*;/g, '/* bypass blocked */');
+    html = html.replace(/sandbox="[^"]*"/gi, '');
     html = html.replace('<head>', '<head><base href="https://e.streamforester.name/">');
 
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
     return res.send(html);
   } catch (e) {
     res.status(502).send('Error loading JAVSub embed: ' + e.message);
@@ -745,11 +743,22 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
     const embedUrl = `https://upload18.org/play/index/${upperId}`;
     const embedRes = await axios.get(embedUrl, {
       timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.fit/' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javtiful.fit/' }
     });
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html' });
-    const origin = 'https://upload18.org';
-    const html = embedRes.data.replace('<head>', `<head><base href="${origin}/">`);
+    
+    // Check if m3u8 stream can be extracted directly
+    const match = embedRes.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
+    if (match) {
+      const rawUrl = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
+      const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(rawUrl);
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
+      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+      return res.send(html);
+    }
+
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+    let html = embedRes.data.replace('<head>', `<head><base href="https://upload18.org/">`);
+    html = html.replace(/sandbox="[^"]*"/gi, '');
     return res.send(html);
   } catch (e) {
     res.status(502).send('Failed loading JavTiful player: ' + e.message);
@@ -769,10 +778,17 @@ app.get('/api/embed/subjav/:id', async (req, res) => {
         'Referer': `https://${domains.subjav}/`
       }
     });
-    let html = pageRes.data;
-    html = html.replace('<head>', `<head><base href="https://${domains.subjav}/">`);
+    const $ = cheerio.load(pageRes.data);
+    
+    // Extract player section and necessary head links
+    const headScripts = $('head script, head link[rel="stylesheet"]').map((i, el) => $.html(el)).get().join('\n');
+    const playerContent = $('#video, .videoWrapper, .entry-content').first().html() || $('#video').html() || '';
+    const footerScripts = $('footer script, body > script').map((i, el) => $.html(el)).get().join('\n');
+
+    const cleanHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><base href="https://${domains.subjav}/"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}.screen, .videoWrapper, #video{width:100%!important;height:100vh!important;max-height:100vh!important;padding:0!important;margin:0!important}</style>${headScripts}</head><body><div id="video" style="width:100%;height:100vh;">${playerContent}</div>${footerScripts}</body></html>`;
+    
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    return res.send(html);
+    return res.send(cleanHtml);
   } catch (e) {
     res.status(502).send('Failed loading SubJAV player: ' + e.message);
   }

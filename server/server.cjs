@@ -390,8 +390,8 @@ async function getJavhdzVideoUrl(id) {
   const movie = moviesData.javhdz.find(m => m.id === id);
   if (!movie) return null;
   try {
-    const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/i, domains.javhdz) : `https://${domains.javhdz}/phim-sex-...`;
-    const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/i, domains.javhdz) : `https://${domains.javhdz}/chi-gai-${id}.html`;
+    const page = await axios.get(link, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const match = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
     if (match) {
       const decoded = Buffer.from(match[1], 'base64').toString('utf-8');
@@ -401,7 +401,7 @@ async function getJavhdzVideoUrl(id) {
     console.warn(`[JAVHDz] Fetch failed on domain ${domains.javhdz}. Triggering auto-discovery...`);
     autodiscoverDomain('javhdz').catch(() => {});
   }
-  return null;
+  return { url: `/api/embed/javhdz/${id}`, type: 'iframe', fallback: true };
 }
 
 // ============ VLXX ============
@@ -434,14 +434,38 @@ async function getVlxxVideoUrl(id, server = 1) {
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id, server = 1) {
-  return { url: `/api/embed/javsub/${encodeURIComponent(id)}?server=${server}`, type: 'iframe' };
+  try {
+    const movie = moviesData.javsub.find(m => m.id === id);
+    let playUrl = '';
+    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
+      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
+      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
+    }
+    if (!playUrl) {
+      const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
+      const $ = cheerio.load(html);
+      const buttons = $('button.set-player-source');
+      if (buttons.length > 0) {
+        const idx = Math.min(Math.max(0, parseInt(server) - 1), buttons.length - 1);
+        playUrl = $(buttons[idx]).attr('data-source') || $(buttons[0]).attr('data-source');
+      }
+    }
+    if (playUrl) {
+      const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+      return { url: cleanUrl, type: 'iframe' };
+    }
+    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
+  } catch (e) {
+    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
+  }
 }
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
   const movie = moviesData.javtiful.find(m => m.id === id);
   const code = movie?.code || id;
-  return { url: `/api/embed/javtiful/${encodeURIComponent(code)}`, type: 'iframe' };
+  const upperId = code ? code.toUpperCase() : id;
+  return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
 }
 
 // ============ PhimXYZ ============
@@ -463,7 +487,12 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
-  return { url: `/api/embed/subjav/${encodeURIComponent(id)}`, type: 'iframe' };
+  const movie = moviesData.subjav.find(m => m.id === String(id) || (m.link && m.link.includes(`/${id}/`)));
+  if (movie && movie.link) {
+    const cleanLink = movie.link.replace(/subjav\.(city|st|love|site)/gi, domains.subjav);
+    return { url: cleanLink, type: 'iframe' };
+  }
+  return { url: `https://${domains.subjav}/`, type: 'iframe', fallback: true };
 }
 
 

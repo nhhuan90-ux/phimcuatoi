@@ -437,15 +437,7 @@ async function getJavsubVideoUrl(id, server = 1) {
         .replace(/&adTag=[^&]*/g, '')
         .replace(/\?adTag=[^&]*/g, '');
 
-      let m3u8Url = activeUrl;
-      if (activeUrl.includes('/videos/') && activeUrl.includes('/play')) {
-        m3u8Url = activeUrl.replace(/\/play\??.*/, '/master.m3u8');
-      }
-      const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
-      const separator = activeUrl.includes('?') ? '&' : '?';
-      const fullEmbedUrl = activeUrl + separator + 'video=' + encodeURIComponent(proxiedUrl);
-
-      return { url: fullEmbedUrl, videoUrl: proxiedUrl, type: 'iframe' };
+      return { url: activeUrl, type: 'iframe' };
     }
     return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
   } catch (e) {
@@ -455,7 +447,9 @@ async function getJavsubVideoUrl(id, server = 1) {
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
-  const upperId = id ? id.toUpperCase() : id;
+  const movie = moviesData.javtiful.find(m => m.id === id);
+  const code = movie?.code || id;
+  const upperId = code ? code.toUpperCase() : id;
   // Step 1: Try upload18.org with upperId
   try {
     const embedUrl = `https://upload18.org/play/index/${upperId}`;
@@ -478,7 +472,7 @@ async function getJavtifulVideoUrl(id) {
     }
   } catch (e) {}
 
-  return { url: `/api/embed/javtiful/${id}`, type: 'iframe' };
+  return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
 }
 
 // ============ PhimXYZ ============

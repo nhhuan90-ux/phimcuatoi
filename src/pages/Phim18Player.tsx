@@ -14,7 +14,7 @@ export default function Phim18Player() {
     }
   }, [source, id]);
 
-  const embedUrl = source && id ? `${PHIM18_API}/player.html?source=${source}&id=${id}` : '';
+  const embedUrl = source && id ? `${PHIM18_API}/player.html?source=${source}&id=${id}&_t=${Date.now()}` : '';
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">

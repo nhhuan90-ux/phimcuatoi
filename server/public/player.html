@@ -191,7 +191,7 @@ function loadMovie() {
     return;
   }
 
-  ajaxGet('/api/movie/' + source + '/' + id, function(err, movie) {
+  ajaxGet('/api/movie/' + source + '/' + id + '?_t=' + Date.now(), function(err, movie) {
     if (err) {
       document.getElementById('playerLoading').innerHTML = '<div class="error-msg">Không tìm thấy phim</div>';
       return;
@@ -267,7 +267,7 @@ function loadVideo(server) {
   document.getElementById('playerContainer').style.display = 'none';
 
   var needsServer = ['vlxx', 'javsub', 'supjav'].indexOf(source) !== -1;
-  var url = '/api/video/' + source + '/' + id + (needsServer ? '?server=' + server : '');
+  var url = '/api/video/' + source + '/' + id + '?_t=' + Date.now() + (needsServer ? '&server=' + server : '');
 
   ajaxGet(url, function(err, data) {
     if (err) {

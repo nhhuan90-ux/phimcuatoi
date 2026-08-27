@@ -117,22 +117,37 @@ app.use((req, res, next) => {
   next();
 });
 const PORT = process.env.PORT || 3001;
-const DATA_FILE = fs.existsSync(path.join(__dirname, 'movies.json'))
-  ? path.join(__dirname, 'movies.json')
-  : path.join(process.cwd(), 'server', 'movies.json');
-
 const ALL_SOURCES = ['javhdz','vlxx','javsub','javtiful','phimxyz','subjav'];
 
 let moviesData = {};
 ALL_SOURCES.forEach(k => moviesData[k] = []);
 moviesData.all = [];
 
+function getPossibleDataPaths(filename) {
+  return [
+    path.join(__dirname, filename),
+    path.join(process.cwd(), 'server', filename),
+    path.join(process.cwd(), filename)
+  ];
+}
+
 function loadData() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      moviesData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+    const paths = getPossibleDataPaths('movies.json');
+    const targetPath = paths.find(p => fs.existsSync(p));
+    if (targetPath) {
+      moviesData = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
       ALL_SOURCES.forEach(k => { if (!moviesData[k]) moviesData[k] = []; });
-      console.log(`Loaded ${(moviesData.all||[]).length} movies`);
+      if (!moviesData.all || moviesData.all.length === 0) {
+        const combined = [];
+        ALL_SOURCES.forEach(k => {
+          if (Array.isArray(moviesData[k])) combined.push(...moviesData[k]);
+        });
+        moviesData.all = combined;
+      }
+      console.log(`Loaded ${(moviesData.all||[]).length} movies from ${targetPath}`);
+    } else {
+      console.error('movies.json not found in candidate paths!');
     }
   } catch (e) { console.error('Load error:', e.message); }
 }
@@ -140,26 +155,28 @@ loadData();
 
 function saveData() {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(moviesData, null, 2), 'utf-8');
+    const paths = getPossibleDataPaths('movies.json');
+    const targetPath = paths.find(p => fs.existsSync(p)) || paths[0];
+    fs.writeFileSync(targetPath, JSON.stringify(moviesData, null, 2), 'utf-8');
     return true;
   } catch (e) { console.error('Save error:', e.message); return false; }
 }
 
 // ============ AUTODISCOVER DOMAINS ============
-const DOMAINS_FILE = fs.existsSync(path.join(__dirname, 'domains.json'))
-  ? path.join(__dirname, 'domains.json')
-  : path.join(process.cwd(), 'server', 'domains.json');
-
 let domains = {
-  javhdz: 'javhdz.mobi',
+  javhdz: 'javhdz.cam',
   subjav: 'subjav.city',
-  phimxyz: 'i1.phimxyz.blog'
+  phimxyz: 'i1.phimxyz.blog',
+  javsub: 'javsub.blog',
+  javtiful: 'javtiful.fit'
 };
 
 function loadDomains() {
   try {
-    if (fs.existsSync(DOMAINS_FILE)) {
-      domains = { ...domains, ...JSON.parse(fs.readFileSync(DOMAINS_FILE, 'utf-8')) };
+    const paths = getPossibleDataPaths('domains.json');
+    const targetPath = paths.find(p => fs.existsSync(p));
+    if (targetPath) {
+      domains = { ...domains, ...JSON.parse(fs.readFileSync(targetPath, 'utf-8')) };
       console.log('Loaded domains:', domains);
     }
   } catch (e) { console.error('Load domains error:', e.message); }
@@ -168,7 +185,9 @@ loadDomains();
 
 function saveDomains() {
   try {
-    fs.writeFileSync(DOMAINS_FILE, JSON.stringify(domains, null, 2), 'utf-8');
+    const paths = getPossibleDataPaths('domains.json');
+    const targetPath = paths.find(p => fs.existsSync(p)) || paths[0];
+    fs.writeFileSync(targetPath, JSON.stringify(domains, null, 2), 'utf-8');
     console.log('Saved domains:', domains);
   } catch (e) { console.error('Save domains error:', e.message); }
 }

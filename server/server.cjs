@@ -992,5 +992,17 @@ if (require.main === module) {
   process.on('SIGTERM', () => { console.log('Shutting down...'); server.close(() => process.exit(0)); });
 }
 
+app.get('/player.html', (req, res) => {
+  try {
+    const playerHtmlPath = path.join(__dirname, 'public', 'player.html');
+    const html = fs.readFileSync(playerHtmlPath, 'utf-8');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.send(html);
+  } catch (e) {
+    res.status(500).send('Player loading error: ' + e.message);
+  }
+});
+
 app.checkForUpdates = checkForUpdates;
 module.exports = app;

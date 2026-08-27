@@ -6,6 +6,7 @@
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/player.html", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

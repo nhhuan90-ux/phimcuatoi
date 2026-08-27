@@ -360,9 +360,9 @@ async function checkAllDomainsHealthAndAutoDiscover() {
   }
 }
 
-// Run periodic domain health check every 30 minutes
-setInterval(checkAllDomainsHealthAndAutoDiscover, 30 * 60 * 1000);
-setTimeout(checkAllDomainsHealthAndAutoDiscover, 5000);
+// Run periodic domain health check once every 24 hours
+setInterval(checkAllDomainsHealthAndAutoDiscover, 24 * 60 * 60 * 1000);
+setTimeout(checkAllDomainsHealthAndAutoDiscover, 10000);
 
 // ============ JAVHDz ============
 async function getJavhdzVideoUrl(id) {
@@ -510,8 +510,10 @@ async function getSubjavVideoUrl(id) {
       if (match) {
         return { videoUrl: match[1], type: 'hls' };
       }
-    }
-  } catch (e) {}
+  } catch (e) {
+    console.warn(`[SubJAV] Fetch failed on domain ${domains.subjav}. Triggering auto-discovery...`);
+    autodiscoverDomain('subjav').catch(() => {});
+  }
 
   return null;
 }

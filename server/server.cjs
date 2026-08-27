@@ -434,44 +434,14 @@ async function getVlxxVideoUrl(id, server = 1) {
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id, server = 1) {
-  try {
-    const movie = moviesData.javsub.find(m => m.id === id);
-    let playUrl = '';
-    
-    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
-      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
-      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
-    }
-    
-    if (!playUrl) {
-      const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
-      const $ = cheerio.load(html);
-      const buttons = $('button.set-player-source');
-      if (buttons.length > 0) {
-        const idx = Math.min(Math.max(0, parseInt(server) - 1), buttons.length - 1);
-        playUrl = $(buttons[idx]).attr('data-source') || $(buttons[0]).attr('data-source');
-      }
-    }
-    
-    if (playUrl) {
-      let activeUrl = playUrl
-        .replace(/&adTag=[^&]*/g, '')
-        .replace(/\?adTag=[^&]*/g, '');
-
-      return { url: activeUrl, type: 'iframe' };
-    }
-    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
-  } catch (e) {
-    return { url: `https://javsub.blog/phim-sex/${id}`, type: 'iframe', fallback: true };
-  }
+  return { url: `/api/embed/javsub/${encodeURIComponent(id)}?server=${server}`, type: 'iframe' };
 }
 
 // ============ JavTiful ============
 async function getJavtifulVideoUrl(id) {
   const movie = moviesData.javtiful.find(m => m.id === id);
   const code = movie?.code || id;
-  const upperId = code ? code.toUpperCase() : id;
-  return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
+  return { url: `/api/embed/javtiful/${encodeURIComponent(code)}`, type: 'iframe' };
 }
 
 // ============ PhimXYZ ============
@@ -493,21 +463,7 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
-  try {
-    const res = await axios.get(`https://${domains.subjav}/wp-json/tiktok/v1/videos/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const video = res.data.video || res.data;
-    if (video && video.video_url) {
-      return { videoUrl: video.video_url, type: 'hls' };
-    }
-  } catch (e) {}
-
-  const movie = moviesData.subjav.find(m => m.id === id);
-  if (movie && movie.link) {
-    const cleanLink = movie.link.replace(/subjav\.(city|st|love|site)/g, domains.subjav);
-    return { url: cleanLink, type: 'iframe' };
-  }
-
-  return { url: `https://${domains.subjav}/`, type: 'iframe', fallback: true };
+  return { url: `/api/embed/subjav/${encodeURIComponent(id)}`, type: 'iframe' };
 }
 
 
@@ -797,6 +753,28 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
     return res.send(html);
   } catch (e) {
     res.status(502).send('Failed loading JavTiful player: ' + e.message);
+  }
+});
+
+// ============ SubJAV EMBED ============
+app.get('/api/embed/subjav/:id', async (req, res) => {
+  const id = req.params.id;
+  const movie = moviesData.subjav.find(m => m.id === String(id) || (m.link && m.link.includes(`/${id}/`)));
+  const targetLink = movie?.link ? movie.link.replace(/subjav\.(city|st|love|site)/gi, domains.subjav) : `https://${domains.subjav}/`;
+  try {
+    const pageRes = await axios.get(targetLink, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Referer': `https://${domains.subjav}/`
+      }
+    });
+    let html = pageRes.data;
+    html = html.replace('<head>', `<head><base href="https://${domains.subjav}/">`);
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+    return res.send(html);
+  } catch (e) {
+    res.status(502).send('Failed loading SubJAV player: ' + e.message);
   }
 });
 

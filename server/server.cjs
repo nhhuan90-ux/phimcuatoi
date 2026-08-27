@@ -529,6 +529,7 @@ async function getSubjavVideoUrl(id) {
       if (match) {
         return { videoUrl: match[1], type: 'hls' };
       }
+    }
   } catch (e) {
     console.warn(`[SubJAV] Fetch failed on domain ${domains.subjav}. Triggering auto-discovery...`);
     autodiscoverDomain('subjav').catch(() => {});

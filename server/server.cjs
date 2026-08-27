@@ -647,10 +647,9 @@ app.get('/api/proxy/hls', async (req, res) => {
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
     let data = response.data
-      .replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|vtt))/gm, m => baseUrl + m)
-      .replace(/\.png/g, '.ts')
+      .replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|png|vtt))/gm, m => baseUrl + m)
       .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m))
-      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m));
+      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.(ts|png)[^\s]*)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m));
       
     // Rewrites for JAVSub and SubJAV stream segments and playlists
     if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|subjav)/i)) {
@@ -668,7 +667,10 @@ app.get('/api/proxy/segment', async (req, res) => {
   try {
     let referer = `https://${domains.javhdz}/`;
     let targetUrl = url;
-    if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq)/i)) {
+    if (url.match(/tiktokcdn/i)) {
+      referer = `https://${domains.javhdz}/`;
+      targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
+    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq)/i)) {
       try {
         const urlObj = new URL(url);
         referer = urlObj.origin + '/';
@@ -677,12 +679,10 @@ app.get('/api/proxy/segment', async (req, res) => {
       referer = `https://${domains.subjav}/`;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
-    } else if (url.match(/tiktokcdn/i)) {
-      referer = `https://${domains.javhdz}/`;
     } else {
-      targetUrl = url.replace(/\.ts$/, '.png');
+      targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
     }
-    const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'arraybuffer' });
+    const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'arraybuffer' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'video/MP2T', 'Content-Length': response.data.length });
     res.send(response.data);
   } catch (e) { res.status(502).json({ error: 'Segment failed: ' + e.message }); }

@@ -469,28 +469,6 @@ async function getJavtifulVideoUrl(id) {
   const movie = moviesData.javtiful.find(m => m.id === id);
   const code = movie?.code || id;
   const upperId = code ? code.toUpperCase() : id;
-  // Step 1: Try upload18.org with upperId
-  try {
-    const embedUrl = `https://upload18.org/play/index/${upperId}`;
-    const res = await axios.get(embedUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javtiful.fit/' } });
-    const match = res.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
-    if (match) {
-      const m3u8Url = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
-      const proxiedUrl = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
-      return { videoUrl: proxiedUrl, type: 'hls' };
-    }
-  } catch (e) {}
-
-  // Step 2: Try scraping javtiful.fit/video/${id} for iframe
-  try {
-    const pageRes = await axios.get(`https://javtiful.fit/video/${id}`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(pageRes.data);
-    const iframe = $('iframe').first().attr('src') || $('iframe').first().attr('data-src');
-    if (iframe) {
-      return { url: iframe, type: 'iframe' };
-    }
-  } catch (e) {}
-
   return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
 }
 
@@ -521,21 +499,13 @@ async function getSubjavVideoUrl(id) {
     }
   } catch (e) {}
 
-  try {
-    const res = await axios.get(`https://${domains.subjav}/wp-json/coixx/v1/player/?id=${id}&server=1`, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (res.data && res.data.success && res.data.data) {
-      const html = res.data.data;
-      const match = html.match(/file:\s*['"]([^'"]+)['"]/);
-      if (match) {
-        return { videoUrl: match[1], type: 'hls' };
-      }
-    }
-  } catch (e) {
-    console.warn(`[SubJAV] Fetch failed on domain ${domains.subjav}. Triggering auto-discovery...`);
-    autodiscoverDomain('subjav').catch(() => {});
+  const movie = moviesData.subjav.find(m => m.id === id);
+  if (movie && movie.link) {
+    const cleanLink = movie.link.replace(/subjav\.(city|st|love|site)/g, domains.subjav);
+    return { url: cleanLink, type: 'iframe' };
   }
 
-  return null;
+  return { url: `https://${domains.subjav}/`, type: 'iframe', fallback: true };
 }
 
 

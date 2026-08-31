@@ -460,9 +460,34 @@ async function getVlxxVideoUrl(id, server = 1) {
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id, server = 1) {
-  // Return our own embed proxy URL - it handles fetching & rewriting the streamforester player
-  // to bypass BLOCKED checks and proxy HLS through our server
-  return { url: `/api/embed/javsub/${encodeURIComponent(id)}?server=${server}`, type: 'iframe' };
+  const movie = moviesData.javsub.find(m => m.id === id);
+  try {
+    let playUrl = '';
+    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
+      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
+      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
+    }
+    if (!playUrl) {
+      const link = movie?.link || `https://${domains.javsub || 'javsub.blog'}/phim-sex/${id}`;
+      const html = await fetchHtml(link);
+      const $ = cheerio.load(html);
+      playUrl = $('button.set-player-source').first().attr('data-source');
+    }
+    if (!playUrl) return null;
+
+    // Extract video hash ID from embed URL (e.g. /videos/690fadb247cbcd7bd70f34f3/play)
+    const videoIdMatch = playUrl.match(/\/videos\/([a-f0-9]+)\//);
+    if (videoIdMatch) {
+      // Use vcast.name which serves master.m3u8 directly (streamforester returns 401)
+      const m3u8Url = `https://vcast.name/videos/${videoIdMatch[1]}/master.m3u8`;
+      return { videoUrl: m3u8Url, type: 'hls' };
+    }
+
+    // Fallback: return as iframe
+    return { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+  } catch (e) {
+    return null;
+  }
 }
 
 // ============ JavTiful ============
@@ -653,7 +678,7 @@ app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
     let referer = `https://${domains.javhdz}/`;
-    if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl)/i)) {
+    if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast|sdeli)/i)) {
       referer = 'https://javsub.blog/';
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
@@ -693,7 +718,7 @@ app.get('/api/proxy/segment', async (req, res) => {
       targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
     } else if (url.match(/ibyteimg/i)) {
       referer = 'https://subjav1.blog/';
-    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq)/i)) {
+    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|vcast|sdeli)/i)) {
       try {
         const urlObj = new URL(url);
         referer = urlObj.origin + '/';

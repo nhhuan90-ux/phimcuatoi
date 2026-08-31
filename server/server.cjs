@@ -413,7 +413,33 @@ async function getJavhdzVideoUrl(id) {
   }
   
   if (!iframeSrc) return null;
-  return { url: iframeSrc, type: 'iframe' };
+
+  let finalM3u8 = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${id}-playlist.m3u8`;
+
+  try {
+    const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javgiga.net/' } });
+    const html = embedRes.data;
+    
+    const evalMatch = html.match(/eval\(function\(p,a,c,k,e,[\s\S]*?\.split\('\|'\).*?\)/);
+    if (evalMatch) {
+      const pMatch = evalMatch[0].match(/}\s*\(\s*'((?:\\'|[^'])*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']+)'/);
+      if (pMatch) {
+        let p = pMatch[1];
+        const a = parseInt(pMatch[2]);
+        let c = parseInt(pMatch[3]);
+        const k = pMatch[4].split('|');
+        while (c--) {
+          if (k[c]) p = p.replace(new RegExp('\\b' + c.toString(a) + '\\b', 'g'), k[c]);
+        }
+        const m3u8Match = p.match(/(https?:\/\/[^"'\s|]+\.m3u8[^"'\s|]*)/i);
+        if (m3u8Match) {
+          finalM3u8 = m3u8Match[1];
+        }
+      }
+    }
+  } catch (e) {}
+
+  return { videoUrl: finalM3u8, type: 'hls' };
 }
 
 // ============ VLXX ============
@@ -448,7 +474,13 @@ async function getJavsubVideoUrl(id, server = 1) {
       playUrl = $('button.set-player-source').first().attr('data-source');
     }
     if (!playUrl) return null;
-    return { url: playUrl, type: 'iframe' };
+
+    const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+    let m3u8Url = cleanUrl;
+    if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
+      m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
+    }
+    return { videoUrl: m3u8Url, type: 'hls' };
   } catch (e) {
     return null;
   }
@@ -459,6 +491,18 @@ async function getJavtifulVideoUrl(id) {
   const movie = moviesData.javtiful.find(m => m.id === id);
   const code = movie?.code || id;
   const upperId = code ? code.toUpperCase() : code;
+  try {
+    const embedUrl = `https://upload18.org/play/index/${upperId}`;
+    const embedRes = await axios.get(embedUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javtiful.fit/' }
+    });
+    const match = embedRes.data.match(/"m3u8"\s*:\s*"([^"]+)"/);
+    if (match) {
+      const rawUrl = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
+      return { videoUrl: rawUrl, type: 'hls' };
+    }
+  } catch (e) {}
   return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
 }
 
@@ -487,8 +531,8 @@ async function getSubjavVideoUrl(id) {
     const match = movie.link.match(/subjav\.[a-z]+\/([^/]+)/);
     if (match) slug = match[1];
   }
-  const embedUrl = `https://${domains.subjav || 'subjav.bike'}/play/${slug}/`;
-  return { url: embedUrl, type: 'iframe' };
+  const m3u8Url = `https://${domains.subjav || 'subjav1.blog'}/storage/m3u8/${slug}/index.m3u8`;
+  return { videoUrl: m3u8Url, type: 'hls' };
 }
 
 

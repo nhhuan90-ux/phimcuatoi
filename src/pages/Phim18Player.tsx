@@ -65,8 +65,8 @@ export default function Phim18Player() {
       setLoading(true);
       setError(null);
       try {
-        const needsServer = ['vlxx', 'javsub', 'supjav'].includes(source);
-        const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}` : ''}&_t=${Date.now()}`;
+        const needsServer = ['vlxx', 'javsub', 'subjav'].includes(source);
+        const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}&` : '?'}_t=${Date.now()}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Video resolve failed');
         const data = await res.json();

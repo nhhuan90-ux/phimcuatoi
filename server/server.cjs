@@ -460,30 +460,9 @@ async function getVlxxVideoUrl(id, server = 1) {
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id, server = 1) {
-  const movie = moviesData.javsub.find(m => m.id === id);
-  try {
-    let playUrl = '';
-    if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
-      const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
-      playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
-    }
-    if (!playUrl) {
-      const link = movie?.link || `https://${domains.javsub || 'javsub.xyz'}/phim-sex/${id}`;
-      const html = await fetchHtml(link);
-      const $ = cheerio.load(html);
-      playUrl = $('button.set-player-source').first().attr('data-source');
-    }
-    if (!playUrl) return null;
-
-    const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
-    let m3u8Url = cleanUrl;
-    if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
-      m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
-    }
-    return { videoUrl: m3u8Url, type: 'hls' };
-  } catch (e) {
-    return null;
-  }
+  // Return our own embed proxy URL - it handles fetching & rewriting the streamforester player
+  // to bypass BLOCKED checks and proxy HLS through our server
+  return { url: `/api/embed/javsub/${encodeURIComponent(id)}?server=${server}`, type: 'iframe' };
 }
 
 // ============ JavTiful ============
@@ -837,22 +816,40 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
       playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
     }
     if (!playUrl) {
-      const html = await fetchHtml(`https://javsub.blog/phim-sex/${req.params.id}`);
+      const html = await fetchHtml(`https://${domains.javsub || 'javsub.blog'}/phim-sex/${req.params.id}`);
       const $ = cheerio.load(html);
       playUrl = $('button.set-player-source').first().attr('data-source');
     }
     if (!playUrl) return res.status(404).send('Player source not found');
 
     const cleanUrl = playUrl.replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
-    let m3u8Url = cleanUrl;
-    if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
-      m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
-    }
-    const host = req.headers.host || 'phimcuatoi.vercel.app';
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(m3u8Url);
+
+    // Fetch the streamforester player HTML and proxy it
+    const embedRes = await axios.get(cleanUrl, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': `https://${domains.javsub || 'javsub.blog'}/`
+      }
+    });
+    let html = embedRes.data;
+
+    // Extract base origin for proxying config/assets
+    let embedOrigin = '';
+    try { embedOrigin = new URL(cleanUrl).origin; } catch (e) { embedOrigin = 'https://e.streamforester.name'; }
+
+    // Bypass the BLOCKED! check: force iw to true
+    html = html.replace(/"iw"\s*:\s*false/g, '"iw":true');
+    // Bypass iframe detection checks
+    html = html.replace(/if\s*\(\s*!o\.iw\s*\)/g, 'if(false)');
+    html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
+    html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
+
+    // Inject <base> tag so relative paths (scripts, CSS, config) resolve to the embed origin
+    html = html.replace('<head>', `<head><base href="${embedOrigin}/">`);
+
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    return res.send(buildCleanHlsPlayerHtml(proxyUrl));
+    return res.send(html);
   } catch (e) {
     res.status(502).send('Error loading JAVSub embed: ' + e.message);
   }

@@ -399,18 +399,6 @@ async function getVlxxVideoUrl(id, server = 1) {
       const $ = cheerio.load(data.player);
       const iframeUrl = $('iframe').first().attr('src');
       if (iframeUrl) {
-        // Fetch the iframe html to extract direct stream URL
-        const iframeRes = await axios.get(iframeUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vlxx.phd/' }, timeout: 15000 }).catch(() => null);
-        if (iframeRes && iframeRes.data) {
-          const match = iframeRes.data.match(/window\.__SRC\s*=\s*([^;]+);/);
-          if (match) {
-            const srcData = JSON.parse(match[1]);
-            if (srcData && srcData[0] && srcData[0].file) {
-              return { videoUrl: srcData[0].file, type: 'hls' };
-            }
-          }
-        }
-        // Fallback to iframe if extraction fails
         return { url: iframeUrl, type: 'iframe' };
       }
     }
@@ -449,14 +437,7 @@ async function getPhimxyzVideoUrl(id) {
 
 // ============ SubJAV ============
 async function getSubjavVideoUrl(id) {
-  const movie = moviesData.subjav.find(m => m.id === String(id) || (m.link && m.link.includes(`/${id}/`)));
-  let slug = id;
-  if (movie && movie.link) {
-    const match = movie.link.match(/subjav\.[a-z]+\/([^/]+)/);
-    if (match) slug = match[1];
-  }
-  const m3u8Url = `https://subjav1.blog/storage/m3u8/${slug}/index.m3u8`;
-  return { videoUrl: m3u8Url, type: 'hls' };
+  return { url: `/api/embed/subjav/${encodeURIComponent(id)}`, type: 'iframe' };
 }
 
 
@@ -681,28 +662,57 @@ app.get('/api/proxy/image', async (req, res) => {
   }
 });
 
+function buildCleanHlsPlayerHtml(proxyUrl) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block;object-fit:contain}</style></head><body><video id="player" controls autoplay playsinline></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})});h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)h.recoverMediaError();else h.destroy()}})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
+}
+
 // ============ JAVHDz EMBED ============
 app.get('/api/embed/javhdz/:eid', async (req, res) => {
-  const movie = moviesData.javhdz.find(m => m.id === req.params.eid);
-  const embedId = movie?.embedId || req.params.eid;
-  try {
-    const embedUrl = `https://morencius.com/v/${embedId}`;
-    const embedRes = await axios.get(embedUrl, {
-      timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' }
-    });
-
-    let html = embedRes.data;
-    html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
-    html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
-    html = html.replace(/top\.location\s*=/g, '/* top.location = */');
-    html = html.replace('<head>', '<head><base href="https://morencius.com/">');
-
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    return res.send(html);
-  } catch (e) {
-    res.status(502).send('Error loading JAVHDz embed: ' + e.message);
+  const eid = req.params.eid;
+  const movie = moviesData.javhdz.find(m => m.id === eid || m.code === eid);
+  let code = '';
+  if (movie && movie.img) {
+    const match = movie.img.match(/\/data\/([A-Za-z0-9-]+?)-\d{4}-\d{2}\.jpg/i) || movie.img.match(/\/([A-Za-z0-9-]+)\.jpg/i);
+    if (match) code = match[1].toLowerCase();
   }
+  if (!code) code = movie?.code || eid;
+
+  const candidateUrls = [
+    `https://javgiga.net/${code}-mosaic/`,
+    `https://javgiga.net/${code}/`,
+    `https://javgiga.net/${code}-engsub/`,
+    movie?.link ? movie.link.replace(/javhdz\.[a-z]+/gi, 'javgiga.net') : null
+  ].filter(Boolean);
+
+  let iframeSrc = '';
+  for (const url of candidateUrls) {
+    try {
+      const pageRes = await axios.get(url, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
+      const $ = cheerio.load(pageRes.data);
+      iframeSrc = $('iframe[src*="morencius"], iframe[src*="vidhide"], iframe[src*="play"]').first().attr('src') || '';
+      if (iframeSrc) break;
+    } catch (e) {}
+  }
+
+  if (iframeSrc) {
+    try {
+      const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' } });
+      let html = embedRes.data;
+      html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
+      html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
+      html = html.replace(/top\.location\s*=/g, '/* top.location = */');
+      html = html.replace('<head>', '<head><base href="https://morencius.com/">');
+      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+      return res.send(html);
+    } catch (e) {}
+  }
+
+  const host = req.headers.host || 'phimcuatoi.vercel.app';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const hlsUrl = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${eid}-playlist.m3u8`;
+  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(hlsUrl);
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+  return res.send(buildCleanHlsPlayerHtml(proxyUrl));
 });
 
 // ============ JAVSub EMBED ============
@@ -769,9 +779,8 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
       const host = req.headers.host || 'phimcuatoi.vercel.app';
       const protocol = req.headers['x-forwarded-proto'] || 'https';
       const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(rawUrl);
-      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay playsinline></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})});h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)h.recoverMediaError();else h.destroy()}})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
       res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-      return res.send(html);
+      return res.send(buildCleanHlsPlayerHtml(proxyUrl));
     }
 
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
@@ -789,29 +798,17 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
 app.get('/api/embed/subjav/:id', async (req, res) => {
   const id = req.params.id;
   const movie = moviesData.subjav.find(m => m.id === String(id) || (m.link && m.link.includes(`/${id}/`)));
-  const targetLink = movie?.link ? movie.link.replace(/subjav\.(city|st|love|site)/gi, domains.subjav) : `https://${domains.subjav}/`;
-  try {
-    const pageRes = await axios.get(targetLink, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer': `https://${domains.subjav}/`
-      }
-    });
-    const $ = cheerio.load(pageRes.data);
-    
-    // Extract player section and necessary head links
-    const headScripts = $('head script, head link[rel="stylesheet"]').map((i, el) => $.html(el)).get().join('\n');
-    const playerContent = $('#video, .videoWrapper, .entry-content').first().html() || $('#video').html() || '';
-    const footerScripts = $('footer script, body > script').map((i, el) => $.html(el)).get().join('\n');
-
-    const cleanHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><base href="https://${domains.subjav}/"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}.screen, .videoWrapper, #video{width:100%!important;height:100vh!important;max-height:100vh!important;padding:0!important;margin:0!important}</style>${headScripts}</head><body><div id="video" style="width:100%;height:100vh;">${playerContent}</div>${footerScripts}</body></html>`;
-    
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    return res.send(cleanHtml);
-  } catch (e) {
-    res.status(502).send('Failed loading SubJAV player: ' + e.message);
+  let slug = id;
+  if (movie && movie.link) {
+    const match = movie.link.match(/subjav\.[a-z]+\/([^/]+)/);
+    if (match) slug = match[1];
   }
+  const host = req.headers.host || 'phimcuatoi.vercel.app';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const hlsUrl = `https://subjav1.blog/storage/m3u8/${slug}/index.m3u8`;
+  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(hlsUrl);
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+  return res.send(buildCleanHlsPlayerHtml(proxyUrl));
 });
 
 // ============ STATIC ============

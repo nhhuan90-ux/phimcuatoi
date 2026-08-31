@@ -694,25 +694,36 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     } catch (e) {}
   }
 
+  let finalM3u8 = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${eid}-playlist.m3u8`;
+
   if (iframeSrc) {
     try {
       const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' } });
-      let html = embedRes.data;
-      html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
-      html = html.replace(/\/sandboxed\.html/g, '#');
-      html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
-      html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
-      html = html.replace(/top\.location\s*=/g, '/* top.location = */');
-      html = html.replace('<head>', '<head><base href="https://morencius.com/">');
-      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-      return res.send(html);
+      const html = embedRes.data;
+      
+      const evalMatch = html.match(/eval\(function\(p,a,c,k,e,[\s\S]*?\.split\('\|'\).*?\)/);
+      if (evalMatch) {
+        const pMatch = evalMatch[0].match(/}\s*\(\s*'((?:\\'|[^'])*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']+)'/);
+        if (pMatch) {
+          let p = pMatch[1];
+          const a = parseInt(pMatch[2]);
+          let c = parseInt(pMatch[3]);
+          const k = pMatch[4].split('|');
+          while (c--) {
+            if (k[c]) p = p.replace(new RegExp('\\b' + c.toString(a) + '\\b', 'g'), k[c]);
+          }
+          const m3u8Match = p.match(/(https?:\/\/[^"'\s|]+\.m3u8[^"'\s|]*)/i);
+          if (m3u8Match) {
+            finalM3u8 = m3u8Match[1];
+          }
+        }
+      }
     } catch (e) {}
   }
 
   const host = req.headers.host || 'phimcuatoi.vercel.app';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const hlsUrl = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${eid}-playlist.m3u8`;
-  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(hlsUrl);
+  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(finalM3u8);
   res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
   return res.send(buildCleanHlsPlayerHtml(proxyUrl));
 });
@@ -741,26 +752,9 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
     }
     const host = req.headers.host || 'phimcuatoi.vercel.app';
     const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const proxiedM3u8 = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(m3u8Url);
-    const separator = cleanUrl.includes('?') ? '&' : '?';
-    const targetUrl = cleanUrl + separator + 'video=' + encodeURIComponent(proxiedM3u8);
-
-    const embedRes = await axios.get(targetUrl, {
-      timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javsub.blog/' }
-    });
-
-    let html = embedRes.data;
-    html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
-    html = html.replace(/\/sandboxed\.html/g, '#');
-    html = html.replace(/if\s*\(!o\.iw\)[^;]*;/g, '/* bypass blocked */');
-    html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
-    html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
-    html = html.replace(/sandbox="[^"]*"/gi, '');
-    html = html.replace('<head>', '<head><base href="https://e.streamforester.name/">');
-
+    const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(m3u8Url);
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    return res.send(html);
+    return res.send(buildCleanHlsPlayerHtml(proxyUrl));
   } catch (e) {
     res.status(502).send('Error loading JAVSub embed: ' + e.message);
   }
@@ -777,25 +771,21 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javtiful.fit/' }
     });
 
+    let rawUrl = '';
     const match = embedRes.data.match(/"m3u8"\s*:\s*"([^"]+)"/i) || embedRes.data.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
     if (match) {
-      const rawUrl = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
-      const host = req.headers.host || 'phimcuatoi.vercel.app';
-      const protocol = req.headers['x-forwarded-proto'] || 'https';
-      const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(rawUrl);
-      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-      return res.send(buildCleanHlsPlayerHtml(proxyUrl));
+      rawUrl = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
     }
 
+    if (!rawUrl) {
+      rawUrl = `https://upload18.org/playlist/${upperId}.m3u8`;
+    }
+
+    const host = req.headers.host || 'phimcuatoi.vercel.app';
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(rawUrl);
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    let html = embedRes.data;
-    html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
-    html = html.replace(/\/sandboxed\.html/g, '#');
-    html = html.replace('<head>', `<head><base href="https://upload18.org/">`);
-    html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
-    html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
-    html = html.replace(/sandbox="[^"]*"/gi, '');
-    return res.send(html);
+    return res.send(buildCleanHlsPlayerHtml(proxyUrl));
   } catch (e) {
     res.status(502).send('Failed loading JavTiful player: ' + e.message);
   }

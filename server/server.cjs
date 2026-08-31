@@ -698,6 +698,8 @@ app.get('/api/embed/javhdz/:eid', async (req, res) => {
     try {
       const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' } });
       let html = embedRes.data;
+      html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
+      html = html.replace(/\/sandboxed\.html/g, '#');
       html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
       html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
       html = html.replace(/top\.location\s*=/g, '/* top.location = */');
@@ -749,6 +751,8 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
     });
 
     let html = embedRes.data;
+    html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
+    html = html.replace(/\/sandboxed\.html/g, '#');
     html = html.replace(/if\s*\(!o\.iw\)[^;]*;/g, '/* bypass blocked */');
     html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
     html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
@@ -784,7 +788,10 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
     }
 
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    let html = embedRes.data.replace('<head>', `<head><base href="https://upload18.org/">`);
+    let html = embedRes.data;
+    html = html.replace(/!function\(\)\{try\{var t=\["sandbox"[^<]+/g, '/* anti-framing script neutered */');
+    html = html.replace(/\/sandboxed\.html/g, '#');
+    html = html.replace('<head>', `<head><base href="https://upload18.org/">`);
     html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
     html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
     html = html.replace(/sandbox="[^"]*"/gi, '');

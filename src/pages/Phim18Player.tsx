@@ -202,7 +202,6 @@ export default function Phim18Player() {
             src={videoData.url}
             allow="autoplay; fullscreen"
             allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-forms"
             className="w-full h-full border-0"
           />
         ) : (

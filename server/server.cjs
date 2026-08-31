@@ -463,7 +463,8 @@ async function getJavsubVideoUrl(id, server = 1) {
       playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
     }
     if (!playUrl) {
-      const html = await fetchHtml(`https://javsub.blog/phim-sex/${id}`);
+      const link = movie?.link || `https://${domains.javsub || 'javsub.xyz'}/phim-sex/${id}`;
+      const html = await fetchHtml(link);
       const $ = cheerio.load(html);
       playUrl = $('button.set-player-source').first().attr('data-source');
     }
@@ -722,8 +723,11 @@ app.get('/api/proxy/segment', async (req, res) => {
       referer = `https://${domains.subjav}/`;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
+    } else if (url.match(/(dramiyos|javgiga|morencius|vidhide)/i)) {
+      referer = 'https://javgiga.net/';
     } else {
-      targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
+      // Keep URL unchanged
+      targetUrl = url;
     }
     const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'arraybuffer' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'video/MP2T', 'Content-Length': response.data.length });

@@ -87,7 +87,7 @@ export default function Phim18Player() {
 
   // Setup HLS.js if type === 'hls'
   useEffect(() => {
-    if (!videoData || videoData.type !== 'hls' || !videoData.videoUrl || !videoRef.current) return;
+    if (loading || !videoData || videoData.type !== 'hls' || !videoData.videoUrl || !videoRef.current) return;
 
     let hlsInstance: any = null;
     const videoEl = videoRef.current;
@@ -108,6 +108,21 @@ export default function Phim18Player() {
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
             videoEl.play().catch(() => {});
           });
+          hlsInstance.on(Hls.Events.ERROR, (_event: any, data: any) => {
+            if (data.fatal) {
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  hlsInstance.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  hlsInstance.recoverMediaError();
+                  break;
+                default:
+                  hlsInstance.destroy();
+                  break;
+              }
+            }
+          });
         } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
           videoEl.src = proxyUrl;
           videoEl.play().catch(() => {});
@@ -125,7 +140,7 @@ export default function Phim18Player() {
     return () => {
       if (hlsInstance) hlsInstance.destroy();
     };
-  }, [videoData]);
+  }, [videoData, loading]);
 
   if (!source || !id) {
     return (

@@ -752,6 +752,17 @@ app.get('/api/embed/javtiful/:id', async (req, res) => {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javtiful.fit/' }
     });
 
+    const match = embedRes.data.match(/"m3u8"\s*:\s*"([^"]+)"/i) || embedRes.data.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
+    if (match) {
+      const rawUrl = match[1].replace(/\\/g, '').replace(/u0026/g, '&');
+      const host = req.headers.host || 'phimcuatoi.vercel.app';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(rawUrl);
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay playsinline></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})});h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)h.recoverMediaError();else h.destroy()}})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
+      res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+      return res.send(html);
+    }
+
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
     let html = embedRes.data.replace('<head>', `<head><base href="https://upload18.org/">`);
     html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');

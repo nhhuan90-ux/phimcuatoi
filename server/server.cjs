@@ -387,8 +387,7 @@ setTimeout(checkAllDomainsHealthAndAutoDiscover, 10000);
 
 // ============ JAVHDz ============
 async function getJavhdzVideoUrl(id) {
-  const hlsUrl = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${id}-playlist.m3u8`;
-  return { videoUrl: hlsUrl, type: 'hls' };
+  return { url: `/api/embed/javhdz/${encodeURIComponent(id)}`, type: 'iframe' };
 }
 
 // ============ VLXX ============
@@ -685,17 +684,25 @@ app.get('/api/proxy/image', async (req, res) => {
 // ============ JAVHDz EMBED ============
 app.get('/api/embed/javhdz/:eid', async (req, res) => {
   const movie = moviesData.javhdz.find(m => m.id === req.params.eid);
-  if (!movie) return res.status(404).send('Not found');
+  const embedId = movie?.embedId || req.params.eid;
   try {
-    const link = movie.link ? movie.link.replace(/javhdz\.[a-z]+/gi, domains.javhdz) : `https://${domains.javhdz}/chi-gai-${req.params.eid}.html`;
-    const page = await axios.get(link, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const atobMatch = page.data.match(/window\.atob\(["']([^"']+)["']\)/);
-    const videoUrl = atobMatch ? Buffer.from(atobMatch[1], 'base64').toString('utf-8') : '';
-    const proxyUrl = '/api/proxy/hls?url=' + encodeURIComponent(videoUrl);
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block}</style></head><body><video id="player" controls autoplay poster="https://${domains.javhdz}/jwplayer/loading.jpg"></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
+    const embedUrl = `https://morencius.com/v/${embedId}`;
+    const embedRes = await axios.get(embedUrl, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' }
+    });
+
+    let html = embedRes.data;
+    html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
+    html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
+    html = html.replace(/top\.location\s*=/g, '/* top.location = */');
+    html = html.replace('<head>', '<head><base href="https://morencius.com/">');
+
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
-    res.send(html);
-  } catch (e) { res.status(502).send('Failed: ' + e.message); }
+    return res.send(html);
+  } catch (e) {
+    res.status(502).send('Error loading JAVHDz embed: ' + e.message);
+  }
 });
 
 // ============ JAVSub EMBED ============

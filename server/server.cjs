@@ -608,22 +608,24 @@ app.get('/api/proxy/hls', async (req, res) => {
     } else if (url.match(/tiktokcdn/i)) {
       referer = `https://${domains.javhdz}/`;
     }
-    const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': referer }, responseType: 'text' });
+    const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'text' });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
-    const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-    let data = response.data
-      .replace(/^([a-zA-Z0-9_\-\.]+\.(m3u8|ts|png|vtt))/gm, m => baseUrl + m)
-      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m))
-      .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.tiktokcdn\.(?:top|com)[^\s]+\.(ts|png)[^\s]*)/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m));
-      
-    // Rewrites for JAVSub and SubJAV stream segments and playlists
-    if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|subjav)/i)) {
-      data = data
-        .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.(?:top|name|com|net|city|blog)[^\s]+\.(ts|vtt))/g, m => '/api/proxy/segment?url=' + encodeURIComponent(m))
-        .replace(/(https:\/\/(?:[a-zA-Z0-9.-]+)\.(?:top|name|com|net|city|blog)[^\s]+\.m3u8)/g, m => '/api/proxy/hls?url=' + encodeURIComponent(m));
-    }
     
-    res.send(data);
+    const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    const lines = response.data.split('\n').map(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return line;
+      let targetUrl = trimmed;
+      if (!targetUrl.startsWith('http')) {
+        targetUrl = baseUrl + targetUrl;
+      }
+      if (targetUrl.includes('.m3u8')) {
+        return '/api/proxy/hls?url=' + encodeURIComponent(targetUrl);
+      }
+      return '/api/proxy/segment?url=' + encodeURIComponent(targetUrl);
+    });
+    
+    res.send(lines.join('\n'));
   } catch (e) { res.status(502).json({ error: 'Proxy failed: ' + e.message }); }
 });
 
@@ -635,6 +637,8 @@ app.get('/api/proxy/segment', async (req, res) => {
     if (url.match(/tiktokcdn/i)) {
       referer = `https://${domains.javhdz}/`;
       targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
+    } else if (url.match(/ibyteimg/i)) {
+      referer = 'https://subjav1.blog/';
     } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq)/i)) {
       try {
         const urlObj = new URL(url);
@@ -648,7 +652,7 @@ app.get('/api/proxy/segment', async (req, res) => {
       targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
     }
     const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'arraybuffer' });
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'video/MP2T', 'Content-Length': response.data.length });
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'video/MP2T', 'Content-Length': response.data.length });
     res.send(response.data);
   } catch (e) { res.status(502).json({ error: 'Segment failed: ' + e.message }); }
 });

@@ -678,7 +678,9 @@ app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
     let referer = `https://${domains.javhdz}/`;
-    if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast|sdeli)/i)) {
+    if (url.match(/sdeli/i)) {
+      referer = 'https://vcast.name/';
+    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast)/i)) {
       referer = 'https://javsub.blog/';
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
@@ -712,28 +714,49 @@ app.get('/api/proxy/segment', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
     let referer = `https://${domains.javhdz}/`;
+    let originHeader = referer;
     let targetUrl = url;
     if (url.match(/tiktokcdn/i)) {
       referer = `https://${domains.javhdz}/`;
+      originHeader = referer;
       targetUrl = url.replace(/\.ts(\?|$)/, '.png$1');
     } else if (url.match(/ibyteimg/i)) {
       referer = 'https://subjav1.blog/';
-    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|vcast|sdeli)/i)) {
+      originHeader = referer;
+    } else if (url.match(/sdeli/i)) {
+      referer = 'https://vcast.name/';
+      originHeader = referer;
+    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|vcast)/i)) {
       try {
         const urlObj = new URL(url);
         referer = urlObj.origin + '/';
-      } catch (e) { referer = 'https://javsub.blog/'; }
+        originHeader = referer;
+      } catch (e) {
+        referer = 'https://javsub.blog/';
+        originHeader = referer;
+      }
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
+      originHeader = referer;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
+      originHeader = referer;
     } else if (url.match(/(dramiyos|javgiga|morencius|vidhide)/i)) {
       referer = 'https://javgiga.net/';
+      originHeader = referer;
     } else {
       // Keep URL unchanged
       targetUrl = url;
     }
-    const response = await axios.get(targetUrl, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'arraybuffer' });
+    const response = await axios.get(targetUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Referer': referer,
+        'Origin': originHeader
+      },
+      responseType: 'arraybuffer'
+    });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'video/MP2T', 'Content-Length': response.data.length });
     res.send(response.data);
   } catch (e) { res.status(502).json({ error: 'Segment failed: ' + e.message }); }

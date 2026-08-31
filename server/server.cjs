@@ -716,7 +716,9 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
     if (cleanUrl.includes('/videos/') && cleanUrl.includes('/play')) {
       m3u8Url = cleanUrl.replace(/\/play\??.*/, '/master.m3u8');
     }
-    const proxiedM3u8 = '/api/proxy/hls?url=' + encodeURIComponent(m3u8Url);
+    const host = req.headers.host || 'phimcuatoi.vercel.app';
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const proxiedM3u8 = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(m3u8Url);
     const separator = cleanUrl.includes('?') ? '&' : '?';
     const targetUrl = cleanUrl + separator + 'video=' + encodeURIComponent(proxiedM3u8);
 

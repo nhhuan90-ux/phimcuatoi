@@ -673,23 +673,126 @@ app.get('/api/admin/autodiscover', async (req, res) => {
   }
 });
 
+// ============ DAILY CRAWLER DISPATCHER ============
+
+// List of sources to crawl (exclude any non‑video sources if present)
+const crawlSources = ['javhdz', 'javsub', 'javtiful', 'subjav', 'phimxyz', 'vlxx'];
+
+// Simple selector config per source (can be extended later)
+const sourceSelectorConfig = {
+  javhdz: { item: '.movie-item', linkAttr: 'href', imgAttr: 'src', titleAttr: 'title' },
+  // Default config – many sites use similar markup; adjust as needed.
+  default: { item: '.movie-item', linkAttr: 'href', imgAttr: 'src', titleAttr: 'title' },
+};
+
+/** Generic crawler for a given source */
+async function crawlSource(source) {
+  const base = `https://${domains[source]}`;
+  const config = sourceSelectorConfig[source] || sourceSelectorConfig.default;
+  try {
+    const res = await axios.get(base, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', Referer: base } });
+    const $ = cheerio.load(res.data);
+    const newItems = [];
+    $(config.item).each((i, el) => {
+      const link = $(el).find('a').attr(config.linkAttr);
+      const img = $(el).find('img').attr(config.imgAttr);
+      const title = $(el).find('a').attr(config.titleAttr) || $(el).find('a').text().trim();
+      if (!link) return;
+      const idMatch = link.match(/\/([^/]+)\/?$/);
+      const id = idMatch ? idMatch[1] : null;
+      if (!id) return;
+      const exists = moviesData[source]?.some(m => m.id === id);
+      if (!exists) {
+        newItems.push({
+          id,
+          title,
+          link: `${base}${link}`.replace(/(?<!:)\/\//, '/'),
+          img: img ? (img.startsWith('http') ? img : `${base}${img}`) : ''
+        });
+      }
+    });
+    if (newItems.length > 0) {
+      moviesData[source] = moviesData[source] || [];
+      moviesData[source].push(...newItems);
+      // Re‑compute combined list
+      moviesData.all = [];
+      Object.keys(moviesData).forEach(k => {
+        if (Array.isArray(moviesData[k])) moviesData.all.push(...moviesData[k]);
+      });
+      saveData();
+    }
+    return { added: newItems.length, total: moviesData[source].length };
+  } catch (e) {
+    console.error(`crawlSource ${source} error:`, e.message);
+    return { added: 0, total: moviesData[source] ? moviesData[source].length : 0 };
+  }
+}
+
+/** Crawl all configured sources */
+async function crawlAllSources() {
+  const summary = {};
+  for (const src of crawlSources) {
+    const result = await crawlSource(src);
+    summary[src] = result;
+  }
+  console.log('Crawl all summary:', summary);
+  return summary;
+}
+
+// Admin endpoint to trigger full crawl manually
+app.get('/api/admin/crawl-all', async (req, res) => {
+  const result = await crawlAllSources();
+  res.json({ message: 'Full crawl completed', summary: result });
+});
+
+// Keep existing javhdz admin endpoint for backward compatibility (calls generic crawler)
+app.get('/api/admin/crawl-javhdz', async (req, res) => {
+  const result = await crawlSource('javhdz');
+  res.json({ message: 'javhdz crawl completed', result });
+});
+
+// Schedule daily crawl (runs at server start and then every 24 h)
+const DAILY_INTERVAL_MS = 24 * 60 * 60 * 1000;
+(async () => {
+  console.log('Initial daily crawl at startup');
+  await crawlAllSources();
+  setInterval(async () => {
+    console.log('Scheduled daily crawl');
+    await crawlAllSources();
+  }, DAILY_INTERVAL_MS);
+})();
+
 // ============ HLS PROXY ============
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
     let referer = `https://${domains.javhdz}/`;
+    let originHeader = referer;
     if (url.match(/sdeli/i)) {
       referer = 'https://vcast.name/';
+      originHeader = referer;
     } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast)/i)) {
       referer = 'https://javsub.blog/';
+      originHeader = referer;
     } else if (url.match(/subjav/i)) {
       referer = `https://${domains.subjav}/`;
+      originHeader = referer;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
+      originHeader = referer;
     } else if (url.match(/tiktokcdn/i)) {
       referer = `https://${domains.javhdz}/`;
+      originHeader = referer;
     }
-    const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': referer }, responseType: 'text' });
+    const response = await axios.get(url, { 
+      timeout: 15000, 
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 
+        'Referer': referer,
+        'Origin': originHeader
+      }, 
+      responseType: 'text' 
+    });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
     
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);

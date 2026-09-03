@@ -166,7 +166,7 @@ function saveData() {
 
 // ============ AUTODISCOVER DOMAINS ============
 let domains = {
-  javhdz: 'javhdz.cam',
+  javhdz: 'javhdz.pw',
   subjav: 'subjav.city',
   phimxyz: 'i1.phimxyz.blog',
   javsub: 'javsub.blog',
@@ -298,7 +298,17 @@ async function validateDomainCandidate(source, hostname) {
   try {
     if (source === 'javhdz') {
       const url = `https://${hostname}/category/uncensored-3/`;
-      const res = await axios.get(url, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const res = await axios.get(url, { timeout: 6000, headers: { 'User-Agent': UA } });
+      if (res.request?.res?.responseUrl) {
+        try {
+          const finalHost = new URL(res.request.res.responseUrl).hostname;
+          if (finalHost && finalHost !== domains.javhdz && finalHost.includes('javhd')) {
+            console.log(`[AutoSearchBot] javhdz redirected to ${finalHost}`);
+            domains.javhdz = finalHost;
+            saveDomains();
+          }
+        } catch (e) {}
+      }
       const $ = cheerio.load(res.data);
       if (res.status === 200 && $('.movie-item.m-block').length > 0) return true;
     } 
@@ -388,58 +398,53 @@ setTimeout(checkAllDomainsHealthAndAutoDiscover, 10000);
 // ============ JAVHDz ============
 async function getJavhdzVideoUrl(id) {
   const movie = moviesData.javhdz.find(m => m.id === id || m.code === id);
-  let code = '';
-  if (movie && movie.img) {
-    const match = movie.img.match(/\/data\/([A-Za-z0-9-]+?)-\d{4}-\d{2}\.jpg/i) || movie.img.match(/\/([A-Za-z0-9-]+)\.jpg/i);
-    if (match) code = match[1].toLowerCase();
+  const currentDomain = domains.javhdz || 'javhdz.pw';
+  
+  const candidateUrls = [];
+  if (movie && movie.link) {
+    candidateUrls.push(movie.link.replace(/https?:\/\/[^/]+/i, `https://${currentDomain}`));
   }
-  if (!code) code = movie?.code || id;
+  candidateUrls.push(`https://${currentDomain}/-${id}.html`);
 
-  const candidateUrls = [
-    `https://javgiga.net/${code}-mosaic/`,
-    `https://javgiga.net/${code}/`,
-    `https://javgiga.net/${code}-engsub/`,
-    movie?.link ? movie.link.replace(/javhdz\.[a-z]+/gi, 'javgiga.net') : null
-  ].filter(Boolean);
-
-  let iframeSrc = '';
   for (const url of candidateUrls) {
     try {
-      const pageRes = await axios.get(url, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-      const $ = cheerio.load(pageRes.data);
-      iframeSrc = $('iframe[src*="morencius"], iframe[src*="vidhide"], iframe[src*="play"]').first().attr('src') || '';
-      if (iframeSrc) break;
-    } catch (e) {}
-  }
-  
-  if (!iframeSrc) return null;
+      const res = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Referer': `https://${currentDomain}/`
+        },
+        timeout: 8000
+      });
+      
+      // If page redirected to a new domain, update domains.javhdz
+      if (res.request?.res?.responseUrl) {
+        try {
+          const finalHost = new URL(res.request.res.responseUrl).hostname;
+          if (finalHost && finalHost !== domains.javhdz && finalHost.includes('javhd')) {
+            domains.javhdz = finalHost;
+            saveDomains();
+          }
+        } catch (e) {}
+      }
 
-  let finalM3u8 = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${id}-playlist.m3u8`;
-
-  try {
-    const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javgiga.net/' } });
-    const html = embedRes.data;
-    
-    const evalMatch = html.match(/eval\(function\(p,a,c,k,e,[\s\S]*?\.split\('\|'\).*?\)/);
-    if (evalMatch) {
-      const pMatch = evalMatch[0].match(/}\s*\(\s*'((?:\\'|[^'])*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']+)'/);
-      if (pMatch) {
-        let p = pMatch[1];
-        const a = parseInt(pMatch[2]);
-        let c = parseInt(pMatch[3]);
-        const k = pMatch[4].split('|');
-        while (c--) {
-          if (k[c]) p = p.replace(new RegExp('\\b' + c.toString(a) + '\\b', 'g'), k[c]);
-        }
-        const m3u8Match = p.match(/(https?:\/\/[^"'\s|]+\.m3u8[^"'\s|]*)/i);
-        if (m3u8Match) {
-          finalM3u8 = m3u8Match[1];
+      // Check for atob base64 string
+      const match = res.data.match(/atob\(\s*["']([^"']+)["']\s*\)/);
+      if (match) {
+        const decoded = Buffer.from(match[1], 'base64').toString('utf8');
+        if (decoded && (decoded.includes('.m3u8') || decoded.startsWith('http'))) {
+          return { videoUrl: decoded, type: 'hls' };
         }
       }
-    }
-  } catch (e) {}
 
-  return { videoUrl: finalM3u8, type: 'hls' };
+      // Check direct m3u8 in page
+      const m3u8Match = res.data.match(/https?:\/\/[^"'\s<>]+\.m3u8[^"'\s<>]*/i);
+      if (m3u8Match) {
+        return { videoUrl: m3u8Match[0], type: 'hls' };
+      }
+    } catch (e) {}
+  }
+
+  return null;
 }
 
 // ============ VLXX ============
@@ -673,94 +678,53 @@ app.get('/api/admin/autodiscover', async (req, res) => {
   }
 });
 
-// ============ DAILY CRAWLER DISPATCHER ============
+// ============ CRAWLER ADMIN ENDPOINTS ============
 
-// List of sources to crawl (exclude any non‑video sources if present)
-const crawlSources = ['javhdz', 'javsub', 'javtiful', 'subjav', 'phimxyz', 'vlxx'];
-
-// Simple selector config per source (can be extended later)
-const sourceSelectorConfig = {
-  javhdz: { item: '.movie-item', linkAttr: 'href', imgAttr: 'src', titleAttr: 'title' },
-  // Default config – many sites use similar markup; adjust as needed.
-  default: { item: '.movie-item', linkAttr: 'href', imgAttr: 'src', titleAttr: 'title' },
-};
-
-/** Generic crawler for a given source */
-async function crawlSource(source) {
-  const base = `https://${domains[source]}`;
-  const config = sourceSelectorConfig[source] || sourceSelectorConfig.default;
-  try {
-    const res = await axios.get(base, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0', Referer: base } });
-    const $ = cheerio.load(res.data);
-    const newItems = [];
-    $(config.item).each((i, el) => {
-      const link = $(el).find('a').attr(config.linkAttr);
-      const img = $(el).find('img').attr(config.imgAttr);
-      const title = $(el).find('a').attr(config.titleAttr) || $(el).find('a').text().trim();
-      if (!link) return;
-      const idMatch = link.match(/\/([^/]+)\/?$/);
-      const id = idMatch ? idMatch[1] : null;
-      if (!id) return;
-      const exists = moviesData[source]?.some(m => m.id === id);
-      if (!exists) {
-        newItems.push({
-          id,
-          title,
-          link: `${base}${link}`.replace(/(?<!:)\/\//, '/'),
-          img: img ? (img.startsWith('http') ? img : `${base}${img}`) : ''
-        });
-      }
-    });
-    if (newItems.length > 0) {
-      moviesData[source] = moviesData[source] || [];
-      moviesData[source].push(...newItems);
-      // Re‑compute combined list
-      moviesData.all = [];
-      Object.keys(moviesData).forEach(k => {
-        if (Array.isArray(moviesData[k])) moviesData.all.push(...moviesData[k]);
-      });
-      saveData();
-    }
-    return { added: newItems.length, total: moviesData[source].length };
-  } catch (e) {
-    console.error(`crawlSource ${source} error:`, e.message);
-    return { added: 0, total: moviesData[source] ? moviesData[source].length : 0 };
-  }
-}
-
-/** Crawl all configured sources */
-async function crawlAllSources() {
-  const summary = {};
-  for (const src of crawlSources) {
-    const result = await crawlSource(src);
-    summary[src] = result;
-  }
-  console.log('Crawl all summary:', summary);
-  return summary;
-}
-
-// Admin endpoint to trigger full crawl manually
+// Admin endpoint to trigger full crawl manually across all sources
 app.get('/api/admin/crawl-all', async (req, res) => {
-  const result = await crawlAllSources();
-  res.json({ message: 'Full crawl completed', summary: result });
+  try {
+    await checkForUpdates();
+    res.json({
+      status: 'done',
+      message: 'Full crawl completed across all sources',
+      lastCheck,
+      checkCount,
+      total: (moviesData.all || []).length,
+      ...Object.fromEntries(ALL_SOURCES.map(k => [k, (moviesData[k] || []).length]))
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// Keep existing javhdz admin endpoint for backward compatibility (calls generic crawler)
+// Admin endpoint to crawl javhdz
 app.get('/api/admin/crawl-javhdz', async (req, res) => {
-  const result = await crawlSource('javhdz');
-  res.json({ message: 'javhdz crawl completed', result });
+  try {
+    const javhdzParser = (html) => {
+      const $ = cheerio.load(html); const items = [];
+      $('.movie-item.m-block').each((i, el) => {
+        const t = $(el).find('.movie-title-1').text().trim();
+        const h = $(el).attr('href');
+        const m = h ? h.match(/-(\d+)\.html$/) : null;
+        if (t && h && m) items.push({
+          id: m[1], title: t,
+          img: $(el).find('.public-film-item-thumb').attr('src') ? `https://${domains.javhdz}` + $(el).find('.public-film-item-thumb').attr('src') : '',
+          link: `https://${domains.javhdz}` + h, tag: $(el).find('.ribbon-sub').text().trim(),
+          views: $(el).find('.ribbon-viewed').text().trim()
+        });
+      });
+      return items;
+    };
+    const added1 = await checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser);
+    const added2 = await checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser);
+    const added3 = await checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/beauty-4/':`/category/beauty-4/page/${p}/`}`, javhdzParser);
+    const totalAdded = added1 + added2 + added3;
+    if (totalAdded > 0) saveData();
+    res.json({ message: 'javhdz crawl completed', added: totalAdded, total: (moviesData.javhdz || []).length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
-
-// Schedule daily crawl (runs at server start and then every 24 h)
-const DAILY_INTERVAL_MS = 24 * 60 * 60 * 1000;
-(async () => {
-  console.log('Initial daily crawl at startup');
-  await crawlAllSources();
-  setInterval(async () => {
-    console.log('Scheduled daily crawl');
-    await crawlAllSources();
-  }, DAILY_INTERVAL_MS);
-})();
 
 // ============ HLS PROXY ============
 app.get('/api/proxy/hls', async (req, res) => {
@@ -896,62 +860,11 @@ function buildCleanHlsPlayerHtml(proxyUrl) {
 
 // ============ JAVHDz EMBED ============
 app.get('/api/embed/javhdz/:eid', async (req, res) => {
-  const eid = req.params.eid;
-  const movie = moviesData.javhdz.find(m => m.id === eid || m.code === eid);
-  let code = '';
-  if (movie && movie.img) {
-    const match = movie.img.match(/\/data\/([A-Za-z0-9-]+?)-\d{4}-\d{2}\.jpg/i) || movie.img.match(/\/([A-Za-z0-9-]+)\.jpg/i);
-    if (match) code = match[1].toLowerCase();
-  }
-  if (!code) code = movie?.code || eid;
-
-  const candidateUrls = [
-    `https://javgiga.net/${code}-mosaic/`,
-    `https://javgiga.net/${code}/`,
-    `https://javgiga.net/${code}-engsub/`,
-    movie?.link ? movie.link.replace(/javhdz\.[a-z]+/gi, 'javgiga.net') : null
-  ].filter(Boolean);
-
-  let iframeSrc = '';
-  for (const url of candidateUrls) {
-    try {
-      const pageRes = await axios.get(url, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
-      const $ = cheerio.load(pageRes.data);
-      iframeSrc = $('iframe[src*="morencius"], iframe[src*="vidhide"], iframe[src*="play"]').first().attr('src') || '';
-      if (iframeSrc) break;
-    } catch (e) {}
-  }
-
-  let finalM3u8 = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${eid}-playlist.m3u8`;
-
-  if (iframeSrc) {
-    try {
-      const embedRes = await axios.get(iframeSrc, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://javgiga.net/' } });
-      const html = embedRes.data;
-      
-      const evalMatch = html.match(/eval\(function\(p,a,c,k,e,[\s\S]*?\.split\('\|'\).*?\)/);
-      if (evalMatch) {
-        const pMatch = evalMatch[0].match(/}\s*\(\s*'((?:\\'|[^'])*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']+)'/);
-        if (pMatch) {
-          let p = pMatch[1];
-          const a = parseInt(pMatch[2]);
-          let c = parseInt(pMatch[3]);
-          const k = pMatch[4].split('|');
-          while (c--) {
-            if (k[c]) p = p.replace(new RegExp('\\b' + c.toString(a) + '\\b', 'g'), k[c]);
-          }
-          const m3u8Match = p.match(/(https?:\/\/[^"'\s|]+\.m3u8[^"'\s|]*)/i);
-          if (m3u8Match) {
-            finalM3u8 = m3u8Match[1];
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
+  const result = await getJavhdzVideoUrl(req.params.eid);
+  if (!result || !result.videoUrl) return res.status(404).send('Video not found');
   const host = req.headers.host || 'phimcuatoi.vercel.app';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(finalM3u8);
+  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=` + encodeURIComponent(result.videoUrl);
   res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
   return res.send(buildCleanHlsPlayerHtml(proxyUrl));
 });
@@ -1065,7 +978,9 @@ function saveData() {
     moviesData.updated = new Date().toISOString();
     const all = []; ALL_SOURCES.forEach(k => { if (moviesData[k]) all.push(...moviesData[k]); });
     moviesData.all = all;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(moviesData, null, 2));
+    const paths = getPossibleDataPaths('movies.json');
+    const targetPath = paths.find(p => fs.existsSync(p)) || paths[0];
+    fs.writeFileSync(targetPath, JSON.stringify(moviesData, null, 2), 'utf-8');
     return true;
   } catch (e) { console.error('Save error:', e.message); return false; }
 }

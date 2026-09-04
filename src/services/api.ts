@@ -262,12 +262,19 @@ const vsmovFetchDetail = async (slug: string) => {
 
   const episodes = (movie.episodes || data.episodes || data.data?.item?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'VSMov',
-    items: (server.server_data || server.items || []).map((ep: any) => ({
-      name: ep.name,
-      slug: ep.slug,
-      embed: ep.link_embed || ep.embed || '',
-      m3u8: ep.link_m3u8 || ep.m3u8 || '',
-    })),
+    items: (server.server_data || server.items || []).map((ep: any) => {
+      const embed = ep.link_embed || ep.embed || '';
+      let m3u8 = ep.link_m3u8 || ep.m3u8 || '';
+      if (!m3u8 && embed && embed.includes('/video/')) {
+        m3u8 = embed.replace(/\/video\/([^/?#]+).*/, '/stream/$1/master.m3u8');
+      }
+      return {
+        name: ep.name,
+        slug: ep.slug,
+        embed,
+        m3u8,
+      };
+    }),
   }));
 
   return {

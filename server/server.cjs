@@ -747,6 +747,9 @@ app.get('/api/proxy/hls', async (req, res) => {
     } else if (url.match(/tiktokcdn/i)) {
       referer = `https://${domains.javhdz}/`;
       originHeader = referer;
+    } else if (url.match(/(streamvsmov|vsmov)/i)) {
+      referer = 'https://vsmov.com/';
+      originHeader = referer;
     }
     const response = await axios.get(url, { 
       timeout: 15000, 
@@ -810,6 +813,9 @@ app.get('/api/proxy/segment', async (req, res) => {
       originHeader = referer;
     } else if (url.match(/(dramiyos|javgiga|morencius|vidhide)/i)) {
       referer = 'https://javgiga.net/';
+      originHeader = referer;
+    } else if (url.match(/(streamvsmov|vsmov)/i)) {
+      referer = 'https://vsmov.com/';
       originHeader = referer;
     } else {
       // Keep URL unchanged

@@ -750,19 +750,33 @@ app.get('/api/proxy/hls', async (req, res) => {
     } else if (url.match(/(streamvsmov|vsmov)/i)) {
       referer = 'https://vsmov.com/';
       originHeader = referer;
+    } else if (url.match(/(streamc|hihihoho)/i)) {
+      referer = 'https://streamc.xyz/';
+      originHeader = referer;
+    }
+    if (req.query.referer) {
+      referer = req.query.referer;
+      originHeader = req.query.referer;
+    }
+    let userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const headers = {
+      'User-Agent': userAgent,
+      'Referer': referer
+    };
+    if (url.match(/(streamc|hihihoho)/i)) {
+      headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+    } else if (originHeader) {
+      headers['Origin'] = originHeader;
     }
     const response = await axios.get(url, { 
       timeout: 15000, 
-      headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 
-        'Referer': referer,
-        'Origin': originHeader
-      }, 
+      headers,
       responseType: 'text' 
     });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'application/vnd.apple.mpegurl' });
     
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    const refParam = req.query.referer ? '&referer=' + encodeURIComponent(req.query.referer) : '';
     const lines = response.data.split('\n').map(line => {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith('#')) return line;
@@ -771,9 +785,9 @@ app.get('/api/proxy/hls', async (req, res) => {
         targetUrl = baseUrl + targetUrl;
       }
       if (targetUrl.includes('.m3u8')) {
-        return '/api/proxy/hls?url=' + encodeURIComponent(targetUrl);
+        return '/api/proxy/hls?url=' + encodeURIComponent(targetUrl) + refParam;
       }
-      return '/api/proxy/segment?url=' + encodeURIComponent(targetUrl);
+      return '/api/proxy/segment?url=' + encodeURIComponent(targetUrl) + refParam;
     });
     
     res.send(lines.join('\n'));
@@ -817,17 +831,36 @@ app.get('/api/proxy/segment', async (req, res) => {
     } else if (url.match(/(streamvsmov|vsmov)/i)) {
       referer = 'https://vsmov.com/';
       originHeader = referer;
+    } else if (url.match(/(streamc|hihihoho)/i)) {
+      referer = 'https://streamc.xyz/';
+      originHeader = referer;
     } else {
       // Keep URL unchanged
       targetUrl = url;
     }
+    if (req.query.referer) {
+      try {
+        const u = new URL(req.query.referer);
+        referer = u.origin + '/';
+        originHeader = u.origin;
+      } catch (e) {
+        referer = req.query.referer;
+        originHeader = req.query.referer;
+      }
+    }
+    let userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const headers = {
+      'User-Agent': userAgent,
+      'Referer': referer
+    };
+    if (targetUrl.match(/(streamc|hihihoho)/i)) {
+      headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+    } else if (originHeader) {
+      headers['Origin'] = originHeader;
+    }
     const response = await axios.get(targetUrl, {
       timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer': referer,
-        'Origin': originHeader
-      },
+      headers,
       responseType: 'arraybuffer'
     });
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'video/MP2T', 'Content-Length': response.data.length });
@@ -863,6 +896,58 @@ app.get('/api/proxy/image', async (req, res) => {
 function buildCleanHlsPlayerHtml(proxyUrl) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}video{width:100%;height:100vh;display:block;object-fit:contain}</style></head><body><video id="player" controls autoplay playsinline></video><script>var v=document.getElementById('player');if(typeof Hls!=='undefined'&&Hls.isSupported()){var h=new Hls({maxBufferLength:30});h.loadSource(${JSON.stringify(proxyUrl)});h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){})});h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)h.recoverMediaError();else h.destroy()}})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=${JSON.stringify(proxyUrl)};v.play().catch(function(){})}</script></body></html>`;
 }
+
+// ============ NGUONC RESOLVER & CLEAN PLAYER ============
+const nguoncCache = new Map();
+
+async function resolveNguoncStream(embedUrl) {
+  if (nguoncCache.has(embedUrl)) {
+    const cached = nguoncCache.get(embedUrl);
+    if (Date.now() - cached.time < 30 * 60 * 1000) return cached.data;
+  }
+  try {
+    const pageRes = await axios.get(embedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://phim.nguonc.com/'
+      },
+      timeout: 8000
+    });
+    const $ = cheerio.load(pageRes.data);
+    const dataObf = $('#player').attr('data-obf');
+    if (!dataObf) return null;
+    const streamData = JSON.parse(Buffer.from(dataObf, 'base64').toString('utf-8'));
+    const urlObj = new URL(embedUrl);
+    const rawM3u8 = `${urlObj.origin}/${streamData.sUb}`;
+    const result = { rawM3u8, embedUrl };
+    nguoncCache.set(embedUrl, { time: Date.now(), data: result });
+    return result;
+  } catch (e) {
+    console.error('resolveNguoncStream error:', e.message);
+    return null;
+  }
+}
+
+app.get('/api/video/nguonc', async (req, res) => {
+  const { embed } = req.query;
+  if (!embed) return res.status(400).json({ error: 'Missing embed URL' });
+  const result = await resolveNguoncStream(embed);
+  if (!result) return res.status(404).json({ error: 'Video stream not found' });
+  const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(result.rawM3u8)}&referer=${encodeURIComponent(embed)}`;
+  return res.redirect(proxyUrl);
+});
+
+app.get('/api/embed/nguonc', async (req, res) => {
+  const { embed } = req.query;
+  if (!embed) return res.status(400).send('Missing embed URL');
+  const result = await resolveNguoncStream(embed);
+  if (!result) return res.status(404).send('Video stream not found');
+  const host = req.headers.host || 'phimcuatoi.vercel.app';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=${encodeURIComponent(result.rawM3u8)}&referer=${encodeURIComponent(embed)}`;
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+  return res.send(buildCleanHlsPlayerHtml(proxyUrl));
+});
 
 // ============ JAVHDz EMBED ============
 app.get('/api/embed/javhdz/:eid', async (req, res) => {

@@ -169,12 +169,23 @@ const nguoncFetchDetail = async (slug: string) => {
   const movie = data.movie;
   const episodes = (movie?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'NguonC',
-    items: (server.server_data || server.items || []).map((ep: any) => ({
-      name: ep.name,
-      slug: ep.slug,
-      embed: ep.embed || ep.link_embed || '',
-      m3u8: ep.m3u8 || ep.link_m3u8 || '',
-    })),
+    items: (server.server_data || server.items || []).map((ep: any) => {
+      const originalEmbed = ep.embed || ep.link_embed || '';
+      let m3u8 = ep.m3u8 || ep.link_m3u8 || '';
+      let embed = originalEmbed;
+      if (originalEmbed) {
+        if (!m3u8) {
+          m3u8 = `/api/video/nguonc?embed=${encodeURIComponent(originalEmbed)}`;
+        }
+        embed = `/api/embed/nguonc?embed=${encodeURIComponent(originalEmbed)}`;
+      }
+      return {
+        name: ep.name,
+        slug: ep.slug,
+        embed,
+        m3u8,
+      };
+    }),
   }));
   
   return {

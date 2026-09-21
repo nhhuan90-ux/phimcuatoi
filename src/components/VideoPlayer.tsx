@@ -9,6 +9,7 @@ interface VideoPlayerProps {
   initialTime?: number;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   forceEmbed?: boolean;
+  isTV?: boolean;
 }
 
 export default function VideoPlayer({
@@ -19,6 +20,7 @@ export default function VideoPlayer({
   initialTime = 0,
   onTimeUpdate,
   forceEmbed = false,
+  isTV,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
@@ -56,12 +58,19 @@ export default function VideoPlayer({
 
   const deviceInfo = detectDevice();
 
+  const isTVInterface = isTV ?? (
+    typeof window !== 'undefined' && (
+      window.location.pathname.startsWith('/tv') ||
+      localStorage.getItem('preferredMode') === 'tv'
+    )
+  );
+
   // Active player mode: 'hls' | 'native' | 'embed'
   const [playerMode, setPlayerMode] = useState<'hls' | 'native' | 'embed'>(() => {
     if (forceEmbed && safeEmbed) return 'embed';
     if (!safeM3u8 && safeEmbed) return 'embed';
-    // On Cốc Cốc, Smart TV, or Android projector: Native HTML5 provides direct hardware decoding!
-    if (safeM3u8 && (deviceInfo.isCocCoc || deviceInfo.isTvOrProjector || deviceInfo.isOldBrowser)) {
+    // If in TV interface, prioritize native HTML5 for direct hardware acceleration
+    if (safeM3u8 && isTVInterface) {
       return 'native';
     }
     return safeM3u8 ? 'hls' : 'embed';
@@ -338,8 +347,8 @@ export default function VideoPlayer({
         <div className="flex items-center flex-wrap gap-1.5">
           <span className="text-zinc-400 font-medium mr-1 text-[11px] hidden sm:inline">Chế độ phát:</span>
 
-          {/* Mode 1: Native HTML5 (Best for TV / Cốc Cốc / Old Android) */}
-          {safeM3u8 && (
+          {/* Mode 1: Native HTML5 (Chỉ hiện trong giao diện TV) */}
+          {isTVInterface && safeM3u8 && (
             <button
               onClick={() => setPlayerMode('native')}
               title="Khuyên dùng cho Cốc Cốc, Smart TV và Máy chiếu Android (sử dụng chip giải mã phần cứng)"

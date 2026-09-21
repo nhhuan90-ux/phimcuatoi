@@ -14,7 +14,6 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [playerKey, setPlayerKey] = useState(0);
-  const [useEmbed, setUseEmbed] = useState(false);
   const [initialTime, setInitialTime] = useState(0);
   const [isLightsOff, setIsLightsOff] = useState(false);
   const lastSavedTime = useRef(0);
@@ -217,7 +216,6 @@ export default function Watch() {
             playerKey={playerKey}
             initialTime={initialTime}
             onTimeUpdate={handleTimeUpdate}
-            forceEmbed={useEmbed}
           />
         </div>
 
@@ -260,14 +258,6 @@ export default function Watch() {
               <span>🔄</span> Tải lại player
             </button>
             <button
-              onClick={() => setUseEmbed(prev => !prev)}
-              className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
-                useEmbed ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#2b2b2b] hover:bg-gray-700 text-white'
-              }`}
-            >
-              <span>📺</span> {useEmbed ? 'Dùng Trình phát HLS' : 'Dùng Trình phát Dự phòng'}
-            </button>
-            <button
               onClick={toggleLights}
               className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center gap-2 ${
                 isLightsOff 
@@ -289,8 +279,8 @@ export default function Watch() {
               </a>
             )}
           </div>
-          <p className="text-xs text-gray-400 italic">
-            💡 <strong>Mẹo cho Cốc Cốc, Smart TV & Máy chiếu cũ:</strong> Chọn nút <em>&quot;TV / Cốc Cốc (Native)&quot;</em> hoặc bấm <em>&quot;Mở bằng App TV&quot;</em> (VLC / MX Player) ngay dưới video để chạy mượt mà nhất.
+          <p className="text-xs text-gray-500 italic">
+            * Nhấn &quot;Tải lại player&quot; nếu video không phát được, hoặc thử đổi máy chủ bằng danh sách bên trên.
           </p>
         </div>
 

@@ -15,7 +15,6 @@ export default function TVWatch() {
   const [loading, setLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [playerKey, setPlayerKey] = useState(0);
-  const [useEmbed, setUseEmbed] = useState(false);
   const [initialTime, setInitialTime] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const overlayTimer = useRef<any>(null);
@@ -115,7 +114,7 @@ export default function TVWatch() {
   return (
     <div className="tv-player-container">
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
-        <VideoPlayer m3u8Url={currentEpData.m3u8} embedUrl={currentEpData.embed} title={movie.name} playerKey={playerKey} initialTime={initialTime} onTimeUpdate={handleTimeUpdate} forceEmbed={useEmbed} />
+        <VideoPlayer m3u8Url={currentEpData.m3u8} embedUrl={currentEpData.embed} title={movie.name} playerKey={playerKey} initialTime={initialTime} onTimeUpdate={handleTimeUpdate} isTV={true} />
       </div>
 
       {/* Overlay */}
@@ -131,9 +130,6 @@ export default function TVWatch() {
           </TVFocusable>
           <TVFocusable onPress={()=>setPlayerKey(p=>p+1)} className="tv-btn tv-btn-secondary" focusClassName="tv-btn-focus" style={{fontSize:14,padding:'10px 20px'}}>
             <RefreshCw size={16} /> Tải lại
-          </TVFocusable>
-          <TVFocusable onPress={()=>setUseEmbed(p=>!p)} className={`tv-btn ${useEmbed?'tv-btn-primary':'tv-btn-secondary'}`} focusClassName="tv-btn-focus" style={{fontSize:14,padding:'10px 20px'}}>
-            <span>📺 {useEmbed ? 'Dùng Trình phát HLS' : 'Dùng Trình phát Dự phòng'}</span>
           </TVFocusable>
 
           {/* Server buttons */}

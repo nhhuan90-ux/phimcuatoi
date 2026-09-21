@@ -205,8 +205,8 @@ export default function Watch() {
 
         {/* Player */}
         <div 
-          className={`w-full bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 transition-all duration-500 ${
-            isLightsOff ? 'z-[70] ring-4 ring-red-600/20' : ''
+          className={`w-full bg-black rounded-lg overflow-hidden shadow-2xl shadow-black/50 mb-4 transition-all duration-500 relative ${
+            isLightsOff ? 'z-[70] ring-4 ring-red-600/30 shadow-[0_0_60px_rgba(0,0,0,0.95)]' : 'z-10'
           }`} 
         >
           <VideoPlayer
@@ -249,7 +249,7 @@ export default function Watch() {
           </div>
         )}
 
-        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div className={`flex flex-wrap justify-between items-center gap-4 mb-6 ${isLightsOff ? 'relative z-[70]' : ''}`}>
           <div className="flex gap-4">
             <button
               onClick={reloadPlayer}

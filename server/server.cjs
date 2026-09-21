@@ -110,6 +110,9 @@ try {
 
 const app = express();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', '*');
@@ -118,6 +121,42 @@ app.use((req, res, next) => {
   res.set('Expires', '0');
   next();
 });
+
+// ============ AUTHENTICATION / ACCESS PIN ============
+const ACCESS_PIN = process.env.ACCESS_PIN || '1210';
+
+app.post('/api/auth/verify', (req, res) => {
+  const pin = String(req.body?.pin || req.query?.pin || '').trim();
+  if (pin === ACCESS_PIN) {
+    const token = Buffer.from(`pct-auth-${Date.now()}-${ACCESS_PIN}`).toString('base64');
+    return res.json({ success: true, token, message: 'Xác thực thành công' });
+  }
+  return res.status(401).json({ success: false, message: 'Mã PIN không đúng, vui lòng thử lại!' });
+});
+
+app.get('/api/auth/verify', (req, res) => {
+  const pin = String(req.query?.pin || '').trim();
+  if (pin === ACCESS_PIN) {
+    const token = Buffer.from(`pct-auth-${Date.now()}-${ACCESS_PIN}`).toString('base64');
+    return res.json({ success: true, token, message: 'Xác thực thành công' });
+  }
+  return res.status(401).json({ success: false, message: 'Mã PIN không đúng, vui lòng thử lại!' });
+});
+
+app.get('/api/auth/check', (req, res) => {
+  const authHeader = req.headers['authorization'] || req.query?.token;
+  if (authHeader) {
+    try {
+      const raw = authHeader.replace(/^Bearer\s+/i, '');
+      const decoded = Buffer.from(raw, 'base64').toString('utf-8');
+      if (decoded.includes(`-${ACCESS_PIN}`) || raw.includes('pct-auth')) {
+        return res.json({ authenticated: true });
+      }
+    } catch (e) {}
+  }
+  return res.status(401).json({ authenticated: false });
+});
+
 const PORT = process.env.PORT || 3001;
 const ALL_SOURCES = ['javhdz','vlxx','javsub','javtiful','phimxyz','subjav'];
 

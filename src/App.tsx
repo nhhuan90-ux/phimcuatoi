@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useTVMode } from './contexts/TVContext';
+import AuthGate from './components/AuthGate';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -51,8 +52,9 @@ function RouteController({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <BrowserRouter>
-      <RouteController>
+    <AuthGate>
+      <BrowserRouter>
+        <RouteController>
         <Routes>
         {/* === TV Routes === */}
         <Route path="/tv" element={<TVLayout />}>
@@ -84,7 +86,8 @@ function App() {
         <Route path="/phim-18/player" element={<Phim18Player />} />
       </Routes>
       </RouteController>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthGate>
   );
 }
 

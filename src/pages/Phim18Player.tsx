@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Film, Play, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { ArrowLeft, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import VideoPlayer from '../components/VideoPlayer';
 
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 
@@ -31,8 +32,6 @@ export default function Phim18Player() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeServer, setActiveServer] = useState(1);
-
-  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Fetch movie details
   useEffect(() => {
@@ -85,63 +84,6 @@ export default function Phim18Player() {
     return () => { isMounted = false; };
   }, [source, id, activeServer]);
 
-  // Setup HLS.js if type === 'hls'
-  useEffect(() => {
-    if (loading || !videoData || videoData.type !== 'hls' || !videoData.videoUrl || !videoRef.current) return;
-
-    let hlsInstance: any = null;
-    const videoEl = videoRef.current;
-    const proxyUrl = `${PHIM18_API}/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`;
-
-    const loadHls = async () => {
-      try {
-        const HlsModule = await import('hls.js');
-        const Hls = HlsModule.default;
-        if (Hls.isSupported()) {
-          hlsInstance = new Hls({
-            maxBufferLength: 30,
-            maxMaxBufferLength: 60,
-            maxBufferSize: 30 * 1024 * 1024
-          });
-          hlsInstance.loadSource(proxyUrl);
-          hlsInstance.attachMedia(videoEl);
-          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-            videoEl.play().catch(() => {});
-          });
-          hlsInstance.on(Hls.Events.ERROR, (_event: any, data: any) => {
-            if (data.fatal) {
-              switch (data.type) {
-                case Hls.ErrorTypes.NETWORK_ERROR:
-                  hlsInstance.startLoad();
-                  break;
-                case Hls.ErrorTypes.MEDIA_ERROR:
-                  hlsInstance.recoverMediaError();
-                  break;
-                default:
-                  hlsInstance.destroy();
-                  break;
-              }
-            }
-          });
-        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-          videoEl.src = proxyUrl;
-          videoEl.play().catch(() => {});
-        }
-      } catch (e) {
-        if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-          videoEl.src = proxyUrl;
-          videoEl.play().catch(() => {});
-        }
-      }
-    };
-
-    loadHls();
-
-    return () => {
-      if (hlsInstance) hlsInstance.destroy();
-    };
-  }, [videoData, loading]);
-
   if (!source || !id) {
     return (
       <div className="container mx-auto px-4 lg:px-8 py-16 text-center text-white">
@@ -154,32 +96,58 @@ export default function Phim18Player() {
     );
   }
 
-  const servers = movie?.embedUrls?.length
-    ? movie.embedUrls.map((s, idx) => ({ id: idx + 1, label: s.label || `Server #${idx + 1}` }))
-    : [{ id: 1, label: 'Server chính' }];
+  // Define server list based on source
+  const getServers = () => {
+    switch (source) {
+      case 'vlxx':
+        return [
+          { id: 1, label: 'Server 1' },
+          { id: 2, label: 'Server 2' }
+        ];
+      case 'javsub':
+        return [
+          { id: 1, label: 'Server 1 (StreamQQ)' },
+          { id: 2, label: 'Server 2 (PlayHQ)' }
+        ];
+      case 'subjav':
+        return [
+          { id: 1, label: 'Server 1 (HLS)' },
+          { id: 2, label: 'Server 2 (Dự phòng)' }
+        ];
+      default:
+        return [{ id: 1, label: 'Server Chính' }];
+    }
+  };
+
+  const servers = getServers();
+
+  const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl
+    ? `${PHIM18_API}/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`
+    : undefined;
+  const embedUrl = videoData?.url || undefined;
 
   return (
-    <div className="container mx-auto px-4 lg:px-8 py-6 max-w-6xl">
-      {/* Top Breadcrumb & Navigation */}
+    <div className="container mx-auto px-4 lg:px-8 py-4 sm:py-6 max-w-5xl">
+      {/* Top Bar / Back button */}
       <div className="flex items-center justify-between gap-4 mb-4">
         <button
           onClick={() => navigate(-1)}
-          className="px-3.5 py-2 rounded-lg bg-[#2b2b2b] hover:bg-[#3a3a3a] text-white transition-colors flex items-center gap-2 text-xs sm:text-sm font-medium"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium py-1 px-2 rounded-lg hover:bg-white/5"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={18} />
           <span>Quay lại</span>
         </button>
       </div>
 
-      {/* Responsive Video Container */}
-      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800 mb-4">
+      {/* Video Player Container */}
+      <div className="w-full mb-4">
         {loading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400">
+          <div className="w-full aspect-video bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center gap-3 text-gray-400">
             <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-xs sm:text-sm font-medium">Đang nạp trình phát video...</p>
           </div>
         ) : error ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-full aspect-video bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
             <p className="text-white text-sm sm:text-base font-semibold mb-2">{error}</p>
             <button
@@ -189,25 +157,13 @@ export default function Phim18Player() {
               <RefreshCw size={14} /> Thử lại
             </button>
           </div>
-        ) : videoData?.type === 'hls' && videoData.videoUrl ? (
-          <video
-            ref={videoRef}
-            controls
-            autoPlay
-            playsInline
-            className="w-full h-full object-contain"
-          />
-        ) : videoData?.url ? (
-          <iframe
-            src={videoData.url}
-            allow="autoplay; fullscreen"
-            allowFullScreen
-            className="w-full h-full border-0"
-          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
-            Không tìm thấy nguồn phát thích hợp
-          </div>
+          <VideoPlayer
+            m3u8Url={m3u8Url}
+            embedUrl={embedUrl}
+            title={movie?.title || 'Xem Phim 18+'}
+            playerKey={activeServer}
+          />
         )}
       </div>
 

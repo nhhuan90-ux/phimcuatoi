@@ -289,8 +289,8 @@ export default function Watch() {
               </a>
             )}
           </div>
-          <p className="text-xs text-gray-500 italic">
-            * Nhấn "Tải lại player" nếu video không phát được, hoặc thử đổi máy chủ bằng nút bên trên.
+          <p className="text-xs text-gray-400 italic">
+            💡 <strong>Mẹo cho Cốc Cốc, Smart TV & Máy chiếu cũ:</strong> Chọn nút <em>&quot;TV / Cốc Cốc (Native)&quot;</em> hoặc bấm <em>&quot;Mở bằng App TV&quot;</em> (VLC / MX Player) ngay dưới video để chạy mượt mà nhất.
           </p>
         </div>
 

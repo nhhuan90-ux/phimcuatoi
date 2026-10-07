@@ -135,7 +135,18 @@ export default function Audiobook() {
     return { book, progress: prog };
   }, [books, currentBook]);
 
-  // Khởi tạo audio element
+  // Refs to hold latest values for event listeners without re-creating Audio instance
+  const currentBookRef = useRef<Book | null>(null);
+  const currentChapterIndexRef = useRef<number>(0);
+  const savedResumeTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    currentBookRef.current = currentBook;
+    currentChapterIndexRef.current = currentChapterIndex;
+    savedResumeTimeRef.current = savedResumeTime;
+  }, [currentBook, currentChapterIndex, savedResumeTime]);
+
+  // Khởi tạo audio element DUY NHẤT 1 lần khi mount
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
@@ -143,8 +154,9 @@ export default function Audiobook() {
 
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 0);
-      if (savedResumeTime !== null && savedResumeTime > 0) {
-        audio.currentTime = Math.min(savedResumeTime, (audio.duration || 1) - 1);
+      if (savedResumeTimeRef.current !== null && savedResumeTimeRef.current > 0) {
+        audio.currentTime = Math.min(savedResumeTimeRef.current, (audio.duration || 1) - 1);
+        savedResumeTimeRef.current = null;
         setSavedResumeTime(null);
       }
     };
@@ -153,7 +165,8 @@ export default function Audiobook() {
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       const now = Date.now();
-      if (now - lastSave > 2000 && currentBook?.id) {
+      const b = currentBookRef.current;
+      if (now - lastSave > 2000 && b?.id) {
         lastSave = now;
         saveProgress(audio.currentTime, audio.duration);
       }
@@ -162,15 +175,19 @@ export default function Audiobook() {
     const onPlay = () => setIsPlaying(true);
     const onPause = () => {
       setIsPlaying(false);
-      if (currentBook?.id) saveProgress(audio.currentTime, audio.duration);
+      const b = currentBookRef.current;
+      if (b?.id) saveProgress(audio.currentTime, audio.duration);
     };
 
     const onEnded = () => {
       setIsPlaying(false);
-      markCompleted(currentChapterIndex);
-      // Tự động phát chương tiếp theo
-      if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
-        playChapter(currentChapterIndex + 1);
+      const b = currentBookRef.current;
+      const chIdx = currentChapterIndexRef.current;
+      if (b) {
+        markCompleted(chIdx);
+        if (chIdx < b.chapters.length - 1) {
+          playChapter(chIdx + 1);
+        }
       }
     };
 
@@ -205,7 +222,7 @@ export default function Audiobook() {
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('error', onError);
     };
-  }, [currentBook, currentChapterIndex, savedResumeTime]);
+  }, []);
 
   const getAudioStreamUrl = (driveId: string) => {
     if (!driveId) return '';
@@ -215,6 +232,10 @@ export default function Audiobook() {
   // Phát sách
   const playBook = (book: Book, targetChapterIdx: number = 0, resumeTime: number | null = null) => {
     if (!book.chapters || book.chapters.length === 0) return;
+    currentBookRef.current = book;
+    currentChapterIndexRef.current = targetChapterIdx;
+    savedResumeTimeRef.current = resumeTime;
+
     setCurrentBook(book);
     setCurrentChapterIndex(targetChapterIdx);
 
@@ -240,9 +261,12 @@ export default function Audiobook() {
 
   // Chọn chương cụ thể
   const playChapter = (index: number) => {
-    if (!currentBook) return;
+    const book = currentBookRef.current || currentBook;
+    if (!book) return;
+    currentChapterIndexRef.current = index;
     setCurrentChapterIndex(index);
-    const chapter = currentBook.chapters[index];
+
+    const chapter = book.chapters[index];
     let driveId = chapter.driveId || '';
     if (!driveId && chapter.driveUrl) {
       const match = chapter.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);

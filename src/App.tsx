@@ -11,6 +11,7 @@ import Search from './pages/Search';
 import History from './pages/History';
 import Phim18Plus from './pages/Phim18Plus';
 import Phim18Player from './pages/Phim18Player';
+import Audiobook from './pages/Audiobook';
 
 // TV Components
 import TVLayout from './components/tv/TVLayout';
@@ -81,6 +82,8 @@ function App() {
           <Route path="tim-kiem" element={<Search />} />
           <Route path="lich-su" element={<History />} />
           <Route path="phim-18" element={<Phim18Plus />} />
+          <Route path="sach-noi" element={<Audiobook />} />
+          <Route path="audiobook" element={<Audiobook />} />
         </Route>
         {/* === Phim 18+ Player (fullscreen, no layout) === */}
         <Route path="/phim-18/player" element={<Phim18Player />} />

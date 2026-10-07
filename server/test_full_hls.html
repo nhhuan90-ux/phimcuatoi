@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+  <video id="video" controls autoplay width="800"></video>
+  <script>
+    var video = document.getElementById('video');
+    fetch('https://phimcuatoi.vercel.app/api/video/javhdz/4003')
+      .then(r => r.json())
+      .then(data => {
+        var hls = new Hls({ debug: true });
+        var proxyUrl = 'https://phimcuatoi.vercel.app/api/proxy/hls?url=' + encodeURIComponent(data.videoUrl);
+        hls.loadSource(proxyUrl);
+        hls.attachMedia(video);
+      });
+  </script>
+</body>
+</html>

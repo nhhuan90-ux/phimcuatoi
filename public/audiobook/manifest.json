@@ -1,0 +1,21 @@
+{
+  "name": "OmniBook - Nghe Sách Nói Online",
+  "short_name": "OmniBook",
+  "description": "Ứng dụng nghe sách nói online kết nối Google Drive, hỗ trợ phát trong nền và nhớ vị trí nghe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "icons": [
+    {
+      "src": "/static/icons/default_cover.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/default_cover.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

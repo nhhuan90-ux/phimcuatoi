@@ -93,6 +93,7 @@ export default function Header() {
     { name: 'Phim Lẻ', path: '/danh-sach/phim-le' },
     { name: 'Phim Bộ', path: '/danh-sach/phim-bo' },
     { name: 'Phim Hot', path: '/danh-sach/phim-chieu-rap' },
+    { name: 'Sách Nói', path: '/sach-noi' },
     { name: 'Phim 18+', path: '/the-loai/phim-18' },
   ];
 

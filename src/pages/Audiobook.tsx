@@ -140,11 +140,46 @@ export default function Audiobook() {
   const currentChapterIndexRef = useRef<number>(0);
   const savedResumeTimeRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    currentBookRef.current = currentBook;
-    currentChapterIndexRef.current = currentChapterIndex;
-    savedResumeTimeRef.current = savedResumeTime;
-  }, [currentBook, currentChapterIndex, savedResumeTime]);
+  // Lưu tiến độ vào localStorage
+  const saveProgress = (cur: number, dur: number) => {
+    const book = currentBookRef.current;
+    const chIdx = currentChapterIndexRef.current;
+    if (!book?.id) return;
+
+    const existing = getBookProgress(book.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    if (dur > 0 && cur / dur >= 0.95) {
+      completedSet.add(chIdx);
+    }
+
+    const data: ProgressData = {
+      bookId: book.id,
+      chapterIndex: chIdx,
+      currentTime: cur,
+      duration: dur,
+      updatedAt: Date.now(),
+      completedChapters: Array.from(completedSet)
+    };
+
+    try {
+      localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(data));
+      localStorage.setItem('audiobook_last_played_id', book.id);
+    } catch (e) {}
+  };
+
+  const markCompleted = (chIdx: number) => {
+    const book = currentBookRef.current;
+    if (!book?.id) return;
+    const existing = getBookProgress(book.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    completedSet.add(chIdx);
+    if (existing) {
+      existing.completedChapters = Array.from(completedSet);
+      try {
+        localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(existing));
+      } catch (e) {}
+    }
+  };
 
   // Khởi tạo audio element DUY NHẤT 1 lần khi mount
   useEffect(() => {

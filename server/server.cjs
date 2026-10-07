@@ -770,6 +770,67 @@ app.get('/api/admin/crawl-javhdz', async (req, res) => {
   }
 });
 
+// ============ GOOGLE DRIVE AUDIO PROXY ============
+app.get(['/api/proxy/drive', '/api/audio/stream'], async (req, res) => {
+  const driveId = String(req.query.id || req.query.driveId || '').trim();
+  if (!driveId) return res.status(400).json({ error: 'Missing driveId parameter' });
+
+  const driveUrls = [
+    `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`,
+    `https://drive.google.com/uc?export=download&id=${driveId}&confirm=t`,
+    `https://docs.google.com/uc?export=download&id=${driveId}&confirm=t`
+  ];
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': '*/*'
+  };
+
+  if (req.headers.range) {
+    headers['range'] = req.headers.range;
+  }
+
+  let streamed = false;
+
+  for (const targetUrl of driveUrls) {
+    try {
+      const response = await axios({
+        method: 'get',
+        url: targetUrl,
+        headers,
+        responseType: 'stream',
+        timeout: 15000,
+        validateStatus: (status) => status >= 200 && status < 400
+      });
+
+      res.status(response.status);
+
+      const resHeaders = response.headers;
+      if (resHeaders['content-type']) res.set('Content-Type', resHeaders['content-type']);
+      else res.set('Content-Type', 'audio/mpeg');
+
+      if (resHeaders['content-length']) res.set('Content-Length', resHeaders['content-length']);
+      if (resHeaders['content-range']) res.set('Content-Range', resHeaders['content-range']);
+      if (resHeaders['accept-ranges']) res.set('Accept-Ranges', resHeaders['accept-ranges']);
+      else res.set('Accept-Ranges', 'bytes');
+
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Headers', '*');
+      res.set('Cache-Control', 'public, max-age=86400');
+
+      response.data.pipe(res);
+      streamed = true;
+      break;
+    } catch (err) {
+      console.error(`[DriveProxy] Failed fetching ${targetUrl}:`, err.message);
+    }
+  }
+
+  if (!streamed && !res.headersSent) {
+    res.status(500).json({ error: 'Failed to stream Google Drive audio' });
+  }
+});
+
 // ============ HLS PROXY ============
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });

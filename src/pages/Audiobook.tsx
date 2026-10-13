@@ -873,7 +873,7 @@ export default function Audiobook() {
                 <div className="flex items-center gap-2">
                   <Headphones className="w-4 h-4 text-indigo-400" />
                   <span className="text-xs font-bold text-white">
-                    Trình phát Google Drive trực tiếp (Không bị giới hạn tải xuống)
+                    Trình phát Google Drive tích hợp
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -881,9 +881,9 @@ export default function Audiobook() {
                     href={`https://drive.google.com/file/d/${currentChapterDriveId}/view`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[11px] text-gray-400 hover:text-indigo-300 flex items-center gap-1 font-medium"
+                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs flex items-center gap-1 font-semibold transition-all shadow"
                   >
-                    Mở tab Drive <ExternalLink className="w-3 h-3" />
+                    Mở phát trên Drive <ExternalLink className="w-3 h-3" />
                   </a>
                   <button
                     onClick={() => setIsDrivePlayerExpanded(false)}
@@ -894,12 +894,17 @@ export default function Audiobook() {
                   </button>
                 </div>
               </div>
-              <iframe
-                src={`https://drive.google.com/file/d/${currentChapterDriveId}/preview`}
-                className="w-full h-36 md:h-44 rounded-xl bg-black border border-gray-800 shadow-inner"
-                allow="autoplay"
-                title="Google Drive Preview Player"
-              />
+              <div className="relative rounded-xl overflow-hidden bg-black border border-gray-800">
+                <iframe
+                  src={`https://drive.google.com/file/d/${currentChapterDriveId}/preview`}
+                  className="w-full h-44 sm:h-52 bg-black"
+                  allow="autoplay; encrypted-media"
+                  title="Google Drive Preview Player"
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] text-gray-400 flex items-center justify-between">
+                <span>* Nếu trình phát nhúng quay vòng do tài khoản Google, hãy bấm <strong>"Mở phát trên Drive"</strong> để nghe trực tiếp mượt mà.</span>
+              </p>
             </div>
           )}
 

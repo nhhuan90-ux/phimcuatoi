@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Headphones, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw, 
   Search, Clock, BookOpen, Volume2, VolumeX, ListMusic, X, Check, CheckCircle2,
-  ChevronRight, Sparkles, Filter
+  ChevronRight, Sparkles, Filter, RefreshCw, AlertCircle, ExternalLink
 } from 'lucide-react';
 import audiobooksData from '../data/audiobooks.json';
+
+const API_BASE = (import.meta as any).env?.VITE_PHIM18_API || '';
 
 interface Chapter {
   id?: string;
@@ -69,9 +71,13 @@ function formatTime(seconds: number) {
 }
 
 export default function Audiobook() {
-  const [books] = useState<Book[]>(audiobooksData as Book[]);
+  const [books, setBooks] = useState<Book[]>(audiobooksData as Book[]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   // Player State
   const [currentBook, setCurrentBook] = useState<Book | null>(null);
@@ -89,8 +95,25 @@ export default function Audiobook() {
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
   const [sleepTimeRemaining, setSleepTimeRemaining] = useState<number | null>(null);
 
+  // Playback Fallback & Error State
+  const [playbackError, setPlaybackError] = useState<{ driveId: string; title: string; message: string } | null>(null);
+  const [iframePlayerDriveId, setIframePlayerDriveId] = useState<string | null>(null);
+  const [isDrivePlayerExpanded, setIsDrivePlayerExpanded] = useState<boolean>(false);
+
   // Audio element reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Drive ID của tập hiện tại
+  const currentChapterDriveId = useMemo(() => {
+    if (!currentBook) return '';
+    const ch = currentBook.chapters?.[currentChapterIndex];
+    let dId = ch?.driveId;
+    if (!dId && ch?.driveUrl) {
+      const m = ch.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (m) dId = m[1];
+    }
+    return dId || '';
+  }, [currentBook, currentChapterIndex]);
 
   // Danh mục thể loại duy nhất
   const categories = useMemo(() => {
@@ -135,7 +158,53 @@ export default function Audiobook() {
     return { book, progress: prog };
   }, [books, currentBook]);
 
-  // Khởi tạo audio element
+  // Refs to hold latest values for event listeners without re-creating Audio instance
+  const currentBookRef = useRef<Book | null>(null);
+  const currentChapterIndexRef = useRef<number>(0);
+  const savedResumeTimeRef = useRef<number | null>(null);
+
+  // Lưu tiến độ vào localStorage
+  const saveProgress = (cur: number, dur: number) => {
+    const book = currentBookRef.current;
+    const chIdx = currentChapterIndexRef.current;
+    if (!book?.id) return;
+
+    const existing = getBookProgress(book.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    if (dur > 0 && cur / dur >= 0.95) {
+      completedSet.add(chIdx);
+    }
+
+    const data: ProgressData = {
+      bookId: book.id,
+      chapterIndex: chIdx,
+      currentTime: cur,
+      duration: dur,
+      updatedAt: Date.now(),
+      completedChapters: Array.from(completedSet)
+    };
+
+    try {
+      localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(data));
+      localStorage.setItem('audiobook_last_played_id', book.id);
+    } catch (e) {}
+  };
+
+  const markCompleted = (chIdx: number) => {
+    const book = currentBookRef.current;
+    if (!book?.id) return;
+    const existing = getBookProgress(book.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    completedSet.add(chIdx);
+    if (existing) {
+      existing.completedChapters = Array.from(completedSet);
+      try {
+        localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(existing));
+      } catch (e) {}
+    }
+  };
+
+  // Khởi tạo audio element DUY NHẤT 1 lần khi mount
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
@@ -143,8 +212,10 @@ export default function Audiobook() {
 
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 0);
-      if (savedResumeTime !== null && savedResumeTime > 0) {
-        audio.currentTime = Math.min(savedResumeTime, (audio.duration || 1) - 1);
+      setPlaybackError(null);
+      if (savedResumeTimeRef.current !== null && savedResumeTimeRef.current > 0) {
+        audio.currentTime = Math.min(savedResumeTimeRef.current, (audio.duration || 1) - 1);
+        savedResumeTimeRef.current = null;
         setSavedResumeTime(null);
       }
     };
@@ -153,24 +224,86 @@ export default function Audiobook() {
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       const now = Date.now();
-      if (now - lastSave > 2000 && currentBook?.id) {
+      const b = currentBookRef.current;
+      if (now - lastSave > 2000 && b?.id) {
         lastSave = now;
         saveProgress(audio.currentTime, audio.duration);
       }
     };
 
-    const onPlay = () => setIsPlaying(true);
+    const onPlay = () => {
+      setIsPlaying(true);
+      setPlaybackError(null);
+    };
     const onPause = () => {
       setIsPlaying(false);
-      if (currentBook?.id) saveProgress(audio.currentTime, audio.duration);
+      const b = currentBookRef.current;
+      if (b?.id) saveProgress(audio.currentTime, audio.duration);
     };
 
     const onEnded = () => {
       setIsPlaying(false);
-      markCompleted(currentChapterIndex);
-      // Tự động phát chương tiếp theo
-      if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
-        playChapter(currentChapterIndex + 1);
+      const b = currentBookRef.current;
+      const chIdx = currentChapterIndexRef.current;
+      if (b) {
+        markCompleted(chIdx);
+        if (chIdx < b.chapters.length - 1) {
+          playChapter(chIdx + 1);
+        }
+      }
+    };
+
+    const onError = () => {
+      if (!audio.src) return;
+      console.warn('[Audiobook] Stream error with current source, attempting next fallback source...');
+      
+      const b = currentBookRef.current;
+      const chIdx = currentChapterIndexRef.current;
+      const ch = b?.chapters?.[chIdx];
+      let driveId = ch?.driveId;
+      if (!driveId && ch?.driveUrl) {
+        const m = ch.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (m) driveId = m[1];
+      }
+
+      if (!driveId) {
+        try {
+          driveId = new URL(audio.src, window.location.origin).searchParams.get('id') || undefined;
+        } catch (e) {}
+      }
+
+      if (!driveId) return;
+
+      const fallbackCandidates = [
+        `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`,
+        `https://docs.google.com/uc?export=download&id=${driveId}&confirm=t`,
+        `https://drive.google.com/uc?export=download&id=${driveId}&confirm=t`
+      ];
+
+      // Tìm vị trí của link hiện tại trong danh sách fallback
+      const currentSrc = audio.src;
+      let nextIndex = 0;
+      for (let i = 0; i < fallbackCandidates.length; i++) {
+        if (currentSrc.includes(fallbackCandidates[i]) || fallbackCandidates[i].includes(currentSrc)) {
+          nextIndex = i + 1;
+          break;
+        }
+      }
+
+      if (nextIndex < fallbackCandidates.length) {
+        const nextUrl = fallbackCandidates[nextIndex];
+        console.log(`[Audiobook] Switching fallback [${nextIndex + 1}/${fallbackCandidates.length}]:`, nextUrl);
+        audio.src = nextUrl;
+        audio.load();
+        audio.play().catch(() => {});
+      } else {
+        console.warn('[Audiobook] Google Drive giới hạn quota tải xuống trực tiếp. Kích hoạt Trình phát Google Drive Preview cho file:', driveId);
+        setIsDrivePlayerExpanded(true);
+        setPlaybackError({
+          driveId,
+          title: ch?.title || b?.title || 'Tập hiện tại',
+          message: 'Tập này đang bị Google Drive giới hạn tải xuống trực tiếp (Download Quota). Hệ thống đã tự động mở Trình phát Google Drive tích hợp bên dưới để bạn tiếp tục nghe.'
+        });
       }
     };
 
@@ -179,6 +312,7 @@ export default function Audiobook() {
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
 
     return () => {
       audio.pause();
@@ -187,111 +321,80 @@ export default function Audiobook() {
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
     };
-  }, [currentBook, currentChapterIndex, savedResumeTime]);
+  }, []);
 
-  // Cập nhật Media Session (Màn hình khóa & phát ngầm)
+  // Tự động load dữ liệu mới nhất từ server khi mở trang
   useEffect(() => {
-    if (!('mediaSession' in navigator) || !currentBook) return;
-    const currentChapter = currentBook.chapters[currentChapterIndex];
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentChapter ? currentChapter.title : currentBook.title,
-      artist: currentBook.author || 'Audiobook',
-      album: currentBook.title,
-    });
-
-    navigator.mediaSession.setActionHandler('play', () => {
-      audioRef.current?.play().catch(() => {});
-    });
-    navigator.mediaSession.setActionHandler('pause', () => {
-      audioRef.current?.pause();
-    });
-    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-      const skip = details.seekOffset || 15;
-      seekRelative(-skip);
-    });
-    navigator.mediaSession.setActionHandler('seekforward', (details) => {
-      const skip = details.seekOffset || 15;
-      seekRelative(skip);
-    });
-    navigator.mediaSession.setActionHandler('previoustrack', () => {
-      if (currentChapterIndex > 0) playChapter(currentChapterIndex - 1);
-    });
-    navigator.mediaSession.setActionHandler('nexttrack', () => {
-      if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
-        playChapter(currentChapterIndex + 1);
-      }
-    });
-  }, [currentBook, currentChapterIndex]);
-
-  // Quản lý hẹn giờ tắt
-  useEffect(() => {
-    if (sleepTimerMinutes === null) {
-      setSleepTimeRemaining(null);
-      return;
-    }
-    setSleepTimeRemaining(sleepTimerMinutes * 60);
-
-    const interval = setInterval(() => {
-      setSleepTimeRemaining(prev => {
-        if (prev === null || prev <= 1) {
-          clearInterval(interval);
-          audioRef.current?.pause();
-          setIsPlaying(false);
-          setSleepTimerMinutes(null);
-          return null;
+    const fetchLatestBooks = async () => {
+      try {
+        const res = await fetch('/api/books');
+        if (res.ok) {
+          const remoteBooks = await res.json();
+          if (Array.isArray(remoteBooks) && remoteBooks.length > 0) {
+            setBooks(remoteBooks);
+          }
         }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [sleepTimerMinutes]);
-
-  // Lưu tiến độ vào localStorage
-  const saveProgress = (cur: number, dur: number) => {
-    if (!currentBook?.id) return;
-    const existing = getBookProgress(currentBook.id);
-    const completedSet = new Set(existing?.completedChapters || []);
-    if (dur > 0 && cur / dur >= 0.95) {
-      completedSet.add(currentChapterIndex);
-    }
-
-    const data: ProgressData = {
-      bookId: currentBook.id,
-      chapterIndex: currentChapterIndex,
-      currentTime: cur,
-      duration: dur,
-      updatedAt: Date.now(),
-      completedChapters: Array.from(completedSet)
+      } catch (err) {
+        // Fallback dùng audiobooksData import sẵn
+      }
     };
+    fetchLatestBooks();
+  }, []);
 
-    localStorage.setItem(`audiobook_progress_${currentBook.id}`, JSON.stringify(data));
-    localStorage.setItem('audiobook_last_played_id', currentBook.id);
+  // Xử lý nút đồng bộ thủ công từ Google Drive
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncStatus('Đang quét và đồng bộ các tập audio mới từ Google Drive...');
+    try {
+      const res = await fetch('/api/sync-audiobooks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.books)) {
+          setBooks(data.books);
+        }
+        setSyncStatus(`✔ ${data.message || 'Đồng bộ Google Drive thành công!'}`);
+      } else {
+        setSyncStatus('Lỗi: Máy chủ không phản hồi yêu cầu đồng bộ.');
+      }
+    } catch (err: any) {
+      setSyncStatus(`Lỗi kết nối: ${err?.message || 'Không thể kết nối API server'}`);
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncStatus(null), 5000);
+    }
   };
 
-  const markCompleted = (chIdx: number) => {
-    if (!currentBook?.id) return;
-    const existing = getBookProgress(currentBook.id);
-    const completedSet = new Set(existing?.completedChapters || []);
-    completedSet.add(chIdx);
-    if (existing) {
-      existing.completedChapters = Array.from(completedSet);
-      localStorage.setItem(`audiobook_progress_${currentBook.id}`, JSON.stringify(existing));
-    }
+  const getAudioStreamUrl = (driveId: string) => {
+    if (!driveId) return '';
+    // Phát trực tiếp từ Google Drive CDN
+    return `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
   };
 
   // Phát sách
   const playBook = (book: Book, targetChapterIdx: number = 0, resumeTime: number | null = null) => {
     if (!book.chapters || book.chapters.length === 0) return;
+    setPlaybackError(null);
+    currentBookRef.current = book;
+    currentChapterIndexRef.current = targetChapterIdx;
+    savedResumeTimeRef.current = resumeTime;
+
     setCurrentBook(book);
     setCurrentChapterIndex(targetChapterIdx);
 
     const chapter = book.chapters[targetChapterIdx];
-    const driveId = chapter.driveId || '';
-    // Luồng trực tiếp Google Drive CDN với confirm=t bỏ qua cảnh báo >100MB
-    const streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
+    let driveId = chapter.driveId || '';
+    if (!driveId && chapter.driveUrl) {
+      const match = chapter.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) driveId = match[1];
+    }
+
+    const streamUrl = getAudioStreamUrl(driveId);
 
     if (audioRef.current) {
       audioRef.current.src = streamUrl;
@@ -306,11 +409,21 @@ export default function Audiobook() {
 
   // Chọn chương cụ thể
   const playChapter = (index: number) => {
-    if (!currentBook) return;
+    const book = currentBookRef.current || currentBook;
+    if (!book) return;
+    setPlaybackError(null);
+    currentBookRef.current = book;
+    currentChapterIndexRef.current = index;
     setCurrentChapterIndex(index);
-    const chapter = currentBook.chapters[index];
-    const driveId = chapter.driveId || '';
-    const streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
+
+    const chapter = book.chapters[index];
+    let driveId = chapter.driveId || '';
+    if (!driveId && chapter.driveUrl) {
+      const match = chapter.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) driveId = match[1];
+    }
+
+    const streamUrl = getAudioStreamUrl(driveId);
 
     if (audioRef.current) {
       audioRef.current.src = streamUrl;
@@ -375,26 +488,56 @@ export default function Audiobook() {
           </div>
         </div>
 
-        {/* SEARCH BAR */}
-        <div className="w-full md:w-80 relative">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm tên sách, tác giả..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        {/* ACTION CONTROLS: SYNC BUTTON & SEARCH BAR */}
+        <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
+              isSyncing
+                ? 'bg-indigo-900/60 text-indigo-300 border border-indigo-700/50 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/25 active:scale-95'
+            }`}
+            title="Quét và đồng bộ các tập/sách mới từ Google Drive lên trang"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Đang đồng bộ Drive...' : 'Đồng bộ Google Drive'}</span>
+          </button>
+
+          {/* SEARCH BAR */}
+          <div className="w-full sm:w-72 md:w-80 relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm tên sách, tác giả..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* SYNC NOTIFICATION BANNER */}
+      {syncStatus && (
+        <div className="mb-6 p-3.5 rounded-xl bg-slate-900/90 border border-indigo-500/40 flex items-center justify-between gap-3 text-sm text-indigo-200 shadow-lg animate-fadeIn">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+            <span className="truncate">{syncStatus}</span>
+          </div>
+          <button onClick={() => setSyncStatus(null)} className="text-gray-400 hover:text-white p-1">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* QUICK RESUME BANNER (NẾU CÓ BÀI NGHE DỞ) */}
       {lastPlayedProgress && (
@@ -658,6 +801,25 @@ export default function Audiobook() {
                           Đang phát
                         </span>
                       )}
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          let dId = ch.driveId;
+                          if (!dId && ch.driveUrl) {
+                            const m = ch.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                            if (m) dId = m[1];
+                          }
+                          if (dId) {
+                            playBook(selectedBookForModal, idx, 0);
+                            setIsDrivePlayerExpanded(true);
+                            setSelectedBookForModal(null);
+                          }
+                        }}
+                        className="w-8 h-8 rounded-lg bg-gray-800/80 hover:bg-amber-600 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                        title="Nghe qua Trình phát Google Drive (tránh giới hạn file)"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </div>
                       <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300 hover:bg-indigo-600 hover:text-white transition-colors">
                         <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                       </div>
@@ -673,6 +835,74 @@ export default function Audiobook() {
       {/* FLOATING AUDIO PLAYER (ĐÁY MÀN HÌNH) */}
       {currentBook && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-950/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl px-4 py-3 md:py-3.5">
+          {/* PLAYBACK ERROR ALERT (NẾU GOOGLE DRIVE GIỚI HẠN TẢI XUỐNG FILE LỚN) */}
+          {playbackError && (
+            <div className="max-w-7xl mx-auto mb-2.5 p-2.5 px-3.5 rounded-xl bg-amber-950/90 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-amber-200 shadow-xl animate-fadeIn">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span className="truncate">
+                  <strong className="text-white">{playbackError.title}:</strong> {playbackError.message}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setIframePlayerDriveId(playbackError.driveId)}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shadow text-xs transition-all flex items-center gap-1.5"
+                >
+                  <Headphones className="w-3.5 h-3.5" /> Mở Trình phát Drive tích hợp
+                </button>
+                <a
+                  href={`https://drive.google.com/file/d/${playbackError.driveId}/view`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-lg text-xs flex items-center gap-1 transition-all"
+                >
+                  Mở link <ExternalLink className="w-3 h-3" />
+                </a>
+                <button onClick={() => setPlaybackError(null)} className="p-1 text-gray-400 hover:text-white">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* GOOGLE DRIVE PREVIEW EMBEDDED PLAYER (TÍCH HỢP TRỰC TIẾP KHI GẶP LỖI HOẶC KHI BẬT) */}
+          {isDrivePlayerExpanded && currentChapterDriveId && (
+            <div className="max-w-7xl mx-auto mb-3 p-3 bg-gray-900/95 rounded-2xl border border-indigo-500/40 shadow-2xl backdrop-blur-md animate-fadeIn">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-800">
+                <div className="flex items-center gap-2">
+                  <Headphones className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-bold text-white">
+                    Trình phát Google Drive trực tiếp (Không bị giới hạn tải xuống)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://drive.google.com/file/d/${currentChapterDriveId}/view`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-gray-400 hover:text-indigo-300 flex items-center gap-1 font-medium"
+                  >
+                    Mở tab Drive <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button
+                    onClick={() => setIsDrivePlayerExpanded(false)}
+                    className="p-1 text-gray-400 hover:text-white rounded hover:bg-gray-800"
+                    title="Thu gọn"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <iframe
+                src={`https://drive.google.com/file/d/${currentChapterDriveId}/preview`}
+                className="w-full h-36 md:h-44 rounded-xl bg-black border border-gray-800 shadow-inner"
+                allow="autoplay"
+                title="Google Drive Preview Player"
+              />
+            </div>
+          )}
+
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5">
             {/* LEFT: CURRENT TRACK INFO */}
             <div 
@@ -810,6 +1040,19 @@ export default function Audiobook() {
                 {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4" />}
               </button>
 
+              {/* Google Drive Preview Switcher */}
+              <button
+                onClick={() => setIsDrivePlayerExpanded(!isDrivePlayerExpanded)}
+                className={`p-1.5 transition-colors rounded-lg ${
+                  isDrivePlayerExpanded 
+                    ? 'text-indigo-400 bg-indigo-500/20' 
+                    : 'text-gray-400 hover:text-indigo-400'
+                }`}
+                title={isDrivePlayerExpanded ? "Thu gọn Trình phát Google Drive" : "Mở Trình phát Google Drive trực tiếp (tránh giới hạn file)"}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+
               {/* Chapter drawer trigger */}
               <button
                 onClick={() => setSelectedBookForModal(currentBook)}
@@ -818,6 +1061,53 @@ export default function Audiobook() {
               >
                 <ListMusic className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TRÌNH PHÁT GOOGLE DRIVE DỰ PHÒNG */}
+      {iframePlayerDriveId && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIframePlayerDriveId(null)}
+        >
+          <div 
+            className="bg-[#111827] border border-gray-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Headphones className="w-5 h-5 text-indigo-400" />
+                <h3 className="font-bold text-white text-sm md:text-base">
+                  Trình phát Google Drive tích hợp
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIframePlayerDriveId(null)}
+                className="p-1 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <iframe
+                src={`https://drive.google.com/file/d/${iframePlayerDriveId}/preview`}
+                className="w-full h-48 sm:h-56 rounded-xl border border-gray-800 bg-black"
+                allow="autoplay"
+                title="Google Drive Audio Player"
+              />
+              <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                <span>Trình phát trực tiếp của Google (không bị giới hạn tải xuống)</span>
+                <a
+                  href={`https://drive.google.com/file/d/${iframePlayerDriveId}/view`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  Mở trên Drive <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -135,53 +135,7 @@ export default function Audiobook() {
     return { book, progress: prog };
   }, [books, currentBook]);
 
-  // Refs to hold latest values for event listeners without re-creating Audio instance
-  const currentBookRef = useRef<Book | null>(null);
-  const currentChapterIndexRef = useRef<number>(0);
-  const savedResumeTimeRef = useRef<number | null>(null);
-
-  // Lưu tiến độ vào localStorage
-  const saveProgress = (cur: number, dur: number) => {
-    const book = currentBookRef.current;
-    const chIdx = currentChapterIndexRef.current;
-    if (!book?.id) return;
-
-    const existing = getBookProgress(book.id);
-    const completedSet = new Set(existing?.completedChapters || []);
-    if (dur > 0 && cur / dur >= 0.95) {
-      completedSet.add(chIdx);
-    }
-
-    const data: ProgressData = {
-      bookId: book.id,
-      chapterIndex: chIdx,
-      currentTime: cur,
-      duration: dur,
-      updatedAt: Date.now(),
-      completedChapters: Array.from(completedSet)
-    };
-
-    try {
-      localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(data));
-      localStorage.setItem('audiobook_last_played_id', book.id);
-    } catch (e) {}
-  };
-
-  const markCompleted = (chIdx: number) => {
-    const book = currentBookRef.current;
-    if (!book?.id) return;
-    const existing = getBookProgress(book.id);
-    const completedSet = new Set(existing?.completedChapters || []);
-    completedSet.add(chIdx);
-    if (existing) {
-      existing.completedChapters = Array.from(completedSet);
-      try {
-        localStorage.setItem(`audiobook_progress_${book.id}`, JSON.stringify(existing));
-      } catch (e) {}
-    }
-  };
-
-  // Khởi tạo audio element DUY NHẤT 1 lần khi mount
+  // Khởi tạo audio element
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
@@ -189,9 +143,8 @@ export default function Audiobook() {
 
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 0);
-      if (savedResumeTimeRef.current !== null && savedResumeTimeRef.current > 0) {
-        audio.currentTime = Math.min(savedResumeTimeRef.current, (audio.duration || 1) - 1);
-        savedResumeTimeRef.current = null;
+      if (savedResumeTime !== null && savedResumeTime > 0) {
+        audio.currentTime = Math.min(savedResumeTime, (audio.duration || 1) - 1);
         setSavedResumeTime(null);
       }
     };
@@ -200,8 +153,7 @@ export default function Audiobook() {
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       const now = Date.now();
-      const b = currentBookRef.current;
-      if (now - lastSave > 2000 && b?.id) {
+      if (now - lastSave > 2000 && currentBook?.id) {
         lastSave = now;
         saveProgress(audio.currentTime, audio.duration);
       }
@@ -210,34 +162,15 @@ export default function Audiobook() {
     const onPlay = () => setIsPlaying(true);
     const onPause = () => {
       setIsPlaying(false);
-      const b = currentBookRef.current;
-      if (b?.id) saveProgress(audio.currentTime, audio.duration);
+      if (currentBook?.id) saveProgress(audio.currentTime, audio.duration);
     };
 
     const onEnded = () => {
       setIsPlaying(false);
-      const b = currentBookRef.current;
-      const chIdx = currentChapterIndexRef.current;
-      if (b) {
-        markCompleted(chIdx);
-        if (chIdx < b.chapters.length - 1) {
-          playChapter(chIdx + 1);
-        }
-      }
-    };
-
-    const onError = () => {
-      if (!audio.src) return;
-      console.warn('[Audiobook] Primary proxy stream failed, attempting direct Google Drive fallback...');
-      if (audio.src.includes('/api/proxy/drive')) {
-        try {
-          const driveId = new URL(audio.src, window.location.origin).searchParams.get('id');
-          if (driveId) {
-            audio.src = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
-            audio.load();
-            audio.play().catch(() => {});
-          }
-        } catch (e) {}
+      markCompleted(currentChapterIndex);
+      // Tự động phát chương tiếp theo
+      if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
+        playChapter(currentChapterIndex + 1);
       }
     };
 
@@ -246,7 +179,6 @@ export default function Audiobook() {
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
-    audio.addEventListener('error', onError);
 
     return () => {
       audio.pause();
@@ -255,33 +187,111 @@ export default function Audiobook() {
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('error', onError);
     };
-  }, []);
+  }, [currentBook, currentChapterIndex, savedResumeTime]);
 
-  const getAudioStreamUrl = (driveId: string) => {
-    if (!driveId) return '';
-    return `/api/proxy/drive?id=${encodeURIComponent(driveId)}`;
+  // Cập nhật Media Session (Màn hình khóa & phát ngầm)
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentBook) return;
+    const currentChapter = currentBook.chapters[currentChapterIndex];
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentChapter ? currentChapter.title : currentBook.title,
+      artist: currentBook.author || 'Audiobook',
+      album: currentBook.title,
+    });
+
+    navigator.mediaSession.setActionHandler('play', () => {
+      audioRef.current?.play().catch(() => {});
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audioRef.current?.pause();
+    });
+    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+      const skip = details.seekOffset || 15;
+      seekRelative(-skip);
+    });
+    navigator.mediaSession.setActionHandler('seekforward', (details) => {
+      const skip = details.seekOffset || 15;
+      seekRelative(skip);
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      if (currentChapterIndex > 0) playChapter(currentChapterIndex - 1);
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      if (currentBook && currentChapterIndex < currentBook.chapters.length - 1) {
+        playChapter(currentChapterIndex + 1);
+      }
+    });
+  }, [currentBook, currentChapterIndex]);
+
+  // Quản lý hẹn giờ tắt
+  useEffect(() => {
+    if (sleepTimerMinutes === null) {
+      setSleepTimeRemaining(null);
+      return;
+    }
+    setSleepTimeRemaining(sleepTimerMinutes * 60);
+
+    const interval = setInterval(() => {
+      setSleepTimeRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          audioRef.current?.pause();
+          setIsPlaying(false);
+          setSleepTimerMinutes(null);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimerMinutes]);
+
+  // Lưu tiến độ vào localStorage
+  const saveProgress = (cur: number, dur: number) => {
+    if (!currentBook?.id) return;
+    const existing = getBookProgress(currentBook.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    if (dur > 0 && cur / dur >= 0.95) {
+      completedSet.add(currentChapterIndex);
+    }
+
+    const data: ProgressData = {
+      bookId: currentBook.id,
+      chapterIndex: currentChapterIndex,
+      currentTime: cur,
+      duration: dur,
+      updatedAt: Date.now(),
+      completedChapters: Array.from(completedSet)
+    };
+
+    localStorage.setItem(`audiobook_progress_${currentBook.id}`, JSON.stringify(data));
+    localStorage.setItem('audiobook_last_played_id', currentBook.id);
+  };
+
+  const markCompleted = (chIdx: number) => {
+    if (!currentBook?.id) return;
+    const existing = getBookProgress(currentBook.id);
+    const completedSet = new Set(existing?.completedChapters || []);
+    completedSet.add(chIdx);
+    if (existing) {
+      existing.completedChapters = Array.from(completedSet);
+      localStorage.setItem(`audiobook_progress_${currentBook.id}`, JSON.stringify(existing));
+    }
   };
 
   // Phát sách
   const playBook = (book: Book, targetChapterIdx: number = 0, resumeTime: number | null = null) => {
     if (!book.chapters || book.chapters.length === 0) return;
-    currentBookRef.current = book;
-    currentChapterIndexRef.current = targetChapterIdx;
-    savedResumeTimeRef.current = resumeTime;
-
     setCurrentBook(book);
     setCurrentChapterIndex(targetChapterIdx);
 
     const chapter = book.chapters[targetChapterIdx];
-    let driveId = chapter.driveId || '';
-    if (!driveId && chapter.driveUrl) {
-      const match = chapter.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) driveId = match[1];
-    }
-
-    const streamUrl = getAudioStreamUrl(driveId);
+    const driveId = chapter.driveId || '';
+    // Luồng trực tiếp Google Drive CDN với confirm=t bỏ qua cảnh báo >100MB
+    const streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
 
     if (audioRef.current) {
       audioRef.current.src = streamUrl;
@@ -296,19 +306,11 @@ export default function Audiobook() {
 
   // Chọn chương cụ thể
   const playChapter = (index: number) => {
-    const book = currentBookRef.current || currentBook;
-    if (!book) return;
-    currentChapterIndexRef.current = index;
+    if (!currentBook) return;
     setCurrentChapterIndex(index);
-
-    const chapter = book.chapters[index];
-    let driveId = chapter.driveId || '';
-    if (!driveId && chapter.driveUrl) {
-      const match = chapter.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) driveId = match[1];
-    }
-
-    const streamUrl = getAudioStreamUrl(driveId);
+    const chapter = currentBook.chapters[index];
+    const driveId = chapter.driveId || '';
+    const streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`;
 
     if (audioRef.current) {
       audioRef.current.src = streamUrl;

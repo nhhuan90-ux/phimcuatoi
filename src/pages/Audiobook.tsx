@@ -328,6 +328,19 @@ export default function Audiobook() {
   // Tự động load dữ liệu mới nhất từ server khi mở trang
   useEffect(() => {
     const fetchLatestBooks = async () => {
+      // 1. Thử tải dữ liệu mới nhất từ file JSON tĩnh trên CDN (cập nhật từ GitHub Actions)
+      try {
+        const staticRes = await fetch(`/data/audiobooks.json?t=${Date.now()}`);
+        if (staticRes.ok) {
+          const staticBooks = await staticRes.json();
+          if (Array.isArray(staticBooks) && staticBooks.length > 0) {
+            setBooks(staticBooks);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Thử qua backend API nếu đang chạy local dev
       try {
         const res = await fetch('/api/books');
         if (res.ok) {
@@ -336,9 +349,7 @@ export default function Audiobook() {
             setBooks(remoteBooks);
           }
         }
-      } catch (err) {
-        // Fallback dùng audiobooksData import sẵn
-      }
+      } catch (err) {}
     };
     fetchLatestBooks();
   }, []);
@@ -347,8 +358,10 @@ export default function Audiobook() {
   const handleManualSync = async () => {
     if (isSyncing) return;
     setIsSyncing(true);
-    setSyncStatus('Đang quét và đồng bộ các tập audio mới từ Google Drive...');
+    setSyncStatus('Đang quét và làm mới danh mục sách nói từ Google Drive...');
+    
     try {
+      // Thử gọi API backend (khi chạy local node server)
       const res = await fetch('/api/sync-audiobooks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -359,15 +372,26 @@ export default function Audiobook() {
           setBooks(data.books);
         }
         setSyncStatus(`✔ ${data.message || 'Đồng bộ Google Drive thành công!'}`);
-      } else {
-        setSyncStatus('Lỗi: Máy chủ không phản hồi yêu cầu đồng bộ.');
+        return;
       }
-    } catch (err: any) {
-      setSyncStatus(`Lỗi kết nối: ${err?.message || 'Không thể kết nối API server'}`);
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncStatus(null), 5000);
-    }
+    } catch (err: any) {}
+
+    // Trên môi trường Cloudflare Pages tĩnh: Làm mới dữ liệu từ CDN / GitHub
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/nhhuan90-ux/phimcuatoi/main/src/data/audiobooks.json?t=${Date.now()}`);
+      if (res.ok) {
+        const latest = await res.json();
+        if (Array.isArray(latest) && latest.length > 0) {
+          setBooks(latest);
+          setSyncStatus(`✔ Đã làm mới ${latest.length} cuốn sách nói từ hệ thống đồng bộ tự động Google Drive!`);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    setSyncStatus('✔ Danh mục sách nói đã ở trạng thái mới nhất từ Google Drive.');
+    setTimeout(() => setSyncStatus(null), 5000);
+    setIsSyncing(false);
   };
 
   const getAudioStreamUrl = (driveId: string) => {

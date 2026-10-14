@@ -203,6 +203,193 @@ function saveData() {
   } catch (e) { console.error('Save error:', e.message); return false; }
 }
 
+// ============ AUDIOBOOKS DATA MANAGEMENT ============
+let audiobooksData = [];
+
+function getAudiobooksPaths() {
+  return [
+    path.join(__dirname, 'audiobooks.json'),
+    path.join(process.cwd(), 'server', 'audiobooks.json'),
+    path.join(process.cwd(), 'src', 'data', 'audiobooks.json'),
+    path.join(process.cwd(), 'public', 'data', 'audiobooks.json')
+  ];
+}
+
+function loadAudiobooksData() {
+  try {
+    const paths = getAudiobooksPaths();
+    const targetPath = paths.find(p => fs.existsSync(p));
+    if (targetPath) {
+      audiobooksData = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
+      console.log(`Loaded ${audiobooksData.length} audiobooks from ${targetPath}`);
+    } else {
+      console.warn('audiobooks.json not found in any candidate path');
+      audiobooksData = [];
+    }
+  } catch (e) {
+    console.error('Load audiobooks error:', e.message);
+  }
+}
+loadAudiobooksData();
+
+function saveAudiobooksData() {
+  try {
+    const jsonStr = JSON.stringify(audiobooksData, null, 2);
+    const candidatePaths = [
+      path.join(__dirname, 'audiobooks.json'),
+      path.join(process.cwd(), 'server', 'audiobooks.json'),
+      path.join(process.cwd(), 'src', 'data', 'audiobooks.json'),
+      path.join(process.cwd(), 'public', 'data', 'audiobooks.json')
+    ];
+    let savedAny = false;
+    candidatePaths.forEach(p => {
+      try {
+        const dir = path.dirname(p);
+        if (fs.existsSync(dir)) {
+          fs.writeFileSync(p, jsonStr, 'utf-8');
+          savedAny = true;
+        }
+      } catch (err) {}
+    });
+    return savedAny;
+  } catch (e) {
+    console.error('Save audiobooks error:', e.message);
+    return false;
+  }
+}
+
+const ROOT_DRIVE_AUDIO_FOLDER_ID = '1wtVylzodsKB9Ufxd1tSDiPjnKdHM0850';
+
+async function scrapeDriveFolder(folderId) {
+  try {
+    const url = 'https://drive.google.com/drive/folders/' + folderId;
+    const res = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'vi,en;q=0.9'
+      },
+      timeout: 15000
+    });
+    const html = res.data;
+    const $ = cheerio.load(html);
+
+    const folderTitle = $('title').text().replace(/\s*-\s*Google Drive.*$/i, '').trim();
+    const files = [];
+    const subfolders = [];
+
+    $('tr[data-id]').each((i, row) => {
+      const fileId = $(row).attr('data-id');
+      const aria = $(row).find('[aria-label]').first().attr('aria-label') || '';
+      if (fileId && fileId !== folderId && aria) {
+        const isFolder = aria.toLowerCase().includes('folder');
+        if (isFolder) {
+          const cleanFolderTitle = aria
+            .replace(/\s+(Shared folder|folder|Audio|Google Drive|Shared).*$/i, '')
+            .trim();
+          subfolders.push({ folderId: fileId, title: cleanFolderTitle || fileId });
+        } else {
+          const cleanTitle = aria
+            .replace(/\s+(Audio|Shared|Google Drive|Google Tài liệu).*$/i, '')
+            .replace(/\.(mp3|m4a|wav|aac|flac|ogg)$/i, '')
+            .trim();
+
+          files.push({
+            id: `c_${fileId}`,
+            title: cleanTitle || `Tập ${files.length + 1}`,
+            driveUrl: `https://drive.google.com/file/d/${fileId}/view`,
+            driveId: fileId
+          });
+        }
+      }
+    });
+
+    return { folderTitle, files, subfolders };
+  } catch (err) {
+    console.error(`[ScrapeDriveFolder] Failed ${folderId}:`, err.message);
+    return null;
+  }
+}
+
+async function syncDriveAudiobooks() {
+  console.log('[AudiobookSync] Bắt đầu đồng bộ danh mục sách nói từ Google Drive...');
+  loadAudiobooksData();
+
+  let updatedBooksCount = 0;
+  let newChaptersCount = 0;
+  let newBooksCount = 0;
+
+  // 1. Quét thư mục gốc chính (ROOT_DRIVE_AUDIO_FOLDER_ID) để tìm các sách (subfolder) mới thêm vào
+  try {
+    console.log(`[AudiobookSync] Đang quét thư mục mẹ Google Drive (${ROOT_DRIVE_AUDIO_FOLDER_ID})...`);
+    const rootScraped = await scrapeDriveFolder(ROOT_DRIVE_AUDIO_FOLDER_ID);
+    if (rootScraped && rootScraped.subfolders && rootScraped.subfolders.length > 0) {
+      const knownFolderIds = new Set(audiobooksData.map(b => b.folderId).filter(Boolean));
+
+      for (const sub of rootScraped.subfolders) {
+        if (!knownFolderIds.has(sub.folderId)) {
+          console.log(`[AudiobookSync] Phát hiện sách/thư mục mới từ Drive mẹ: "${sub.title}" (${sub.folderId})`);
+          const bookScraped = await scrapeDriveFolder(sub.folderId);
+          if (bookScraped && bookScraped.files && bookScraped.files.length > 0) {
+            const newBook = {
+              id: `book-${Date.now()}-${sub.folderId.substring(0, 6)}`,
+              title: sub.title || bookScraped.folderTitle || 'Sách nói mới',
+              author: 'Chưa rõ tác giả',
+              narrator: 'Diễn đọc Audio',
+              category: 'Văn học / Trinh thám',
+              description: `Sách nói ${sub.title || bookScraped.folderTitle} cập nhật tự động từ Google Drive.`,
+              cover: '',
+              folderId: sub.folderId,
+              chapters: bookScraped.files,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            audiobooksData.unshift(newBook);
+            knownFolderIds.add(sub.folderId);
+            newBooksCount++;
+            newChaptersCount += bookScraped.files.length;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[AudiobookSync] Lỗi quét thư mục mẹ:', err.message);
+  }
+
+  // 2. Quét các sách hiện tại có folderId để kiểm tra xem có thêm tập/chương audio nào mới không
+  for (let i = 0; i < audiobooksData.length; i++) {
+    const book = audiobooksData[i];
+    if (!book.folderId) continue;
+
+    try {
+      const scraped = await scrapeDriveFolder(book.folderId);
+      if (!scraped || !scraped.files || scraped.files.length === 0) continue;
+
+      const existingChapterIds = new Set((book.chapters || []).map(c => c.driveId));
+      const newFiles = scraped.files.filter(f => !existingChapterIds.has(f.driveId));
+
+      if (newFiles.length > 0) {
+        console.log(`[AudiobookSync] Sách "${book.title}": phát hiện ${newFiles.length} chương mới!`);
+        book.chapters = [...(book.chapters || []), ...newFiles];
+        book.updatedAt = new Date().toISOString();
+        updatedBooksCount++;
+        newChaptersCount += newFiles.length;
+      }
+    } catch (e) {
+      console.warn(`[AudiobookSync] Lỗi quét folder ${book.folderId}:`, e.message);
+    }
+  }
+
+  if (newChaptersCount > 0 || newBooksCount > 0) {
+    saveAudiobooksData();
+    console.log(`[AudiobookSync] Hoàn tất đồng bộ: Thêm ${newBooksCount} cuốn sách mới, cập nhật ${updatedBooksCount} sách, thêm ${newChaptersCount} chương audio.`);
+  } else {
+    console.log('[AudiobookSync] Tất cả sách hiện tại đã đồng bộ mới nhất.');
+  }
+
+  return { updatedBooksCount, newBooksCount, newChaptersCount, totalBooks: audiobooksData.length };
+}
+
+
 // ============ AUTODISCOVER DOMAINS ============
 let domains = {
   javhdz: 'javhdz.ac',
@@ -831,6 +1018,85 @@ app.get(['/api/proxy/drive', '/api/audio/stream'], async (req, res) => {
   }
 });
 
+// ============ AUDIOBOOKS API ROUTES ============
+app.get(['/api/books', '/api/audiobooks'], (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Cache-Control', 'no-cache');
+  loadAudiobooksData();
+  res.json(audiobooksData);
+});
+
+app.post('/api/sync-audiobooks', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  try {
+    const result = await syncDriveAudiobooks();
+    res.json({
+      success: true,
+      message: `Đã đồng bộ xong! Thêm ${result.newChaptersCount} tập mới trong ${result.updatedBooksCount} sách.`,
+      ...result,
+      books: audiobooksData
+    });
+  } catch (e) {
+    console.error('[API sync-audiobooks] Lỗi:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/scan-folder', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const { folderUrl, category, author } = req.body || {};
+  if (!folderUrl) return res.status(400).json({ error: 'Missing folderUrl' });
+
+  // Extract folder ID
+  let folderId = folderUrl.trim();
+  const match = folderUrl.match(/folders\/([a-zA-Z0-9_\-]+)/);
+  if (match) folderId = match[1];
+
+  try {
+    const scraped = await scrapeDriveFolder(folderId);
+    if (!scraped || !scraped.files || scraped.files.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy file audio trong thư mục hoặc thư mục chưa chia sẻ công khai!' });
+    }
+
+    loadAudiobooksData();
+    let existingBook = audiobooksData.find(b => b.folderId === folderId);
+
+    if (existingBook) {
+      const existingIds = new Set((existingBook.chapters || []).map(c => c.driveId));
+      const newFiles = scraped.files.filter(f => !existingIds.has(f.driveId));
+      if (newFiles.length > 0) {
+        existingBook.chapters = [...(existingBook.chapters || []), ...newFiles];
+        existingBook.updatedAt = new Date().toISOString();
+      }
+    } else {
+      const newBook = {
+        id: `book-${Date.now()}`,
+        title: scraped.folderTitle || 'Sách nói mới',
+        author: author || 'Chưa rõ tác giả',
+        narrator: 'Diễn đọc Audio',
+        category: category || 'Sách nói',
+        description: `Sách nói ${scraped.folderTitle} cập nhật tự động từ Google Drive.`,
+        cover: '',
+        folderId: folderId,
+        chapters: scraped.files,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      audiobooksData.unshift(newBook);
+    }
+
+    saveAudiobooksData();
+    res.json({
+      success: true,
+      message: `Đã quét và đồng bộ ${scraped.files.length} tập cho sách "${scraped.folderTitle}"!`,
+      books: audiobooksData
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 // ============ HLS PROXY ============
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
@@ -1325,4 +1591,5 @@ app.get('/player.html', (req, res) => {
 });
 
 app.checkForUpdates = checkForUpdates;
+app.syncDriveAudiobooks = syncDriveAudiobooks;
 module.exports = app;

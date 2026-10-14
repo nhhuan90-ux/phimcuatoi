@@ -259,49 +259,105 @@ function saveAudiobooksData() {
 }
 
 const ROOT_DRIVE_AUDIO_FOLDER_ID = '1wtVylzodsKB9Ufxd1tSDiPjnKdHM0850';
+const AUDIO_EXTENSIONS = ['.mp3', '.m4a', '.wav', '.aac', '.flac', '.ogg', '.wma'];
 
 async function scrapeDriveFolder(folderId) {
   try {
-    const url = 'https://drive.google.com/drive/folders/' + folderId;
-    const res = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'vi,en;q=0.9'
-      },
-      timeout: 15000
-    });
-    const html = res.data;
-    const $ = cheerio.load(html);
-
-    const folderTitle = $('title').text().replace(/\s*-\s*Google Drive.*$/i, '').trim();
     const files = [];
     const subfolders = [];
+    let folderTitle = '';
 
-    $('tr[data-id]').each((i, row) => {
-      const fileId = $(row).attr('data-id');
-      const aria = $(row).find('[aria-label]').first().attr('aria-label') || '';
-      if (fileId && fileId !== folderId && aria) {
-        const isFolder = aria.toLowerCase().includes('folder');
-        if (isFolder) {
-          const cleanFolderTitle = aria
-            .replace(/\s+(Shared folder|folder|Audio|Google Drive|Shared).*$/i, '')
-            .trim();
-          subfolders.push({ folderId: fileId, title: cleanFolderTitle || fileId });
-        } else {
-          const cleanTitle = aria
-            .replace(/\s+(Audio|Shared|Google Drive|Google Tài liệu).*$/i, '')
-            .replace(/\.(mp3|m4a|wav|aac|flac|ogg)$/i, '')
-            .trim();
+    // 1. Dùng embeddedfolderview trước: Google Drive render toàn bộ item (không bị giới hạn 50 mục đầu)
+    try {
+      const embUrl = `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
+      const res = await axios.get(embUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'vi,en;q=0.9'
+        },
+        timeout: 20000
+      });
+      const $ = cheerio.load(res.data);
+      folderTitle = $('title').text().replace(/\s*-\s*Google Drive.*$/i, '').trim();
 
-          files.push({
-            id: `c_${fileId}`,
-            title: cleanTitle || `Tập ${files.length + 1}`,
-            driveUrl: `https://drive.google.com/file/d/${fileId}/view`,
-            driveId: fileId
-          });
+      $('.flip-entry').each((i, el) => {
+        const rawId = $(el).attr('id') || '';
+        const fileId = rawId.replace(/^entry-/, '');
+        const rawTitle = $(el).find('.flip-entry-title').text().trim();
+        const link = $(el).find('a').attr('href') || '';
+        const isFolder = link.includes('/folders/') || $(el).find('.drive-sprite-folder').length > 0;
+
+        if (fileId && fileId !== folderId && rawTitle) {
+          if (isFolder) {
+            subfolders.push({
+              folderId: fileId,
+              title: rawTitle
+            });
+          } else {
+            const lower = rawTitle.toLowerCase();
+            const isAudio = AUDIO_EXTENSIONS.some(ext => lower.endsWith(ext));
+            if (isAudio) {
+              let cleanTitle = rawTitle;
+              AUDIO_EXTENSIONS.forEach(ext => {
+                if (cleanTitle.toLowerCase().endsWith(ext)) {
+                  cleanTitle = cleanTitle.slice(0, -ext.length).trim();
+                }
+              });
+
+              files.push({
+                id: `c_${fileId}`,
+                title: cleanTitle || `Tập ${files.length + 1}`,
+                rawTitle: rawTitle,
+                driveUrl: `https://drive.google.com/file/d/${fileId}/view`,
+                driveId: fileId
+              });
+            }
+          }
         }
-      }
-    });
+      });
+    } catch (embErr) {
+      console.warn(`[ScrapeDriveFolder] embeddedfolderview thất bại cho folder ${folderId}, chuyển sang cách quét thông thường:`, embErr.message);
+    }
+
+    // 2. Fallback nếu embeddedfolderview không ra kết quả
+    if (files.length === 0 && subfolders.length === 0) {
+      const url = 'https://drive.google.com/drive/folders/' + folderId;
+      const res = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'vi,en;q=0.9'
+        },
+        timeout: 15000
+      });
+      const $ = cheerio.load(res.data);
+      if (!folderTitle) folderTitle = $('title').text().replace(/\s*-\s*Google Drive.*$/i, '').trim();
+
+      $('tr[data-id]').each((i, row) => {
+        const fileId = $(row).attr('data-id');
+        const aria = $(row).find('[aria-label]').first().attr('aria-label') || '';
+        if (fileId && fileId !== folderId && aria) {
+          const isFolder = aria.toLowerCase().includes('folder');
+          if (isFolder) {
+            const cleanFolderTitle = aria
+              .replace(/\s+(Shared folder|folder|Audio|Google Drive|Shared).*$/i, '')
+              .trim();
+            subfolders.push({ folderId: fileId, title: cleanFolderTitle || fileId });
+          } else {
+            const cleanTitle = aria
+              .replace(/\s+(Audio|Shared|Google Drive|Google Tài liệu).*$/i, '')
+              .replace(/\.(mp3|m4a|wav|aac|flac|ogg|wma)$/i, '')
+              .trim();
+
+            files.push({
+              id: `c_${fileId}`,
+              title: cleanTitle || `Tập ${files.length + 1}`,
+              driveUrl: `https://drive.google.com/file/d/${fileId}/view`,
+              driveId: fileId
+            });
+          }
+        }
+      });
+    }
 
     return { folderTitle, files, subfolders };
   } catch (err) {
@@ -334,17 +390,30 @@ async function syncDriveAudiobooks() {
 
       for (const file of rootScraped.files) {
         if (!knownChapterIds.has(file.driveId)) {
-          console.log(`[AudiobookSync] Phát hiện sách/file audio đơn lẻ trực tiếp tại root: "${file.title}" (${file.driveId})`);
+          let bookTitle = file.title || 'Sách nói đơn';
+          let bookAuthor = 'Nhiều tác giả';
+          if (file.title && file.title.includes(' - ')) {
+            const parts = file.title.split(' - ');
+            bookTitle = parts[0].trim();
+            bookAuthor = parts.slice(1).join(' - ').trim();
+          }
+
+          console.log(`[AudiobookSync] Phát hiện sách/file audio đơn lẻ trực tiếp tại root: "${bookTitle}" - "${bookAuthor}" (${file.driveId})`);
           const singleBook = {
             id: `book-${Date.now()}-${file.driveId.substring(0, 6)}`,
-            title: file.title || 'Sách nói đơn',
-            author: 'Chưa rõ tác giả',
+            title: bookTitle,
+            author: bookAuthor,
             narrator: 'Diễn đọc Audio',
             category: 'Sách nói',
-            description: `Tác phẩm "${file.title}" cập nhật trực tiếp từ thư mục gốc Google Drive.`,
+            description: `Tác phẩm "${bookTitle}" cập nhật trực tiếp từ thư mục gốc Google Drive.`,
             cover: '',
-            folderId: ROOT_DRIVE_AUDIO_FOLDER_ID,
-            chapters: [file],
+            folderId: '',
+            chapters: [{
+              id: file.id,
+              title: bookTitle,
+              driveUrl: file.driveUrl,
+              driveId: file.driveId
+            }],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
@@ -365,13 +434,21 @@ async function syncDriveAudiobooks() {
           console.log(`[AudiobookSync] Phát hiện sách/thư mục mới từ Drive mẹ: "${sub.title}" (${sub.folderId})`);
           const bookScraped = await scrapeDriveFolder(sub.folderId);
           if (bookScraped && bookScraped.files && bookScraped.files.length > 0) {
+            let bookTitle = sub.title || bookScraped.folderTitle || 'Sách nói mới';
+            let bookAuthor = 'Chưa rõ tác giả';
+            if (bookTitle.includes(' - ')) {
+              const parts = bookTitle.split(' - ');
+              bookTitle = parts[0].trim();
+              bookAuthor = parts.slice(1).join(' - ').trim();
+            }
+
             const newBook = {
               id: `book-${Date.now()}-${sub.folderId.substring(0, 6)}`,
-              title: sub.title || bookScraped.folderTitle || 'Sách nói mới',
-              author: 'Chưa rõ tác giả',
+              title: bookTitle,
+              author: bookAuthor,
               narrator: 'Diễn đọc Audio',
               category: 'Văn học / Trinh thám',
-              description: `Sách nói ${sub.title || bookScraped.folderTitle} cập nhật tự động từ Google Drive.`,
+              description: `Sách nói ${bookTitle} cập nhật tự động từ Google Drive.`,
               cover: '',
               folderId: sub.folderId,
               chapters: bookScraped.files,
@@ -390,10 +467,10 @@ async function syncDriveAudiobooks() {
     console.warn('[AudiobookSync] Lỗi quét thư mục mẹ:', err.message);
   }
 
-  // 2. Quét các sách hiện tại có folderId để kiểm tra xem có thêm tập/chương audio nào mới không
+  // 2. Quét các sách hiện tại có folderId riêng để kiểm tra xem có thêm tập/chương audio nào mới không
   for (let i = 0; i < audiobooksData.length; i++) {
     const book = audiobooksData[i];
-    if (!book.folderId) continue;
+    if (!book.folderId || book.folderId === ROOT_DRIVE_AUDIO_FOLDER_ID) continue;
 
     try {
       const scraped = await scrapeDriveFolder(book.folderId);

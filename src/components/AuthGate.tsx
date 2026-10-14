@@ -100,6 +100,25 @@ function PinAuthScreen({ onAuthenticated }: PinAuthScreenProps) {
     setLoading(true);
     setErrorMsg(null);
 
+    const DEFAULT_PIN = '1210';
+
+    // 1. Kiểm tra mã PIN trực tiếp trên máy khách (Hỗ trợ 100% Cloudflare Pages & chế độ tĩnh/offline)
+    if (pinStr === DEFAULT_PIN) {
+      setIsSuccess(true);
+      const token = btoa(`pct-auth-${Date.now()}-${DEFAULT_PIN}`);
+      if (rememberMe) {
+        localStorage.setItem(STORAGE_KEY, token);
+      } else {
+        sessionStorage.setItem(STORAGE_KEY, token);
+      }
+      setTimeout(() => {
+        onAuthenticated();
+      }, 500);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Nếu không khớp PIN mặc định, thử kiểm tra qua API server (nếu có server phụ trợ)
     try {
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
@@ -107,61 +126,33 @@ function PinAuthScreen({ onAuthenticated }: PinAuthScreenProps) {
         body: JSON.stringify({ pin: pinStr })
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsSuccess(true);
-        if (rememberMe) {
-          localStorage.setItem(STORAGE_KEY, data.token);
-        } else {
-          sessionStorage.setItem(STORAGE_KEY, data.token);
+      if (res.ok) {
+        const text = await res.text();
+        if (text) {
+          const data = JSON.parse(text);
+          if (data.success) {
+            setIsSuccess(true);
+            if (rememberMe) {
+              localStorage.setItem(STORAGE_KEY, data.token);
+            } else {
+              sessionStorage.setItem(STORAGE_KEY, data.token);
+            }
+            setTimeout(() => onAuthenticated(), 500);
+            return;
+          }
         }
-        // Small delay to show smooth unlocking animation before rendering app
-        setTimeout(() => {
-          onAuthenticated();
-        }, 600);
-      } else {
-        triggerShake();
-        setErrorMsg(data.message || 'Mã PIN không đúng, vui lòng thử lại!');
-        setDigits(['', '', '', '']);
-        setTimeout(() => {
-          inputRefs.current[0]?.focus();
-        }, 100);
       }
-      // In case server has connectivity issue or running on static CDN (Cloudflare Pages), verify PIN locally
-      const DEFAULT_PIN = '1210';
-      if (pinStr === DEFAULT_PIN) {
-        setIsSuccess(true);
-        const token = btoa(`pct-auth-${Date.now()}-${DEFAULT_PIN}`);
-        if (rememberMe) {
-          localStorage.setItem(STORAGE_KEY, token);
-        } else {
-          sessionStorage.setItem(STORAGE_KEY, token);
-        }
-        setTimeout(() => {
-          onAuthenticated();
-        }, 600);
-        return;
-      }
-
-      try {
-        const fallbackRes = await fetch(`/api/auth/verify?pin=${encodeURIComponent(pinStr)}`);
-        const fallbackData = await fallbackRes.json();
-        if (fallbackRes.ok && fallbackData.success) {
-          setIsSuccess(true);
-          localStorage.setItem(STORAGE_KEY, fallbackData.token);
-          setTimeout(() => onAuthenticated(), 600);
-          return;
-        }
-      } catch (e) {}
-
-      triggerShake();
-      setErrorMsg('Mã PIN không đúng, vui lòng thử lại!');
-      setDigits(['', '', '', '']);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      // Bỏ qua lỗi kết nối máy chủ
     }
+
+    triggerShake();
+    setErrorMsg('Mã PIN không đúng, vui lòng thử lại!');
+    setDigits(['', '', '', '']);
+    setTimeout(() => {
+      inputRefs.current[0]?.focus();
+      setLoading(false);
+    }, 100);
   };
 
   const handleDigitChange = (index: number, value: string) => {

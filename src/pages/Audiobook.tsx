@@ -384,14 +384,16 @@ export default function Audiobook() {
         if (Array.isArray(latest) && latest.length > 0) {
           setBooks(latest);
           setSyncStatus(`✔ Đã làm mới ${latest.length} cuốn sách nói từ hệ thống đồng bộ tự động Google Drive!`);
+          setIsSyncing(false);
+          setTimeout(() => setSyncStatus(null), 5000);
           return;
         }
       }
     } catch (e) {}
 
     setSyncStatus('✔ Danh mục sách nói đã ở trạng thái mới nhất từ Google Drive.');
-    setTimeout(() => setSyncStatus(null), 5000);
     setIsSyncing(false);
+    setTimeout(() => setSyncStatus(null), 5000);
   };
 
   const getAudioStreamUrl = (driveId: string) => {

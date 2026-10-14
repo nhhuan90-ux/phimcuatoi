@@ -318,10 +318,45 @@ async function syncDriveAudiobooks() {
   let newChaptersCount = 0;
   let newBooksCount = 0;
 
-  // 1. Quét thư mục gốc chính (ROOT_DRIVE_AUDIO_FOLDER_ID) để tìm các sách (subfolder) mới thêm vào
+  // 1. Quét thư mục gốc chính (ROOT_DRIVE_AUDIO_FOLDER_ID)
   try {
     console.log(`[AudiobookSync] Đang quét thư mục mẹ Google Drive (${ROOT_DRIVE_AUDIO_FOLDER_ID})...`);
     const rootScraped = await scrapeDriveFolder(ROOT_DRIVE_AUDIO_FOLDER_ID);
+    
+    // 1.1. Quét các file audio nằm trực tiếp ngay trong thư mục root (folder mẹ)
+    if (rootScraped && rootScraped.files && rootScraped.files.length > 0) {
+      const knownChapterIds = new Set();
+      audiobooksData.forEach(b => {
+        (b.chapters || []).forEach(c => {
+          if (c.driveId) knownChapterIds.add(c.driveId);
+        });
+      });
+
+      for (const file of rootScraped.files) {
+        if (!knownChapterIds.has(file.driveId)) {
+          console.log(`[AudiobookSync] Phát hiện sách/file audio đơn lẻ trực tiếp tại root: "${file.title}" (${file.driveId})`);
+          const singleBook = {
+            id: `book-${Date.now()}-${file.driveId.substring(0, 6)}`,
+            title: file.title || 'Sách nói đơn',
+            author: 'Chưa rõ tác giả',
+            narrator: 'Diễn đọc Audio',
+            category: 'Sách nói',
+            description: `Tác phẩm "${file.title}" cập nhật trực tiếp từ thư mục gốc Google Drive.`,
+            cover: '',
+            folderId: ROOT_DRIVE_AUDIO_FOLDER_ID,
+            chapters: [file],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          audiobooksData.unshift(singleBook);
+          knownChapterIds.add(file.driveId);
+          newBooksCount++;
+          newChaptersCount++;
+        }
+      }
+    }
+
+    // 1.2. Quét các thư mục con (subfolders) trong thư mục root
     if (rootScraped && rootScraped.subfolders && rootScraped.subfolders.length > 0) {
       const knownFolderIds = new Set(audiobooksData.map(b => b.folderId).filter(Boolean));
 

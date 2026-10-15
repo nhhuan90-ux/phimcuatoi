@@ -1,5 +1,45 @@
 [
   {
+    "id": "book-1792036681079-1fWNt0",
+    "title": "Thực Tế Chứng Minh, Người Dân Lúc Nào Cũng Đáng Yêu Nhất",
+    "author": "Mã Bá Dung",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Thực Tế Chứng Minh, Người Dân Lúc Nào Cũng Đáng Yêu Nhất\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1fWNt0UKRlFnRl1hRmJl-kov-qV09iqWu",
+        "title": "Thực Tế Chứng Minh, Người Dân Lúc Nào Cũng Đáng Yêu Nhất",
+        "driveUrl": "https://drive.google.com/file/d/1fWNt0UKRlFnRl1hRmJl-kov-qV09iqWu/view",
+        "driveId": "1fWNt0UKRlFnRl1hRmJl-kov-qV09iqWu"
+      }
+    ],
+    "createdAt": "2026-10-15T03:58:01.079Z",
+    "updatedAt": "2026-10-15T03:58:01.079Z"
+  },
+  {
+    "id": "book-1792036681079-1qW5ql",
+    "title": "Rồng Và Tàu Điện Ngầm",
+    "author": "Mã Bá Dung - VN",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Rồng Và Tàu Điện Ngầm\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1qW5qlLmJevd4_9WeR-FCMbhb9C7GRjPz",
+        "title": "Rồng Và Tàu Điện Ngầm",
+        "driveUrl": "https://drive.google.com/file/d/1qW5qlLmJevd4_9WeR-FCMbhb9C7GRjPz/view",
+        "driveId": "1qW5qlLmJevd4_9WeR-FCMbhb9C7GRjPz"
+      }
+    ],
+    "createdAt": "2026-10-15T03:58:01.079Z",
+    "updatedAt": "2026-10-15T03:58:01.079Z"
+  },
+  {
     "id": "book-1791997893321-1I4gQ5",
     "title": "Vung dat quy tha ma bat",
     "author": "Chưa rõ tác giả",

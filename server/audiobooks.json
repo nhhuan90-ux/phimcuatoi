@@ -1,5 +1,45 @@
 [
   {
+    "id": "book-1792082311136-1tlKxo",
+    "title": "Đừng Để _Nó_ Dụ",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Đừng Để _Nó_ Dụ\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1tlKxooBXx2K2A1NR5XiyJ_H6Ww61TX3U",
+        "title": "Đừng Để _Nó_ Dụ",
+        "driveUrl": "https://drive.google.com/file/d/1tlKxooBXx2K2A1NR5XiyJ_H6Ww61TX3U/view",
+        "driveId": "1tlKxooBXx2K2A1NR5XiyJ_H6Ww61TX3U"
+      }
+    ],
+    "createdAt": "2026-10-15T16:38:31.136Z",
+    "updatedAt": "2026-10-15T16:38:31.136Z"
+  },
+  {
+    "id": "book-1792082311136-1J_Rkz",
+    "title": "Gương mặt đã mất",
+    "author": "Sakurada Tomoya - VN",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Gương mặt đã mất\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1J_RkzWbGfYBemmlgVXMrpCg6ltKvuiSi",
+        "title": "Gương mặt đã mất",
+        "driveUrl": "https://drive.google.com/file/d/1J_RkzWbGfYBemmlgVXMrpCg6ltKvuiSi/view",
+        "driveId": "1J_RkzWbGfYBemmlgVXMrpCg6ltKvuiSi"
+      }
+    ],
+    "createdAt": "2026-10-15T16:38:31.136Z",
+    "updatedAt": "2026-10-15T16:38:31.136Z"
+  },
+  {
     "id": "book-1792036681079-1fWNt0",
     "title": "Thực Tế Chứng Minh, Người Dân Lúc Nào Cũng Đáng Yêu Nhất",
     "author": "Mã Bá Dung",

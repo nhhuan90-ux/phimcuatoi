@@ -91,6 +91,33 @@ export default function VideoPlayer({
     }
   }, [forceEmbed, safeEmbed, safeM3u8, isTVInterface, playerKey]);
 
+  // Auto-respond to stream-guard handshake if embedded iframe asks for parent ad status
+  useEffect(() => {
+    const handleGuardMessage = (event: MessageEvent) => {
+      try {
+        if (event.data && event.data.type === 'stream-guard-hello') {
+          const source = event.source as WindowProxy | null;
+          if (source && typeof source.postMessage === 'function') {
+            source.postMessage({
+              type: 'stream-parent-state',
+              version: event.data.version || 'guard-5',
+              id: event.data.id,
+              helperVersion: 'guard-5',
+              seq: 1,
+              supported: true,
+              suspected: false,
+              parentAdblock: 'clear',
+              key: 'none',
+              cancelled: false
+            }, '*');
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('message', handleGuardMessage);
+    return () => window.removeEventListener('message', handleGuardMessage);
+  }, []);
+
   // Video aspect ratio height
   const h = typeof window !== 'undefined' ? Math.round(window.innerWidth / 1.777) : 340;
 

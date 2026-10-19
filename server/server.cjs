@@ -1233,7 +1233,7 @@ app.get('/api/proxy/hls', async (req, res) => {
     } else if (url.match(/(streamvsmov|vsmov)/i)) {
       referer = 'https://vsmov.com/';
       originHeader = referer;
-    } else if (url.match(/(streamc|hihihoho)/i)) {
+    } else if (url.match(/(streamc|hihihoho|amass)/i)) {
       referer = 'https://streamc.xyz/';
       originHeader = referer;
     }
@@ -1246,7 +1246,7 @@ app.get('/api/proxy/hls', async (req, res) => {
       'User-Agent': userAgent,
       'Referer': referer
     };
-    if (url.match(/(streamc|hihihoho)/i)) {
+    if (url.match(/(streamc|hihihoho|amass)/i)) {
       headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
     } else if (originHeader) {
       headers['Origin'] = originHeader;
@@ -1314,7 +1314,7 @@ app.get('/api/proxy/segment', async (req, res) => {
     } else if (url.match(/(streamvsmov|vsmov)/i)) {
       referer = 'https://vsmov.com/';
       originHeader = referer;
-    } else if (url.match(/(streamc|hihihoho)/i)) {
+    } else if (url.match(/(streamc|hihihoho|amass)/i)) {
       referer = 'https://streamc.xyz/';
       originHeader = referer;
     } else {
@@ -1336,7 +1336,7 @@ app.get('/api/proxy/segment', async (req, res) => {
       'User-Agent': userAgent,
       'Referer': referer
     };
-    if (targetUrl.match(/(streamc|hihihoho)/i)) {
+    if (targetUrl.match(/(streamc|hihihoho|amass)/i)) {
       headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
     } else if (originHeader) {
       headers['Origin'] = originHeader;
@@ -1389,19 +1389,37 @@ async function resolveNguoncStream(embedUrl) {
     if (Date.now() - cached.time < 30 * 60 * 1000) return cached.data;
   }
   try {
-    const pageRes = await axios.get(embedUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://phim.nguonc.com/'
-      },
-      timeout: 8000
-    });
-    const $ = cheerio.load(pageRes.data);
-    const dataObf = $('#player').attr('data-obf');
-    if (!dataObf) return null;
-    const streamData = JSON.parse(Buffer.from(dataObf, 'base64').toString('utf-8'));
     const urlObj = new URL(embedUrl);
-    const rawM3u8 = `${urlObj.origin}/${streamData.sUb}`;
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+      'Referer': embedUrl,
+      'Origin': urlObj.origin,
+      'Content-Type': 'application/json'
+    };
+
+    // 1. Bootstrap
+    const bRes = await axios.post(embedUrl, {
+      action: 'bootstrap',
+      referrer: 'https://phimcuatoi.vercel.app/',
+      frame_origins: ['https://phimcuatoi.vercel.app']
+    }, { headers, timeout: 8000 });
+
+    if (!bRes.data?.bootstrap) return null;
+
+    // 2. Issue direct HLS playlist URL
+    const issueRes = await axios.post(embedUrl, {
+      action: 'issue',
+      bootstrap: bRes.data.bootstrap,
+      turnstile_response: '',
+      playlist_format: 'hls',
+      pretty_url: true,
+      path_chunks: true,
+      frame_origins: ['https://phimcuatoi.vercel.app']
+    }, { headers, timeout: 8000 });
+
+    const rawM3u8 = issueRes.data?.playlist;
+    if (!rawM3u8) return null;
+
     const result = { rawM3u8, embedUrl };
     nguoncCache.set(embedUrl, { time: Date.now(), data: result });
     return result;

@@ -1,5 +1,65 @@
 [
   {
+    "id": "book-1792382395269-1Fohdz",
+    "title": "Trắng và Đen",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Trắng và Đen\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1FohdzlH8DL3lMfs6ahaIAPYF2aDwHkv9",
+        "title": "Trắng và Đen",
+        "driveUrl": "https://drive.google.com/file/d/1FohdzlH8DL3lMfs6ahaIAPYF2aDwHkv9/view",
+        "driveId": "1FohdzlH8DL3lMfs6ahaIAPYF2aDwHkv9"
+      }
+    ],
+    "createdAt": "2026-10-19T03:59:55.269Z",
+    "updatedAt": "2026-10-19T03:59:55.269Z"
+  },
+  {
+    "id": "book-1792382395269-1C-52z",
+    "title": "Le Giang Sinh Cua Ac Ma",
+    "author": "Yokomizo Seishi",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Le Giang Sinh Cua Ac Ma\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1C-52ziSZigV6cJAxSywlxrTaNWYHgyg7",
+        "title": "Le Giang Sinh Cua Ac Ma",
+        "driveUrl": "https://drive.google.com/file/d/1C-52ziSZigV6cJAxSywlxrTaNWYHgyg7/view",
+        "driveId": "1C-52ziSZigV6cJAxSywlxrTaNWYHgyg7"
+      }
+    ],
+    "createdAt": "2026-10-19T03:59:55.269Z",
+    "updatedAt": "2026-10-19T03:59:55.269Z"
+  },
+  {
+    "id": "book-1792382395269-1K_4ar",
+    "title": "Cái Đầu Người",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Cái Đầu Người\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1K_4ar1XRbxhopRzLPrUVagrjPY-IU9OZ",
+        "title": "Cái Đầu Người",
+        "driveUrl": "https://drive.google.com/file/d/1K_4ar1XRbxhopRzLPrUVagrjPY-IU9OZ/view",
+        "driveId": "1K_4ar1XRbxhopRzLPrUVagrjPY-IU9OZ"
+      }
+    ],
+    "createdAt": "2026-10-19T03:59:55.269Z",
+    "updatedAt": "2026-10-19T03:59:55.269Z"
+  },
+  {
     "id": "book-1792082311136-1tlKxo",
     "title": "Đừng Để _Nó_ Dụ",
     "author": "Nhiều tác giả",

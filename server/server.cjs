@@ -1346,7 +1346,7 @@ app.get('/api/proxy/segment', async (req, res) => {
       headers,
       responseType: 'arraybuffer'
     });
-    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': response.headers['content-type'] || 'video/MP2T', 'Content-Length': response.data.length });
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'video/MP2T', 'Content-Length': response.data.length });
     res.send(response.data);
   } catch (e) { res.status(502).json({ error: 'Segment failed: ' + e.message }); }
 });

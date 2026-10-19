@@ -169,23 +169,12 @@ const nguoncFetchDetail = async (slug: string) => {
   const movie = data.movie;
   const episodes = (movie?.episodes || []).map((server: any) => ({
     server_name: server.server_name || 'NguonC',
-    items: (server.server_data || server.items || []).map((ep: any) => {
-      const originalEmbed = ep.embed || ep.link_embed || '';
-      let m3u8 = ep.m3u8 || ep.link_m3u8 || '';
-      let embed = originalEmbed;
-      if (originalEmbed) {
-        if (!m3u8) {
-          m3u8 = `/api/video/nguonc?embed=${encodeURIComponent(originalEmbed)}`;
-        }
-        embed = `/api/embed/nguonc?embed=${encodeURIComponent(originalEmbed)}`;
-      }
-      return {
-        name: ep.name,
-        slug: ep.slug,
-        embed,
-        m3u8,
-      };
-    }),
+    items: (server.server_data || server.items || []).map((ep: any) => ({
+      name: ep.name,
+      slug: ep.slug,
+      embed: ep.embed || ep.link_embed || '',
+      m3u8: ep.m3u8 || ep.link_m3u8 || '',
+    })),
   }));
   
   return {
@@ -631,12 +620,12 @@ export const fetchMovieDetail = async (slug: string) => {
     return false;
   };
 
-  // Prioritize PhimAPI for base info, then NguonC, then VSMov
+  // Prioritize sources with direct clean HLS (PhimAPI, VSMov, OPhim) before embed-only NguonC
   const hasPhimApi = processResult(results[0], 'PhimAPI');
-  const hasNguonc = processResult(results[1], 'NguonC');
   const hasVsmov = processResult(results[2], 'VSMov');
   const hasOphim = processResult(results[3], 'OPhim');
   const hasObb = processResult(results[4], 'OBB');
+  const hasNguonc = processResult(results[1], 'NguonC');
 
   if (!baseMovie) {
     throw new Error('All sources failed or movie not found');

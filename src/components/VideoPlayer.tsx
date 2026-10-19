@@ -372,6 +372,15 @@ export default function VideoPlayer({
         )}
       </div>
 
+      {/* NguonC adblock guide notice */}
+      {playerMode === 'embed' && safeEmbed && (safeEmbed.includes('streamc') || safeEmbed.includes('nguonc')) && (
+        <div className="bg-amber-950/90 border-t border-amber-600/30 text-amber-200 px-3 py-2 text-xs flex items-center justify-between gap-2">
+          <span>
+            💡 <strong>Mẹo nguồn NguonC:</strong> Nếu trình phát hiển thị <em>"Có dấu hiệu chặn quảng cáo"</em>, bạn hãy tạm tắt tiện ích <strong>Chặn quảng cáo (Adblock / Brave Shields)</strong> trên trang này rồi bấm nút <em>Kiểm tra lại</em> trên video, hoặc chuyển sang <strong>Máy chủ khác (Server 1 / 3 / 4)</strong> bên dưới để xem mượt mà không quảng cáo.
+          </span>
+        </div>
+      )}
+
       {/* Modern Player Toolbar & Mode Switcher */}
       <div className="bg-[#111115] border-t border-zinc-800 p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
         {/* Left: Player Mode Switcher */}

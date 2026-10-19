@@ -1424,7 +1424,7 @@ app.get('/api/embed/nguonc', async (req, res) => {
   const { embed } = req.query;
   if (!embed) return res.status(400).send('Missing embed URL');
   const result = await resolveNguoncStream(embed);
-  if (!result) return res.status(404).send('Video stream not found');
+  if (!result) return res.redirect(embed);
   const host = req.headers.host || 'phimcuatoi.vercel.app';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const proxyUrl = `${protocol}://${host}/api/proxy/hls?url=${encodeURIComponent(result.rawM3u8)}&referer=${encodeURIComponent(embed)}`;

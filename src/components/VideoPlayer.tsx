@@ -80,12 +80,16 @@ export default function VideoPlayer({
   const [showExternalMenu, setShowExternalMenu] = useState<boolean>(false);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
-  // Sync mode if forceEmbed changes
+  // Sync mode if forceEmbed or source stream changes
   useEffect(() => {
     if (forceEmbed && safeEmbed) {
       setPlayerMode('embed');
+    } else if (!safeM3u8 && safeEmbed) {
+      setPlayerMode('embed');
+    } else if (safeM3u8 && !forceEmbed) {
+      setPlayerMode(isTVInterface ? 'native' : 'hls');
     }
-  }, [forceEmbed, safeEmbed]);
+  }, [forceEmbed, safeEmbed, safeM3u8, isTVInterface, playerKey]);
 
   // Video aspect ratio height
   const h = typeof window !== 'undefined' ? Math.round(window.innerWidth / 1.777) : 340;

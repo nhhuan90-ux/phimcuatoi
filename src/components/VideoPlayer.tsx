@@ -25,6 +25,9 @@ export default function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<any>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const guardSeqRef = useRef<number>(1);
+  const lastGuardIdRef = useRef<string>('');
 
   const safeEmbed = embedUrl ? embedUrl.replace(/^http:\/\//i, 'https://') : '';
   const safeM3u8 = m3u8Url ? (m3u8Url.startsWith('//') ? `https:${m3u8Url}` : m3u8Url) : '';
@@ -92,10 +95,32 @@ export default function VideoPlayer({
   }, [forceEmbed, safeEmbed, safeM3u8, isTVInterface, playerKey]);
 
   // Auto-respond to stream-guard handshake if embedded iframe asks for parent ad status
+  const triggerBypassGuard = useCallback(() => {
+    try {
+      const win = iframeRef.current?.contentWindow;
+      if (win) {
+        win.postMessage({
+          type: 'stream-parent-state',
+          version: 'guard-5',
+          id: lastGuardIdRef.current || 'init',
+          helperVersion: 'guard-5',
+          seq: guardSeqRef.current++,
+          supported: true,
+          suspected: false,
+          parentAdblock: 'clear',
+          key: 'none',
+          cancelled: false
+        }, '*');
+        win.postMessage({ type: 'stream-parent-available', version: 'guard-5' }, '*');
+      }
+    } catch (e) {}
+  }, []);
+
   useEffect(() => {
     const handleGuardMessage = (event: MessageEvent) => {
       try {
         if (event.data && event.data.type === 'stream-guard-hello') {
+          if (event.data.id) lastGuardIdRef.current = event.data.id;
           const source = event.source as WindowProxy | null;
           if (source && typeof source.postMessage === 'function') {
             source.postMessage({
@@ -103,7 +128,7 @@ export default function VideoPlayer({
               version: event.data.version || 'guard-5',
               id: event.data.id,
               helperVersion: 'guard-5',
-              seq: 1,
+              seq: guardSeqRef.current++,
               supported: true,
               suspected: false,
               parentAdblock: 'clear',
@@ -323,11 +348,13 @@ export default function VideoPlayer({
       <div style={{ width: '100%', height: h, position: 'relative', background: '#000' }}>
         {playerMode === 'embed' && safeEmbed ? (
           <iframe
+            ref={iframeRef}
             key={'e-' + playerKey}
             src={safeEmbed}
             style={{ display: 'block', width: '100%', height: '100%', border: 'none' }}
             allowFullScreen
             allow="autoplay; fullscreen; encrypted-media"
+            onLoad={triggerBypassGuard}
             title={title}
           />
         ) : safeM3u8 ? (
@@ -374,10 +401,16 @@ export default function VideoPlayer({
 
       {/* NguonC adblock guide notice */}
       {playerMode === 'embed' && safeEmbed && (safeEmbed.includes('streamc') || safeEmbed.includes('nguonc')) && (
-        <div className="bg-amber-950/90 border-t border-amber-600/30 text-amber-200 px-3 py-2 text-xs flex items-center justify-between gap-2">
-          <span>
-            💡 <strong>Mẹo nguồn NguonC:</strong> Nếu trình phát hiển thị <em>"Có dấu hiệu chặn quảng cáo"</em>, bạn hãy tạm tắt tiện ích <strong>Chặn quảng cáo (Adblock / Brave Shields)</strong> trên trang này rồi bấm nút <em>Kiểm tra lại</em> trên video, hoặc chuyển sang <strong>Máy chủ khác (Server 1 / 3 / 4)</strong> bên dưới để xem mượt mà không quảng cáo.
+        <div className="bg-amber-950/90 border-t border-amber-600/30 text-amber-200 px-3 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
+          <span className="flex-1">
+            💡 <strong>Nguồn NguonC:</strong> Nếu trình phát hiện cảnh báo quảng cáo, bấm nút bên cạnh để gửi tín hiệu vượt qua hoặc bấm <em>Kiểm tra lại</em> trên player. Bạn cũng có thể đổi sang Server khác bên dưới nếu có.
           </span>
+          <button
+            onClick={triggerBypassGuard}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-medium text-xs shadow transition-colors flex items-center gap-1 shrink-0"
+          >
+            ⚡ Bỏ qua chặn & Phát tiếp
+          </button>
         </div>
       )}
 

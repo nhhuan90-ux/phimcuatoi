@@ -1,5 +1,45 @@
 [
   {
+    "id": "book-1792469569529-1vjGv6",
+    "title": "Và Rồi Không Ai Chết Cả",
+    "author": "Shirai Tomoyuki",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Và Rồi Không Ai Chết Cả\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1vjGv60LKhA9Em0HSHu84mHU2dNV0wxtE",
+        "title": "Và Rồi Không Ai Chết Cả",
+        "driveUrl": "https://drive.google.com/file/d/1vjGv60LKhA9Em0HSHu84mHU2dNV0wxtE/view",
+        "driveId": "1vjGv60LKhA9Em0HSHu84mHU2dNV0wxtE"
+      }
+    ],
+    "createdAt": "2026-10-20T04:12:49.529Z",
+    "updatedAt": "2026-10-20T04:12:49.529Z"
+  },
+  {
+    "id": "book-1792469569528-1sByJd",
+    "title": "Dung bao gio noi doi",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Dung bao gio noi doi\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1sByJdOtac_zgRlOY5piavkwF5jm0Sun0",
+        "title": "Dung bao gio noi doi",
+        "driveUrl": "https://drive.google.com/file/d/1sByJdOtac_zgRlOY5piavkwF5jm0Sun0/view",
+        "driveId": "1sByJdOtac_zgRlOY5piavkwF5jm0Sun0"
+      }
+    ],
+    "createdAt": "2026-10-20T04:12:49.528Z",
+    "updatedAt": "2026-10-20T04:12:49.529Z"
+  },
+  {
     "id": "book-1792382395269-1Fohdz",
     "title": "Trắng và Đen",
     "author": "Nhiều tác giả",

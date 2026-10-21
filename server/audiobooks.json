@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1792601661289-1l7ZGA",
+    "title": "Bo Ba",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Bo Ba\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1l7ZGAdx42amvBmWrfXKakX6Q2MfiCTlu",
+        "title": "Bo Ba",
+        "driveUrl": "https://drive.google.com/file/d/1l7ZGAdx42amvBmWrfXKakX6Q2MfiCTlu/view",
+        "driveId": "1l7ZGAdx42amvBmWrfXKakX6Q2MfiCTlu"
+      }
+    ],
+    "createdAt": "2026-10-21T16:54:21.289Z",
+    "updatedAt": "2026-10-21T16:54:21.289Z"
+  },
+  {
     "id": "book-1792469569529-1vjGv6",
     "title": "Và Rồi Không Ai Chết Cả",
     "author": "Shirai Tomoyuki",

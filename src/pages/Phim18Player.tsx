@@ -1,9 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { ArrowLeft, AlertCircle, RefreshCw, Info, ExternalLink, Play } from 'lucide-react';
 import VideoPlayer from '../components/VideoPlayer';
 
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
+const SOURCE_NAMES: Record<string, string> = {
+  javhdz: 'JAVHDz', vlxx: 'VLXX', javsub: 'JAVSub',
+  javtiful: 'JavTiful', phimxyz: 'PhimXYZ', subjav: 'SubJAV'
+};
+
+const isFullWebpageUrl = (u?: string) => {
+  if (!u) return false;
+  // If URL is an entire website page rather than a dedicated video player iframe
+  return (
+    (u.includes('/video/') && !u.includes('/videos/')) ||
+    u.includes('/phim/') ||
+    u.includes('.html') ||
+    u.includes('vlxx.phd') ||
+    u.includes('javhdz.') ||
+    u.includes('subjav.') ||
+    u.includes('phimxyz.')
+  );
+};
+
 
 interface MovieData {
   id: string;
@@ -117,7 +136,7 @@ export default function Phim18Player() {
           } catch (e) {}
         }
 
-        // Static fallback resolvers
+        // Static fallback resolvers: only use clean embedded players, NEVER embed the full original webpage
         if (!data || (!data.videoUrl && !data.url)) {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
@@ -129,12 +148,9 @@ export default function Phim18Player() {
             const vm = playUrl.match(/\/videos\/([a-f0-9]+)\//);
             if (vm) {
               data = { videoUrl: `https://vcast.name/videos/${vm[1]}/master.m3u8`, type: 'hls' };
-            } else {
+            } else if (!isFullWebpageUrl(playUrl)) {
               data = { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
             }
-          } else if (detail?.link) {
-            // Direct link fallback
-            data = { url: detail.link, type: 'iframe' };
           }
         }
 
@@ -219,6 +235,46 @@ export default function Phim18Player() {
             <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-xs sm:text-sm font-medium">Đang nạp trình phát video...</p>
           </div>
+        ) : (!m3u8Url && (!embedUrl || isFullWebpageUrl(embedUrl))) ? (
+          /* Không nhúng trang gốc vào web: Hiển thị giao diện trực quan với nút Mở xem trực tiếp tại trang nguồn */
+          <div className="w-full aspect-video bg-[#0f0f12] rounded-xl border border-zinc-800 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group shadow-2xl">
+            {movie?.img && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-15 filter blur-xl scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${movie.img})` }}
+              />
+            )}
+            <div className="relative z-10 flex flex-col items-center max-w-md mx-auto">
+              <div className="w-16 h-16 rounded-full bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center mb-4 shadow-lg shadow-red-950/50">
+                <ExternalLink size={28} />
+              </div>
+              <h3 className="text-white text-base sm:text-lg font-bold mb-2">
+                Trình phát trực tiếp không khả dụng
+              </h3>
+              <p className="text-zinc-400 text-xs sm:text-sm mb-6 leading-relaxed">
+                Máy chủ <span className="text-zinc-200 font-semibold">{SOURCE_NAMES[source] || source.toUpperCase()}</span> chặn tính năng phát nhúng để bảo vệ bản quyền. Bấm nút dưới đây để mở xem trực tiếp video tại trang gốc:
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {movie?.link && (
+                  <a
+                    href={movie.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-all duration-200 shadow-xl shadow-red-900/30 hover:scale-[1.03] flex items-center gap-2"
+                  >
+                    <span>Mở xem trực tiếp tại trang nguồn</span>
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+                <button
+                  onClick={() => setActiveServer((prev) => prev)}
+                  className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <RefreshCw size={14} /> Thử lại
+                </button>
+              </div>
+            </div>
+          </div>
         ) : error ? (
           <div className="w-full aspect-video bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
@@ -229,14 +285,15 @@ export default function Phim18Player() {
                   href={movie.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow"
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition-all shadow inline-flex items-center gap-2"
                 >
-                  Mở xem trực tiếp tại trang nguồn &rarr;
+                  <span>Mở xem trực tiếp tại trang nguồn</span>
+                  <ExternalLink size={14} />
                 </a>
               )}
               <button
                 onClick={() => setActiveServer((prev) => prev)}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
+                className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-2"
               >
                 <RefreshCw size={14} /> Thử lại
               </button>

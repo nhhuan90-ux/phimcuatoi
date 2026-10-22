@@ -36,6 +36,89 @@ function AgeGate({ onConfirm }: { onConfirm: () => void }) {
   );
 }
 
+
+// In-memory cache for static movie datasets so tab/page switching is instantaneous
+const staticCache = new Map<string, any[]>();
+
+const isSubjavVertical = (m: any) => {
+  if (m.source !== 'subjav') return false;
+  return m.tag === 'Shorts' || (m.link && m.link.includes('/video/')) || (m.img && m.img.includes('tiktok-thumbnails'));
+};
+
+async function fetchStaticMovies(
+  source: string,
+  format: string,
+  page: number,
+  limit: number,
+  search: string
+) {
+  let list = staticCache.get(source);
+  if (!list) {
+    const filename = source === 'all' ? 'movies_all.json' : `movies_${source}.json`;
+    try {
+      const res = await fetch(`/data/${filename}?t=${Date.now()}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.startsWith('[') || text.startsWith('{')) {
+          const parsed = JSON.parse(text);
+          list = Array.isArray(parsed) ? parsed : (parsed[source] || parsed.all || []);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load local static movie json:', e);
+    }
+
+    // Fallback: GitHub Raw if local static file wasn't found
+    if (!list || list.length === 0) {
+      try {
+        const ghUrl = `https://raw.githubusercontent.com/nhhuan90-ux/phimcuatoi/main/server/movies.json?t=${Date.now()}`;
+        const ghRes = await fetch(ghUrl);
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          if (source === 'all') {
+            list = ghData.all || Object.values(ghData).flat();
+          } else {
+            list = ghData[source] || [];
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load fallback movies from GitHub raw:', err);
+      }
+    }
+
+    if (list && Array.isArray(list)) {
+      staticCache.set(source, list);
+    } else {
+      list = [];
+    }
+  }
+
+  let filtered = [...list];
+
+  // Apply format filter for subjav
+  if (source === 'subjav') {
+    if (format === 'vertical') {
+      filtered = filtered.filter(isSubjavVertical);
+    } else if (format === 'horizontal') {
+      filtered = filtered.filter(m => !isSubjavVertical(m));
+    }
+  } else if (source === 'all') {
+    filtered = filtered.filter(m => !isSubjavVertical(m));
+  }
+
+  // Apply search filter
+  if (search && search.trim()) {
+    const q = search.trim().toLowerCase();
+    filtered = filtered.filter(m => (m.title && m.title.toLowerCase().includes(q)) || (m.tag && m.tag.toLowerCase().includes(q)));
+  }
+
+  const total = filtered.length;
+  const start = (page - 1) * limit;
+  const items = filtered.slice(start, start + limit);
+
+  return { total, page, limit, items };
+}
+
 export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolean }) {
   const [verified, setVerified] = useState<boolean>(() => {
     try {
@@ -98,12 +181,30 @@ export default function Phim18Plus({ hideHeader = false }: { hideHeader?: boolea
     const fetchMovies = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-        if (source !== 'all') params.set('source', source);
-        if (source === 'subjav') params.set('format', subjavFormat);
-        if (search) params.set('search', search);
-        const res = await fetch(`${PHIM18_API}/api/movies?${params}`);
-        const data = await res.json();
+        let data: any = null;
+        if (PHIM18_API) {
+          try {
+            const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+            if (source !== 'all') params.set('source', source);
+            if (source === 'subjav') params.set('format', subjavFormat);
+            if (search) params.set('search', search);
+            const res = await fetch(`${PHIM18_API}/api/movies?${params}`);
+            if (res.ok) {
+              const text = await res.text();
+              if (text.startsWith('{')) {
+                data = JSON.parse(text);
+              }
+            }
+          } catch (apiErr) {
+            console.warn('API fetch failed, falling back to static:', apiErr);
+          }
+        }
+
+        // Static fallback for Cloudflare Pages / Static Hosting
+        if (!data || !Array.isArray(data.items)) {
+          data = await fetchStaticMovies(source, subjavFormat, page, limit, search);
+        }
+
         setMovies(data.items || []);
         setTotal(data.total || 0);
       } catch (e) {

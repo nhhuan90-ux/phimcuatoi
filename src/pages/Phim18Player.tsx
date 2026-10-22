@@ -21,6 +21,36 @@ interface VideoPayload {
   error?: string;
 }
 
+
+async function fetchStaticMovieDetail(source: string, id: string) {
+  try {
+    const filename = source === 'all' ? 'movies_all.json' : `movies_${source}.json`;
+    const res = await fetch(`/data/${filename}?t=${Date.now()}`);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('[') || text.startsWith('{')) {
+        const parsed = JSON.parse(text);
+        const list = Array.isArray(parsed) ? parsed : (parsed[source] || parsed.all || []);
+        const found = list.find((m: any) => m.id === id);
+        if (found) return found;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const ghUrl = `https://raw.githubusercontent.com/nhhuan90-ux/phimcuatoi/main/server/movies.json?t=${Date.now()}`;
+    const ghRes = await fetch(ghUrl);
+    if (ghRes.ok) {
+      const ghData = await ghRes.json();
+      const list = ghData[source] || ghData.all || [];
+      const found = list.find((m: any) => m.id === id);
+      if (found) return found;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 export default function Phim18Player() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -38,16 +68,26 @@ export default function Phim18Player() {
     if (!source || !id) return;
     let isMounted = true;
     const fetchMovie = async () => {
-      try {
-        const res = await fetch(`${PHIM18_API}/api/movie/${source}/${encodeURIComponent(id)}`);
-        if (!res.ok) throw new Error('Not found');
-        const data = await res.json();
-        if (isMounted) {
+      let data: any = null;
+      if (PHIM18_API) {
+        try {
+          const res = await fetch(`${PHIM18_API}/api/movie/${source}/${encodeURIComponent(id)}`);
+          if (res.ok) {
+            const text = await res.text();
+            if (text.startsWith('{')) data = JSON.parse(text);
+          }
+        } catch (e) {}
+      }
+
+      if (!data) {
+        data = await fetchStaticMovieDetail(source, id);
+      }
+
+      if (isMounted) {
+        if (data) {
           setMovie(data);
-          document.title = `${data.title} - Phim 18+`;
-        }
-      } catch (e) {
-        if (isMounted) {
+          document.title = `${data.title || 'Xem Phim 18+'} - Phim 18+`;
+        } else {
           setMovie({ id, title: 'Xem Phim 18+', source });
         }
       }
@@ -64,13 +104,46 @@ export default function Phim18Player() {
       setLoading(true);
       setError(null);
       try {
-        const needsServer = ['vlxx', 'javsub', 'subjav'].includes(source);
-        const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}&` : '?'}_t=${Date.now()}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Video resolve failed');
-        const data = await res.json();
+        let data: any = null;
+        if (PHIM18_API) {
+          try {
+            const needsServer = ['vlxx', 'javsub', 'subjav'].includes(source);
+            const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}&` : '?'}_t=${Date.now()}`;
+            const res = await fetch(url);
+            if (res.ok) {
+              const text = await res.text();
+              if (text.startsWith('{')) data = JSON.parse(text);
+            }
+          } catch (e) {}
+        }
+
+        // Static fallback resolvers
+        if (!data || (!data.videoUrl && !data.url)) {
+          const detail = movie || await fetchStaticMovieDetail(source, id);
+          if (source === 'javtiful') {
+            const code = detail?.code || id;
+            data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
+          } else if (source === 'javsub' && detail?.embedUrls?.length) {
+            const idx = Math.min(Math.max(0, activeServer - 1), detail.embedUrls.length - 1);
+            const playUrl = detail.embedUrls[idx]?.url || detail.embedUrls[0].url;
+            const vm = playUrl.match(/\/videos\/([a-f0-9]+)\//);
+            if (vm) {
+              data = { videoUrl: `https://vcast.name/videos/${vm[1]}/master.m3u8`, type: 'hls' };
+            } else {
+              data = { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+            }
+          } else if (detail?.link) {
+            // Direct link fallback
+            data = { url: detail.link, type: 'iframe' };
+          }
+        }
+
         if (isMounted) {
-          setVideoData(data);
+          if (data && (data.videoUrl || data.url)) {
+            setVideoData(data);
+          } else {
+            setError('Không lấy được link phát video. Video có thể đã bị gỡ hoặc máy chủ đang bận.');
+          }
         }
       } catch (e: any) {
         if (isMounted) {
@@ -82,7 +155,7 @@ export default function Phim18Player() {
     };
     fetchVideoPayload();
     return () => { isMounted = false; };
-  }, [source, id, activeServer]);
+  }, [source, id, activeServer, movie]);
 
   if (!source || !id) {
     return (
@@ -150,12 +223,24 @@ export default function Phim18Player() {
           <div className="w-full aspect-video bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
             <p className="text-white text-sm sm:text-base font-semibold mb-2">{error}</p>
-            <button
-              onClick={() => setActiveServer((prev) => prev)}
-              className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
-            >
-              <RefreshCw size={14} /> Thử lại
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+              {movie?.link && (
+                <a
+                  href={movie.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow"
+                >
+                  Mở xem trực tiếp tại trang nguồn &rarr;
+                </a>
+              )}
+              <button
+                onClick={() => setActiveServer((prev) => prev)}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
+              >
+                <RefreshCw size={14} /> Thử lại
+              </button>
+            </div>
           </div>
         ) : (
           <VideoPlayer

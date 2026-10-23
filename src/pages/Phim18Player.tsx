@@ -258,6 +258,16 @@ export default function Phim18Player() {
               </div>
             </div>
           </div>
+        ) : source === 'javtiful' && videoData?.url ? (
+          <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+            <iframe
+              src={videoData.url}
+              allow="autoplay; fullscreen; encrypted-media"
+              allowFullScreen
+              className="w-full h-full border-0"
+              title={movie?.title || 'Xem Phim 18+'}
+            />
+          </div>
         ) : (
           <VideoPlayer
             m3u8Url={m3u8Url}

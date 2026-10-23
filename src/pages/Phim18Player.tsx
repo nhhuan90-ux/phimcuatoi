@@ -12,6 +12,7 @@ const SOURCE_NAMES: Record<string, string> = {
 const isFullWebpageUrl = (u?: string) => {
   if (!u) return false;
   // If URL is an entire website page rather than a dedicated video player iframe
+  if (u.includes('vlstream.net') || u.includes('/embed/') || u.includes('/play/')) return false;
   return (
     (u.includes('/video/') && !u.includes('/videos/')) ||
     u.includes('/phim/') ||
@@ -88,15 +89,14 @@ export default function Phim18Player() {
     let isMounted = true;
     const fetchMovie = async () => {
       let data: any = null;
-      if (PHIM18_API) {
-        try {
-          const res = await fetch(`${PHIM18_API}/api/movie/${source}/${encodeURIComponent(id)}`);
-          if (res.ok) {
-            const text = await res.text();
-            if (text.startsWith('{')) data = JSON.parse(text);
-          }
-        } catch (e) {}
-      }
+      const apiBase = PHIM18_API || '';
+      try {
+        const res = await fetch(`${apiBase}/api/movie/${source}/${encodeURIComponent(id)}`);
+        if (res.ok) {
+          const text = await res.text();
+          if (text.startsWith('{')) data = JSON.parse(text);
+        }
+      } catch (e) {}
 
       if (!data) {
         data = await fetchStaticMovieDetail(source, id);
@@ -124,17 +124,16 @@ export default function Phim18Player() {
       setError(null);
       try {
         let data: any = null;
-        if (PHIM18_API) {
-          try {
-            const needsServer = ['vlxx', 'javsub', 'subjav'].includes(source);
-            const url = `${PHIM18_API}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}&` : '?'}_t=${Date.now()}`;
-            const res = await fetch(url);
-            if (res.ok) {
-              const text = await res.text();
-              if (text.startsWith('{')) data = JSON.parse(text);
-            }
-          } catch (e) {}
-        }
+        const apiBase = PHIM18_API || '';
+        try {
+          const needsServer = ['vlxx', 'javsub', 'subjav'].includes(source);
+          const url = `${apiBase}/api/video/${source}/${encodeURIComponent(id)}${needsServer ? `?server=${activeServer}&` : '?'}_t=${Date.now()}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const text = await res.text();
+            if (text.startsWith('{')) data = JSON.parse(text);
+          }
+        } catch (e) {}
 
         // Static fallback resolvers: only use clean embedded players, NEVER embed the full original webpage
         if (!data || (!data.videoUrl && !data.url)) {
@@ -158,7 +157,7 @@ export default function Phim18Player() {
           if (data && (data.videoUrl || data.url)) {
             setVideoData(data);
           } else {
-            setError('Không lấy được link phát video. Video có thể đã bị gỡ hoặc máy chủ đang bận.');
+            setError(data?.error || 'Không lấy được link phát video. Video có thể đã bị gỡ hoặc máy chủ đang bận.');
           }
         }
       } catch (e: any) {

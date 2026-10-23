@@ -354,6 +354,7 @@ export default function VideoPlayer({
             style={{ display: 'block', width: '100%', height: '100%', border: 'none' }}
             allowFullScreen
             allow="autoplay; fullscreen; encrypted-media"
+            sandbox="allow-scripts allow-same-origin allow-forms"
             onLoad={triggerBypassGuard}
             title={title}
           />
@@ -373,6 +374,7 @@ export default function VideoPlayer({
             style={{ display: 'block', width: '100%', height: '100%', border: 'none' }}
             allowFullScreen
             allow="autoplay; fullscreen; encrypted-media"
+            sandbox="allow-scripts allow-same-origin allow-forms"
             title={title}
           />
         ) : (

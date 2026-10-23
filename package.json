@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "dev:all": "concurrently \"npm run dev\" \"node server/server.cjs\"",
-    "build": "vite build",
+    "build": "node scripts/build.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
@@ -43,6 +43,7 @@
     "terser": "^5.48.0",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wrangler": "^4.152.0"
   }
 }

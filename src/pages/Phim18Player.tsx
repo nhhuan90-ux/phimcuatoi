@@ -137,8 +137,8 @@ export default function Phim18Player() {
             }
           } else if (source === 'subjav' && detail?.id) {
             data = { videoUrl: `https://subjav1.blog/storage/m3u8/${detail.id}/index.m3u8`, type: 'hls' };
-          } else if (detail?.link) {
-            // Direct link fallback
+          } else if (detail?.link && source !== 'vlxx') {
+            // Direct link fallback (chỉ dùng cho nguồn không chặn X-Frame-Options; VLXX dùng link giải mã play.vlstream.net)
             data = { url: detail.link, type: 'iframe' };
           }
         }

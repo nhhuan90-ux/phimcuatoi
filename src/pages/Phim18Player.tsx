@@ -131,10 +131,26 @@ export default function Phim18Player() {
           } else if (source === 'javsub' && (detail?.embedUrl || detail?.embedUrls?.length)) {
             const playUrl = detail.embedUrl || detail.embedUrls[0].url;
             data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
-          } else if (source === 'subjav' && (detail?.videoUrl || detail?.embedUrl)) {
-            data = detail.videoUrl
-              ? { videoUrl: detail.videoUrl, type: 'hls' }
-              : { url: detail.embedUrl, type: 'iframe' };
+          } else if (source === 'subjav') {
+            if (detail?.videoUrl) {
+              data = { videoUrl: detail.videoUrl, type: 'hls' };
+            } else {
+              data = { url: `https://subjav.asia/player/${id}/`, type: 'iframe' };
+            }
+          } else if (source === 'javhdz') {
+            if (detail?.videoUrl) {
+              data = { videoUrl: detail.videoUrl, type: 'hls' };
+            } else if (detail?.link) {
+              data = { url: detail.link.replace(/https?:\/\/javhdz\.[a-z0-9]+/i, 'https://javhdz.one'), type: 'iframe' };
+            }
+          } else if (source === 'phimxyz') {
+            if (detail?.videoUrl) {
+              data = { videoUrl: detail.videoUrl, type: 'hls' };
+            } else if (detail?.link) {
+              data = { url: detail.link, type: 'iframe' };
+            }
+          } else if (detail?.link) {
+            data = { url: detail.link, type: 'iframe' };
           }
         }
 
@@ -195,7 +211,9 @@ export default function Phim18Player() {
   const servers = getServers();
 
   const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl
-    ? `${PHIM18_API}/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`
+    ? (videoData.videoUrl.includes('tiktokcdn')
+        ? `/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`
+        : videoData.videoUrl)
     : undefined;
   const embedUrl = videoData?.url || undefined;
 
@@ -258,7 +276,7 @@ export default function Phim18Player() {
               </div>
             </div>
           </div>
-        ) : source === 'javtiful' && videoData?.url ? (
+        ) : (source === 'javtiful' || source === 'javsub') && videoData?.url ? (
           <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800">
             <iframe
               src={videoData.url}

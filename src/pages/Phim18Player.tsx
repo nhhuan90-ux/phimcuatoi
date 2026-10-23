@@ -128,9 +128,8 @@ export default function Phim18Player() {
             data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
           } else if (source === 'vlxx' && detail?.embedUrl) {
             data = { url: detail.embedUrl, type: 'iframe' };
-          } else if (source === 'javsub' && detail?.embedUrls?.length) {
-            const idx = Math.min(Math.max(0, activeServer - 1), detail.embedUrls.length - 1);
-            const playUrl = detail.embedUrls[idx]?.url || detail.embedUrls[0].url;
+          } else if (source === 'javsub' && (detail?.embedUrl || detail?.embedUrls?.length)) {
+            const playUrl = detail.embedUrl || detail.embedUrls[0].url;
             const vm = playUrl.match(/\/videos\/([a-f0-9]+)\//);
             if (vm) {
               data = { videoUrl: `https://vcast.name/videos/${vm[1]}/master.m3u8`, type: 'hls' };

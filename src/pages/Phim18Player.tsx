@@ -120,12 +120,14 @@ export default function Phim18Player() {
           }
         } catch (e) {}
 
-        // Static fallback resolvers
+        // Static fallback resolvers: only use dedicated clean embed players
         if (!data || (!data.videoUrl && !data.url)) {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
             const code = detail?.code || id;
             data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
+          } else if (source === 'vlxx' && detail?.embedUrl) {
+            data = { url: detail.embedUrl, type: 'iframe' };
           } else if (source === 'javsub' && detail?.embedUrls?.length) {
             const idx = Math.min(Math.max(0, activeServer - 1), detail.embedUrls.length - 1);
             const playUrl = detail.embedUrls[idx]?.url || detail.embedUrls[0].url;
@@ -135,11 +137,6 @@ export default function Phim18Player() {
             } else {
               data = { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
             }
-          } else if (source === 'subjav' && detail?.id) {
-            data = { videoUrl: `https://subjav1.blog/storage/m3u8/${detail.id}/index.m3u8`, type: 'hls' };
-          } else if (detail?.link && source !== 'vlxx') {
-            // Direct link fallback (chỉ dùng cho nguồn không chặn X-Frame-Options; VLXX dùng link giải mã play.vlstream.net)
-            data = { url: detail.link, type: 'iframe' };
           }
         }
 
@@ -147,7 +144,7 @@ export default function Phim18Player() {
           if (data && (data.videoUrl || data.url)) {
             setVideoData(data);
           } else {
-            setError(data?.error || 'Không lấy được link phát video. Video có thể đã bị gỡ hoặc máy chủ đang bận.');
+            setError(data?.error || `Máy chủ ${SOURCE_NAMES[source] || source.toUpperCase()} chặn tính năng phát nhúng để bảo vệ bản quyền.`);
           }
         }
       } catch (e: any) {
@@ -225,27 +222,42 @@ export default function Phim18Player() {
             <p className="text-xs sm:text-sm font-medium">Đang nạp trình phát video...</p>
           </div>
         ) : error ? (
-          <div className="w-full aspect-video bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
-            <p className="text-white text-sm sm:text-base font-semibold mb-2">{error}</p>
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
-              {movie?.link && (
-                <a
-                  href={movie.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition-all shadow inline-flex items-center gap-2"
+          <div className="w-full aspect-video bg-[#0c0c0e] rounded-xl border border-zinc-800 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group shadow-2xl">
+            {movie?.img && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-20 filter blur-xl scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${movie.img})` }}
+              />
+            )}
+            <div className="relative z-10 flex flex-col items-center max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-full bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center mb-3.5 shadow-lg shadow-red-950/40">
+                <Play size={24} className="ml-1" />
+              </div>
+              <h3 className="text-white text-base sm:text-lg font-bold mb-2">
+                Yêu cầu mở xem tại trang nguồn
+              </h3>
+              <p className="text-zinc-400 text-xs sm:text-sm mb-5 leading-relaxed">
+                Máy chủ <span className="text-zinc-200 font-semibold">{SOURCE_NAMES[source] || source.toUpperCase()}</span> chặn nhúng vào trang ngoài để bảo vệ bản quyền. Bấm nút dưới đây để mở xem trực tiếp video tại trang gốc:
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {movie?.link && (
+                  <a
+                    href={movie.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-all duration-200 shadow-xl shadow-red-900/30 hover:scale-[1.02] inline-flex items-center gap-2"
+                  >
+                    <span>Mở xem trực tiếp tại trang nguồn</span>
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+                <button
+                  onClick={() => setActiveServer((prev) => prev)}
+                  className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
                 >
-                  <span>Mở xem trực tiếp tại trang nguồn</span>
-                  <ExternalLink size={14} />
-                </a>
-              )}
-              <button
-                onClick={() => setActiveServer((prev) => prev)}
-                className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-2"
-              >
-                <RefreshCw size={14} /> Thử lại
-              </button>
+                  <RefreshCw size={14} /> Thử lại
+                </button>
+              </div>
             </div>
           </div>
         ) : (

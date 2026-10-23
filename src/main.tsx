@@ -20,18 +20,24 @@ if ('serviceWorker' in navigator) {
       .then(registration => {
         console.log('SW registered: ', registration);
         
+        // If there's an existing worker waiting, activate it immediately
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
         // Periodically check for updates every 1 hour
         setInterval(() => {
           registration.update();
         }, 1000 * 60 * 60);
 
-        // Notify user if a new SW is waiting
+        // Notify and immediately skip waiting when a new SW is installing
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('New content available; please refresh.');
+                console.log('New content available; activating immediately.');
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
           }

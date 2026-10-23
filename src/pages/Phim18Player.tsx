@@ -130,12 +130,11 @@ export default function Phim18Player() {
             data = { url: detail.embedUrl, type: 'iframe' };
           } else if (source === 'javsub' && (detail?.embedUrl || detail?.embedUrls?.length)) {
             const playUrl = detail.embedUrl || detail.embedUrls[0].url;
-            const vm = playUrl.match(/\/videos\/([a-f0-9]+)\//);
-            if (vm) {
-              data = { videoUrl: `https://vcast.name/videos/${vm[1]}/master.m3u8`, type: 'hls' };
-            } else {
-              data = { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
-            }
+            data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+          } else if (source === 'subjav' && (detail?.videoUrl || detail?.embedUrl)) {
+            data = detail.videoUrl
+              ? { videoUrl: detail.videoUrl, type: 'hls' }
+              : { url: detail.embedUrl, type: 'iframe' };
           }
         }
 

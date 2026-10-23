@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phimcuatoi-v2';
+const CACHE_NAME = 'phimcuatoi-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean up old caches
+// Activate: clean up old caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -35,13 +35,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-First for HTML, Stale-While-Revalidate for others
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Fetch: Network-First for HTML & dynamic data JSON, Stale-While-Revalidate for static assets
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests and http/https protocols
   if (event.request.method !== 'GET') return;
 
+  let url;
   try {
-    const url = new URL(event.request.url);
+    url = new URL(event.request.url);
     if (!url.protocol.startsWith('http')) return;
   } catch (e) {
     return;
@@ -50,9 +57,10 @@ self.addEventListener('fetch', (event) => {
   const acceptHeader = event.request.headers.get('accept');
   const isHtml = event.request.mode === 'navigate' || 
                  (acceptHeader && acceptHeader.includes('text/html'));
+  const isDataOrApi = url.pathname.includes('/data/') || url.pathname.includes('/api/');
 
-  if (isHtml) {
-    // Network-First for navigation requests
+  if (isHtml || isDataOrApi) {
+    // Network-First for navigation and dynamic data
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -67,7 +75,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => caches.match(event.request))
     );
   } else {
-    // Stale-While-Revalidate for other assets
+    // Stale-While-Revalidate for images, icons, and bundle chunks
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {

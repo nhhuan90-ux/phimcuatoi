@@ -73,6 +73,20 @@ export default {
 
       // SubJAV
       if (source === 'subjav') {
+        try {
+          const pRes = await fetch(`https://subjav.asia/wp-json/ecyihz/v1/player/?id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://subjav.asia/' }
+          });
+          if (pRes.ok) {
+            const pData = await pRes.json();
+            if (pData && pData.data) {
+              const mMatch = pData.data.match(/file:\s*['"](https?:\/\/[^'"]+\.m3u8)['"]/i);
+              if (mMatch) {
+                return new Response(JSON.stringify({ videoUrl: mMatch[1], type: 'hls' }), { headers: corsHeaders });
+              }
+            }
+          }
+        } catch (e) {}
         const m3u8Url = `https://subjav1.blog/storage/m3u8/${encodeURIComponent(id)}/index.m3u8`;
         return new Response(JSON.stringify({ videoUrl: m3u8Url, type: 'hls' }), { headers: corsHeaders });
       }

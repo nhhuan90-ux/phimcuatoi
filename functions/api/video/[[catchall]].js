@@ -89,6 +89,12 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ videoUrl: m3u8Url, type: 'hls' }), { headers: corsHeaders });
     }
 
+    // 6. JAVHDz
+    if (source === 'javhdz') {
+      const m3u8Url = `https://p16-sg.tiktokcdn.top/ad-site-i18n-sg/ec8840e153d6ef49205e6506a6fb6f704003/javhd-${encodeURIComponent(id)}-playlist.m3u8`;
+      return new Response(JSON.stringify({ videoUrl: m3u8Url, type: 'hls' }), { headers: corsHeaders });
+    }
+
     return new Response(JSON.stringify({ error: 'Source not supported: ' + source }), { status: 400, headers: corsHeaders });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: corsHeaders });

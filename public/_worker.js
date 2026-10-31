@@ -21,10 +21,17 @@ export default {
       try {
         let referer = url.searchParams.get('referer');
         if (!referer) {
-          if (targetUrl.includes('tiktokcdn.top')) referer = 'https://javhdz.life/';
-          else if (targetUrl.includes('subjav')) referer = 'https://subjav.asia/';
-          else if (targetUrl.includes('vcast') || targetUrl.includes('sdeli') || targetUrl.includes('streamforester')) referer = 'https://vcast.name/';
-          else referer = targetUrl;
+          if (targetUrl.includes('tiktokcdn.top')) {
+            referer = 'https://javhdz.life/';
+          } else if (targetUrl.includes('vcast') || targetUrl.includes('sdeli') || targetUrl.includes('streamforester')) {
+            referer = 'https://vcast.name/';
+          } else if (targetUrl.includes('gooqlevideo') || targetUrl.includes('vlstream') || targetUrl.includes('vlxx')) {
+            referer = 'https://play.vlstream.net/';
+          } else if (targetUrl.includes('subjav')) {
+            referer = 'https://subjav.asia/';
+          } else {
+            referer = targetUrl;
+          }
         }
 
         const upstream = await fetch(targetUrl, {
@@ -34,9 +41,10 @@ export default {
           }
         });
 
-        const contentType = upstream.headers.get('content-type') || 'application/vnd.apple.mpegurl';
+        const contentType = upstream.headers.get('content-type') || '';
+        const isM3u8 = contentType.includes('mpegurl') || targetUrl.includes('.m3u8') || targetUrl.includes('.vl');
 
-        if (contentType.includes('mpegurl') || targetUrl.includes('.m3u8')) {
+        if (isM3u8) {
           const text = await upstream.text();
           const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
           const lines = text.split('\n').map(line => {
@@ -49,14 +57,16 @@ export default {
           return new Response(lines.join('\n'), {
             headers: {
               'Content-Type': 'application/vnd.apple.mpegurl; charset=utf-8',
-              'Access-Control-Allow-Origin': '*'
+              'Access-Control-Allow-Origin': '*',
+              'Cache-Control': 'no-cache'
             }
           });
         }
 
         return new Response(upstream.body, {
+          status: upstream.status,
           headers: {
-            'Content-Type': contentType,
+            'Content-Type': contentType || 'video/MP2T',
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'public, max-age=86400'
           }
@@ -73,38 +83,20 @@ export default {
       const id = parts.slice(1).join('/');
       const server = url.searchParams.get('server') || '1';
 
-      // VLXX
+      // 1. VLXX (Direct HLS Stream via gooqlevideo)
       if (source === 'vlxx') {
-        try {
-          const res = await fetch('https://vlxx.phd/ajax.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'X-Requested-With': 'XMLHttpRequest',
-              'Referer': 'https://vlxx.phd/'
-            },
-            body: `vlxx_server=1&id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`
-          });
-          const data = await res.json();
-          if (data && data.player) {
-            const match = data.player.match(/src=["']([^"']+)["']/i);
-            if (match) {
-              return new Response(JSON.stringify({ url: match[1], type: 'iframe' }), { headers: corsHeaders });
-            }
-          }
-          return new Response(JSON.stringify({ error: 'Player not found in VLXX' }), { status: 404, headers: corsHeaders });
-        } catch (e) {
-          return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: corsHeaders });
-        }
+        const paddedId = String(id).padStart(5, '0');
+        const directManifest = `https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`;
+        const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(directManifest)}`;
+        return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
       }
 
-      // JavTiful (Upload18 direct embed)
+      // 2. JavTiful (Upload18 direct embed)
       if (source === 'javtiful') {
         return new Response(JSON.stringify({ url: `https://upload18.org/play/index/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
       }
 
-      // JAVSub (Direct HLS stream via vcast.name with fallback)
+      // 3. JAVSub (Direct clean HLS stream via vcast.name)
       if (source === 'javsub') {
         const jDomains = ['javsub.blog', 'javsub.xyz'];
         for (const jd of jDomains) {
@@ -119,17 +111,16 @@ export default {
                 const hlsUrl = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`;
                 return new Response(JSON.stringify({ videoUrl: hlsUrl, type: 'hls' }), { headers: corsHeaders });
               }
-              const srcMatch = html.match(/data-source="([^"]+)"/);
-              if (srcMatch) {
-                const playUrl = srcMatch[1].replace(/&adTag=[^&]*/g, '');
-                return new Response(JSON.stringify({ url: playUrl, type: 'iframe' }), { headers: corsHeaders });
-              }
             }
           } catch (e) {}
         }
+        if (/^[a-f0-9]{20,}$/.test(id)) {
+          const hlsUrl = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${id}/master.m3u8`)}`;
+          return new Response(JSON.stringify({ videoUrl: hlsUrl, type: 'hls' }), { headers: corsHeaders });
+        }
       }
 
-      // SubJAV (Direct HLS from ecyihz/apistream)
+      // 4. SubJAV (Direct HLS from ecyihz/apistream)
       if (source === 'subjav') {
         try {
           const pRes = await fetch(`https://subjav.asia/wp-json/ecyihz/v1/player/?id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`, {
@@ -148,7 +139,7 @@ export default {
         return new Response(JSON.stringify({ url: `https://subjav.asia/player/${encodeURIComponent(id)}/`, type: 'iframe' }), { headers: corsHeaders });
       }
 
-      // JAVHDz (Stream HLS from javhdz.life / javhdz.one)
+      // 5. JAVHDz (Stream HLS from javhdz.life atob)
       if (source === 'javhdz') {
         const jDomains = ['javhdz.life', 'javhdz.one'];
         for (const jd of jDomains) {
@@ -165,16 +156,16 @@ export default {
               if (atobMatch) {
                 const stream = atob(atobMatch[1]);
                 if (stream && stream.startsWith('http')) {
-                  return new Response(JSON.stringify({ videoUrl: stream, type: 'hls' }), { headers: corsHeaders });
+                  const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(stream)}`;
+                  return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
                 }
               }
             }
           } catch (e) {}
         }
-        return new Response(JSON.stringify({ url: `https://javhdz.life/-${encodeURIComponent(id)}.html`, type: 'iframe' }), { headers: corsHeaders });
       }
 
-      // PhimXYZ
+      // 6. PhimXYZ
       if (source === 'phimxyz') {
         return new Response(JSON.stringify({ error: 'Nguồn PhimXYZ hiện đang bảo trì máy chủ.' }), { status: 503, headers: corsHeaders });
       }

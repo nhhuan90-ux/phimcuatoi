@@ -120,20 +120,21 @@ export default function Phim18Player() {
           }
         } catch (e) {}
 
-        // Static fallback resolvers: only use dedicated clean embed players
+        // Static fallback resolvers: direct HLS streams and clean dedicated embeds
         if (!data || (!data.videoUrl && !data.url)) {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
             const code = detail?.code || id;
             data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
           } else if (source === 'vlxx') {
-            const embed = detail?.embedUrl;
-            if (embed) {
-              data = { url: embed, type: 'iframe' };
-            }
+            const paddedId = String(id).padStart(5, '0');
+            data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`)}`, type: 'hls' };
           } else if (source === 'javsub') {
             const playUrl = detail?.embedUrl || detail?.embedUrls?.[0]?.url;
-            if (playUrl) {
+            const hashMatch = playUrl ? playUrl.match(/\/videos\/([a-f0-9]+)\//) : null;
+            if (hashMatch) {
+              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`, type: 'hls' };
+            } else if (playUrl) {
               data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
             }
           } else if (source === 'subjav') {
@@ -143,8 +144,13 @@ export default function Phim18Player() {
               data = { url: `https://subjav.asia/player/${id}/`, type: 'iframe' };
             }
           } else if (source === 'javhdz') {
-            const embed = detail?.embedUrl || `https://javhdz.life/embed-${id}.html`;
-            data = { url: embed, type: 'iframe' };
+            if (detail?.videoUrl) {
+              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(detail.videoUrl)}`, type: 'hls' };
+            }
+          } else if (source === 'phimxyz') {
+            if (detail?.videoUrl) {
+              data = { videoUrl: detail.videoUrl, type: 'hls' };
+            }
           }
         }
 
@@ -205,7 +211,7 @@ export default function Phim18Player() {
   const servers = getServers();
 
   const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl
-    ? (videoData.videoUrl.includes('tiktokcdn') || videoData.videoUrl.includes('vcast') || videoData.videoUrl.includes('sdeli')
+    ? (videoData.videoUrl.includes('tiktokcdn') || videoData.videoUrl.includes('vcast') || videoData.videoUrl.includes('sdeli') || videoData.videoUrl.includes('gooqlevideo')
         ? (videoData.videoUrl.startsWith('/api/proxy') ? videoData.videoUrl : `/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`)
         : videoData.videoUrl)
     : undefined;

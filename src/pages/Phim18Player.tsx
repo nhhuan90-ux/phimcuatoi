@@ -126,14 +126,14 @@ export default function Phim18Player() {
           if (source === 'javtiful') {
             const code = detail?.code || id;
             data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
-          } else if (source === 'vlxx' && detail?.embedUrl) {
-            data = { url: detail.embedUrl, type: 'iframe' };
-          } else if (source === 'javsub' && (detail?.embedUrl || detail?.embedUrls?.length)) {
-            const playUrl = detail.embedUrl || detail.embedUrls[0].url;
-            const hashMatch = playUrl ? playUrl.match(/\/videos\/([a-f0-9]+)\//) : null;
-            if (hashMatch) {
-              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`, type: 'hls' };
-            } else {
+          } else if (source === 'vlxx') {
+            const embed = detail?.embedUrl;
+            if (embed) {
+              data = { url: embed, type: 'iframe' };
+            }
+          } else if (source === 'javsub') {
+            const playUrl = detail?.embedUrl || detail?.embedUrls?.[0]?.url;
+            if (playUrl) {
               data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
             }
           } else if (source === 'subjav') {
@@ -143,9 +143,8 @@ export default function Phim18Player() {
               data = { url: `https://subjav.asia/player/${id}/`, type: 'iframe' };
             }
           } else if (source === 'javhdz') {
-            if (detail?.videoUrl) {
-              data = { videoUrl: detail.videoUrl, type: 'hls' };
-            }
+            const embed = detail?.embedUrl || `https://javhdz.life/embed-${id}.html`;
+            data = { url: embed, type: 'iframe' };
           }
         }
 
@@ -271,12 +270,13 @@ export default function Phim18Player() {
               </div>
             </div>
           </div>
-        ) : (source === 'javtiful' || source === 'javsub' || (source === 'vlxx' && videoData?.url?.includes('vlstream'))) && videoData?.url ? (
+        ) : videoData?.type === 'iframe' && videoData?.url ? (
           <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800">
             <iframe
               src={videoData.url}
               allow="autoplay; fullscreen; encrypted-media"
               allowFullScreen
+              referrerPolicy="no-referrer"
               className="w-full h-full border-0"
               title={movie?.title || 'Xem Phim 18+'}
             />

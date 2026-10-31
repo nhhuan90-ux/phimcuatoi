@@ -139,17 +139,17 @@ export default function Phim18Player() {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
             const code = (detail?.code || id || '').toUpperCase();
-            data = { url: `/api/embed/javtiful/${code}`, type: 'iframe' };
+            data = { url: `https://upload18.org/play/index/${code}`, type: 'iframe' };
           } else if (source === 'vlxx') {
-            const paddedId = String(id).padStart(5, '0');
-            data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`)}`, type: 'hls' };
+            if (detail?.embedUrl) {
+              data = { url: detail.embedUrl, type: 'iframe' };
+            }
           } else if (source === 'javsub') {
-            const playUrl = detail?.embedUrl || detail?.embedUrls?.[0]?.url;
-            const hashMatch = playUrl ? playUrl.match(/\/videos\/([a-f0-9]+)\//) : null;
-            if (hashMatch) {
-              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`, type: 'hls' };
-            } else if (playUrl) {
-              data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+            const playUrls = detail?.embedUrls || (detail?.embedUrl ? [{ url: detail.embedUrl, label: 'Server 1' }] : []);
+            const idx = Math.min(Math.max(0, activeServer - 1), Math.max(0, playUrls.length - 1));
+            const chosenUrl = playUrls[idx]?.url || detail?.embedUrl;
+            if (chosenUrl) {
+              data = { url: chosenUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
             }
           } else if (source === 'subjav') {
             if (detail?.videoUrl) {
@@ -159,7 +159,7 @@ export default function Phim18Player() {
             }
           } else if (source === 'javhdz') {
             if (detail?.videoUrl) {
-              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(detail.videoUrl)}`, type: 'hls' };
+              data = { videoUrl: detail.videoUrl, type: 'hls' };
             }
           } else if (source === 'phimxyz') {
             if (detail?.videoUrl) {
@@ -224,11 +224,7 @@ export default function Phim18Player() {
 
   const servers = getServers();
 
-  const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl
-    ? (videoData.videoUrl.includes('tiktokcdn') || videoData.videoUrl.includes('vcast') || videoData.videoUrl.includes('sdeli') || videoData.videoUrl.includes('gooqlevideo')
-        ? (videoData.videoUrl.startsWith('/api/proxy') ? videoData.videoUrl : `/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`)
-        : videoData.videoUrl)
-    : undefined;
+  const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl ? videoData.videoUrl : undefined;
   const embedUrl = videoData?.url || undefined;
 
   return (
@@ -296,7 +292,6 @@ export default function Phim18Player() {
               src={videoData.url}
               allow="autoplay; fullscreen; encrypted-media"
               allowFullScreen
-              referrerPolicy="no-referrer"
               className="w-full h-full border-0"
               title={movie?.title || 'Xem Phim 18+'}
             />

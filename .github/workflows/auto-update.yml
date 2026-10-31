@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,5 +38,9 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add server/movies.json server/audiobooks.json src/data/audiobooks.json public/data/audiobooks.json public/data/movies*.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "data: daily automatic movie and audiobook update" && git push)
+          git add server/movies.json server/domains.json server/audiobooks.json src/data/audiobooks.json public/data/audiobooks.json public/data/movies*.json
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "data: daily automatic movie and audiobook update"
+            git pull --rebase -X ours origin main || true
+            git push origin main
+          fi

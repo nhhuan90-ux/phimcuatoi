@@ -130,7 +130,12 @@ export default function Phim18Player() {
             data = { url: detail.embedUrl, type: 'iframe' };
           } else if (source === 'javsub' && (detail?.embedUrl || detail?.embedUrls?.length)) {
             const playUrl = detail.embedUrl || detail.embedUrls[0].url;
-            data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+            const hashMatch = playUrl ? playUrl.match(/\/videos\/([a-f0-9]+)\//) : null;
+            if (hashMatch) {
+              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`, type: 'hls' };
+            } else {
+              data = { url: playUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+            }
           } else if (source === 'subjav') {
             if (detail?.videoUrl) {
               data = { videoUrl: detail.videoUrl, type: 'hls' };
@@ -140,17 +145,7 @@ export default function Phim18Player() {
           } else if (source === 'javhdz') {
             if (detail?.videoUrl) {
               data = { videoUrl: detail.videoUrl, type: 'hls' };
-            } else if (detail?.link) {
-              data = { url: detail.link.replace(/https?:\/\/javhdz\.[a-z0-9]+/i, 'https://javhdz.one'), type: 'iframe' };
             }
-          } else if (source === 'phimxyz') {
-            if (detail?.videoUrl) {
-              data = { videoUrl: detail.videoUrl, type: 'hls' };
-            } else if (detail?.link) {
-              data = { url: detail.link, type: 'iframe' };
-            }
-          } else if (detail?.link) {
-            data = { url: detail.link, type: 'iframe' };
           }
         }
 
@@ -211,8 +206,8 @@ export default function Phim18Player() {
   const servers = getServers();
 
   const m3u8Url = videoData?.type === 'hls' && videoData.videoUrl
-    ? (videoData.videoUrl.includes('tiktokcdn')
-        ? `/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`
+    ? (videoData.videoUrl.includes('tiktokcdn') || videoData.videoUrl.includes('vcast') || videoData.videoUrl.includes('sdeli')
+        ? (videoData.videoUrl.startsWith('/api/proxy') ? videoData.videoUrl : `/api/proxy/hls?url=${encodeURIComponent(videoData.videoUrl)}`)
         : videoData.videoUrl)
     : undefined;
   const embedUrl = videoData?.url || undefined;
@@ -276,7 +271,7 @@ export default function Phim18Player() {
               </div>
             </div>
           </div>
-        ) : (source === 'javtiful' || source === 'javsub') && videoData?.url ? (
+        ) : (source === 'javtiful' || source === 'javsub' || (source === 'vlxx' && videoData?.url?.includes('vlstream'))) && videoData?.url ? (
           <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800">
             <iframe
               src={videoData.url}

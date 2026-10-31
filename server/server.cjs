@@ -467,8 +467,9 @@ async function syncDriveAudiobooks() {
     console.warn('[AudiobookSync] Lỗi quét thư mục mẹ:', err.message);
   }
 
-  // 2. Quét các sách hiện tại có folderId riêng để kiểm tra xem có thêm tập/chương audio nào mới không
-  for (let i = 0; i < audiobooksData.length; i++) {
+  // 2. Quét tối đa 20 sách gần nhất có folderId riêng để tránh rate limit của Google Drive
+  const maxScan = Math.min(audiobooksData.length, 20);
+  for (let i = 0; i < maxScan; i++) {
     const book = audiobooksData[i];
     if (!book.folderId || book.folderId === ROOT_DRIVE_AUDIO_FOLDER_ID) continue;
 
@@ -504,7 +505,7 @@ async function syncDriveAudiobooks() {
 
 // ============ AUTODISCOVER DOMAINS ============
 let domains = {
-  javhdz: 'javhdz.ac',
+  javhdz: 'javhdz.life',
   subjav: 'subjav.team',
   phimxyz: 'i1.phimxyz.blog',
   javsub: 'javsub.blog',
@@ -818,11 +819,10 @@ async function getJavsubVideoUrl(id, server = 1) {
     }
     if (!playUrl) return null;
 
-    // Extract video hash ID from embed URL (e.g. /videos/690fadb247cbcd7bd70f34f3/play)
+    // Extract video hash ID from embed URL
     const videoIdMatch = playUrl.match(/\/videos\/([a-f0-9]+)\//);
     if (videoIdMatch) {
-      // Use vcast.name which serves master.m3u8 directly (streamforester returns 401)
-      const m3u8Url = `https://vcast.name/videos/${videoIdMatch[1]}/master.m3u8`;
+      const m3u8Url = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${videoIdMatch[1]}/master.m3u8`)}`;
       return { videoUrl: m3u8Url, type: 'hls' };
     }
 
@@ -1616,7 +1616,7 @@ async function checkForUpdates() {
     return items;
   };
 
-  const results = await Promise.all([
+  const settled = await Promise.allSettled([
     // JAVHDz (3 categories)
     checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/uncensored-3/':`/category/uncensored-3/page/${p}/`}`, javhdzParser),
     checkNew('javhdz', p => `https://${domains.javhdz}${p===1?'/category/censored-2/':`/category/censored-2/page/${p}/`}`, javhdzParser),
@@ -1685,6 +1685,7 @@ async function checkForUpdates() {
       return items;
     }),
   ]);
+  const results = settled.map(s => s.status === 'fulfilled' ? s.value : 0);
   const totalAdded = results.reduce((a,b)=>a+b,0);
   if (totalAdded > 0) { saveData(); console.log(`[AutoUpdate] Added ${totalAdded}`); }
   else { console.log(`[AutoUpdate] No new movies`); }

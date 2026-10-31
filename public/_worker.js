@@ -21,9 +21,9 @@ export default {
       try {
         let referer = url.searchParams.get('referer');
         if (!referer) {
-          if (targetUrl.includes('tiktokcdn.top')) referer = 'https://javhdz.one/';
+          if (targetUrl.includes('tiktokcdn.top')) referer = 'https://javhdz.life/';
           else if (targetUrl.includes('subjav')) referer = 'https://subjav.asia/';
-          else if (targetUrl.includes('vcast') || targetUrl.includes('streamforester')) referer = 'https://javsub.xyz/';
+          else if (targetUrl.includes('vcast') || targetUrl.includes('sdeli') || targetUrl.includes('streamforester')) referer = 'https://vcast.name/';
           else referer = targetUrl;
         }
 
@@ -99,29 +99,37 @@ export default {
         }
       }
 
-      // JavTiful
+      // JavTiful (Upload18 direct embed)
       if (source === 'javtiful') {
         return new Response(JSON.stringify({ url: `https://upload18.org/play/index/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
       }
 
-      // JAVSub
+      // JAVSub (Direct HLS stream via vcast.name with fallback)
       if (source === 'javsub') {
-        try {
-          const pageRes = await fetch(`https://javsub.xyz/phim-sex/${encodeURIComponent(id)}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://javsub.xyz/' }
-          });
-          if (pageRes.ok) {
-            const html = await pageRes.text();
-            const srcMatch = html.match(/data-source="([^"]+)"/);
-            if (srcMatch) {
-              const playUrl = srcMatch[1].replace(/&adTag=[^&]*/g, '');
-              return new Response(JSON.stringify({ url: playUrl, type: 'iframe' }), { headers: corsHeaders });
+        const jDomains = ['javsub.blog', 'javsub.xyz'];
+        for (const jd of jDomains) {
+          try {
+            const pageRes = await fetch(`https://${jd}/phim-sex/${encodeURIComponent(id)}`, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': `https://${jd}/` }
+            });
+            if (pageRes.ok) {
+              const html = await pageRes.text();
+              const hashMatch = html.match(/\/videos\/([a-f0-9]+)\//);
+              if (hashMatch) {
+                const hlsUrl = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`;
+                return new Response(JSON.stringify({ videoUrl: hlsUrl, type: 'hls' }), { headers: corsHeaders });
+              }
+              const srcMatch = html.match(/data-source="([^"]+)"/);
+              if (srcMatch) {
+                const playUrl = srcMatch[1].replace(/&adTag=[^&]*/g, '');
+                return new Response(JSON.stringify({ url: playUrl, type: 'iframe' }), { headers: corsHeaders });
+              }
             }
-          }
-        } catch (e) {}
+          } catch (e) {}
+        }
       }
 
-      // SubJAV
+      // SubJAV (Direct HLS from ecyihz/apistream)
       if (source === 'subjav') {
         try {
           const pRes = await fetch(`https://subjav.asia/wp-json/ecyihz/v1/player/?id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`, {
@@ -140,32 +148,35 @@ export default {
         return new Response(JSON.stringify({ url: `https://subjav.asia/player/${encodeURIComponent(id)}/`, type: 'iframe' }), { headers: corsHeaders });
       }
 
-      // JAVHDz
+      // JAVHDz (Stream HLS from javhdz.life / javhdz.one)
       if (source === 'javhdz') {
-        try {
-          const jRes = await fetch(`https://javhdz.one/-${encodeURIComponent(id)}.html`, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Referer': 'https://javhdz.one/'
-            }
-          });
-          if (jRes.ok) {
-            const jHtml = await jRes.text();
-            const atobMatch = jHtml.match(/atob\(\s*["']([^"']+)["']\s*\)/);
-            if (atobMatch) {
-              const stream = atob(atobMatch[1]);
-              if (stream && stream.startsWith('http')) {
-                return new Response(JSON.stringify({ videoUrl: stream, type: 'hls' }), { headers: corsHeaders });
+        const jDomains = ['javhdz.life', 'javhdz.one'];
+        for (const jd of jDomains) {
+          try {
+            const jRes = await fetch(`https://${jd}/-${encodeURIComponent(id)}.html`, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': `https://${jd}/`
+              }
+            });
+            if (jRes.ok) {
+              const jHtml = await jRes.text();
+              const atobMatch = jHtml.match(/atob\(\s*["']([^"']+)["']\s*\)/);
+              if (atobMatch) {
+                const stream = atob(atobMatch[1]);
+                if (stream && stream.startsWith('http')) {
+                  return new Response(JSON.stringify({ videoUrl: stream, type: 'hls' }), { headers: corsHeaders });
+                }
               }
             }
-          }
-        } catch (e) {}
-        return new Response(JSON.stringify({ url: `https://javhdz.one/-${encodeURIComponent(id)}.html`, type: 'iframe' }), { headers: corsHeaders });
+          } catch (e) {}
+        }
+        return new Response(JSON.stringify({ url: `https://javhdz.life/-${encodeURIComponent(id)}.html`, type: 'iframe' }), { headers: corsHeaders });
       }
 
       // PhimXYZ
       if (source === 'phimxyz') {
-        return new Response(JSON.stringify({ url: `https://phimxyz.xyz/phim/${encodeURIComponent(id)}`, type: 'iframe' }), { headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Nguồn PhimXYZ hiện đang bảo trì máy chủ.' }), { status: 503, headers: corsHeaders });
       }
 
       return new Response(JSON.stringify({ error: 'Unknown source: ' + source }), { status: 400, headers: corsHeaders });

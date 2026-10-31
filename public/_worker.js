@@ -13,7 +13,81 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // 0. Handle HLS Proxy
+    // 0. Handle Clean Embed (JavTiful - stripped of ads and popunders)
+    if (url.pathname.startsWith('/api/embed/javtiful/')) {
+      const code = url.pathname.replace('/api/embed/javtiful/', '').toUpperCase();
+      try {
+        const upstreamUrl = `https://upload18.org/play/index/${encodeURIComponent(code)}`;
+        const res = await fetch(upstreamUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+            'Referer': 'https://upload18.org/'
+          }
+        });
+
+        if (!res.ok) {
+          return new Response('Video not found or upstream error: ' + res.status, { status: res.status });
+        }
+
+        let html = await res.text();
+
+        // Ensure base href points to upload18.org so all JWPlayer assets & stream load
+        if (!html.includes('<base')) {
+          html = html.replace('<head>', '<head><base href="https://upload18.org/">');
+        }
+
+        // Remove third-party ad scripts (popunders, vast, click redirects)
+        html = html.replace(/<script[^>]*src=["'][^"']*(?:egotistic|driverhug|plywood|overblown|popunder|clocid)[^"']*["'][^>]*><\/script>/gi, '<!-- ad removed -->');
+        html = html.replace(/<script[^>]*data-clocid[^>]*>[\s\S]*?<\/script>/gi, '<!-- ad removed -->');
+
+        // Neutralize sandbox-guard probe so it never triggers false alarm
+        html = html.replace(/<script[^>]*sandbox-guard[^>]*><\/script>/gi, '<script>window.__u18SandboxGuard={version:"1.1.0",blocked:false,reason:"",iframeContext:false,probeStatus:"clear",probeReason:""};</script>');
+
+        // Inject strict popup killer to block any dynamic window.open / 3rd-party redirects
+        const antiAdScript = `
+        <script>
+          (function() {
+            try {
+              window.open = function() { console.log('[AdBlock] Blocked popup attempt'); return null; };
+            } catch(e) {}
+            try {
+              window.__u18SandboxGuard = { version: "1.1.0", blocked: false, reason: "", iframeContext: false, probeStatus: "clear" };
+            } catch(e) {}
+            document.addEventListener('click', function(e) {
+              var el = e.target;
+              while (el && el !== document) {
+                if (el.tagName === 'A') {
+                  var href = el.getAttribute('href') || '';
+                  if (href.startsWith('http') && !href.includes('upload18.org') && !href.includes('helvid.com')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[AdBlock] Blocked ad link click:', href);
+                    return false;
+                  }
+                  el.removeAttribute('target');
+                }
+                el = el.parentNode;
+              }
+            }, true);
+          })();
+        </script>
+        `;
+
+        html = html.replace('<head>', '<head>' + antiAdScript);
+
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=3600'
+          }
+        });
+      } catch (err) {
+        return new Response('Embed error: ' + err.message, { status: 502 });
+      }
+    }
+
+    // 1. Handle HLS Proxy
     if (url.pathname.startsWith('/api/proxy/hls')) {
       const targetUrl = url.searchParams.get('url');
       if (!targetUrl) return new Response('Missing url', { status: 400 });
@@ -76,7 +150,7 @@ export default {
       }
     }
 
-    // 1. Handle API Video Resolver
+    // 2. Handle API Video Resolver
     if (url.pathname.startsWith('/api/video/')) {
       const parts = url.pathname.replace('/api/video/', '').split('/');
       const source = parts[0];
@@ -91,9 +165,9 @@ export default {
         return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
       }
 
-      // 2. JavTiful (Upload18 direct embed)
+      // 2. JavTiful (Clean embed stripped of ad popunders)
       if (source === 'javtiful') {
-        return new Response(JSON.stringify({ url: `https://upload18.org/play/index/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
+        return new Response(JSON.stringify({ url: `/api/embed/javtiful/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
       }
 
       // 3. JAVSub (Direct clean HLS stream via vcast.name)
@@ -173,7 +247,7 @@ export default {
       return new Response(JSON.stringify({ error: 'Unknown source: ' + source }), { status: 400, headers: corsHeaders });
     }
 
-    // 2. Default: Serve static assets
+    // 3. Default: Serve static assets
     return env.ASSETS.fetch(request);
   }
 };

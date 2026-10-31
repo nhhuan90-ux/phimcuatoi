@@ -68,6 +68,20 @@ export default function Phim18Player() {
   const [error, setError] = useState<string | null>(null);
   const [activeServer, setActiveServer] = useState(1);
 
+  // Global Popup & Unwanted 3rd-Party Ad Window Blocker
+  useEffect(() => {
+    try {
+      const origOpen = window.open;
+      window.open = function(targetUrl) {
+        console.warn('[AdBlock] Blocked attempt to open external window/tab:', targetUrl);
+        return null;
+      };
+      return () => {
+        window.open = origOpen;
+      };
+    } catch(e) {}
+  }, []);
+
   // Fetch movie details
   useEffect(() => {
     if (!source || !id) return;
@@ -124,8 +138,8 @@ export default function Phim18Player() {
         if (!data || (!data.videoUrl && !data.url)) {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
-            const code = detail?.code || id;
-            data = { url: `https://upload18.org/play/index/${code.toUpperCase()}`, type: 'iframe' };
+            const code = (detail?.code || id || '').toUpperCase();
+            data = { url: `/api/embed/javtiful/${code}`, type: 'iframe' };
           } else if (source === 'vlxx') {
             const paddedId = String(id).padStart(5, '0');
             data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(`https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`)}`, type: 'hls' };

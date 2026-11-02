@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1793655220047-1ps5H4",
+    "title": "Vu Mat Tich Thanh Hamelin",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Vu Mat Tich Thanh Hamelin\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1ps5H49QLXDDpSKlA95y9VUbRUL0kcqg2",
+        "title": "Vu Mat Tich Thanh Hamelin",
+        "driveUrl": "https://drive.google.com/file/d/1ps5H49QLXDDpSKlA95y9VUbRUL0kcqg2/view",
+        "driveId": "1ps5H49QLXDDpSKlA95y9VUbRUL0kcqg2"
+      }
+    ],
+    "createdAt": "2026-11-02T21:33:40.047Z",
+    "updatedAt": "2026-11-02T21:33:40.047Z"
+  },
+  {
     "id": "book-1792601661289-1l7ZGA",
     "title": "Bo Ba",
     "author": "Nhiều tác giả",

@@ -1,5 +1,45 @@
 [
   {
+    "id": "book-1794338980491-14NAWK",
+    "title": "Hải Quỳ",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Hải Quỳ\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_14NAWKsKIprtTuNkv82bfjyGr4eMpmrFG",
+        "title": "Hải Quỳ",
+        "driveUrl": "https://drive.google.com/file/d/14NAWKsKIprtTuNkv82bfjyGr4eMpmrFG/view",
+        "driveId": "14NAWKsKIprtTuNkv82bfjyGr4eMpmrFG"
+      }
+    ],
+    "createdAt": "2026-11-10T19:29:40.491Z",
+    "updatedAt": "2026-11-10T19:29:40.491Z"
+  },
+  {
+    "id": "book-1794338980491-15FM8P",
+    "title": "Chân Tướng suy lý sư",
+    "author": "Sống Sót - Hồ Diên Vân",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Chân Tướng suy lý sư\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_15FM8PiQAoOnmuvH_ciFF8_CcogJa4RWq",
+        "title": "Chân Tướng suy lý sư",
+        "driveUrl": "https://drive.google.com/file/d/15FM8PiQAoOnmuvH_ciFF8_CcogJa4RWq/view",
+        "driveId": "15FM8PiQAoOnmuvH_ciFF8_CcogJa4RWq"
+      }
+    ],
+    "createdAt": "2026-11-10T19:29:40.491Z",
+    "updatedAt": "2026-11-10T19:29:40.491Z"
+  },
+  {
     "id": "book-1794262037671-1DN9rh",
     "title": "Toi Ac va Hinh Phat",
     "author": "Chưa rõ tác giả",

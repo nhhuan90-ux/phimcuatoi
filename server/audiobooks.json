@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1794425102184-1Gfm6u",
+    "title": "Nữ Hoàng Bích",
+    "author": "Yokomizo Seishi",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Nữ Hoàng Bích\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1Gfm6u__pqClFhpCs8_aw0JTrT3U0ONzM",
+        "title": "Nữ Hoàng Bích",
+        "driveUrl": "https://drive.google.com/file/d/1Gfm6u__pqClFhpCs8_aw0JTrT3U0ONzM/view",
+        "driveId": "1Gfm6u__pqClFhpCs8_aw0JTrT3U0ONzM"
+      }
+    ],
+    "createdAt": "2026-11-11T19:25:02.184Z",
+    "updatedAt": "2026-11-11T19:25:02.184Z"
+  },
+  {
     "id": "book-1794374960493-1KzWkK",
     "title": "Tổ điều tra quỷ án",
     "author": "Tư Nhiên",

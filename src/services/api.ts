@@ -35,6 +35,12 @@ export const getBaseName = (name: string | undefined): string => {
              .trim();
 };
 
+export const getSeasonNumber = (name: string | undefined): number | null => {
+  if (!name) return null;
+  const match = name.match(/(?:phần|season|ss|part|\bp\.)\s*(\d+)/i);
+  return match ? parseInt(match[1], 10) : null;
+};
+
 const fetchWithTimeout = (promise: Promise<any>, ms: number = 10000): Promise<any> => {
   return Promise.race([
     promise,
@@ -557,6 +563,7 @@ export const fetchMovies = async (endpoint: string, page: number = 1) => {
         const normName = normalizeName(item.name);
         const baseNormName = normalizeName(getBaseName(item.name));
         const baseNormOrigName = normalizeName(getBaseName(item.original_name));
+        const itemSeason = getSeasonNumber(item.name) || getSeasonNumber(item.original_name);
 
         const existing = allItems.find(i => {
            if (i.slug === item.slug) return true;
@@ -565,11 +572,14 @@ export const fetchMovies = async (endpoint: string, page: number = 1) => {
            if (iNormOrigName && normOrigName && iNormOrigName === normOrigName) return true;
            if (iNormName && normName && iNormName === normName) return true;
            
-           // Season grouping blocker: if a base version of this movie is already in list, hide this season
+           // Deduplicate across sources only when base titles match AND season numbers match
            const iBaseNormName = normalizeName(getBaseName(i.name));
            const iBaseNormOrigName = normalizeName(getBaseName(i.original_name));
-           if (baseNormName && iBaseNormName && baseNormName === iBaseNormName) return true;
-           if (baseNormOrigName && iBaseNormOrigName && baseNormOrigName === iBaseNormOrigName) return true;
+           const iSeason = getSeasonNumber(i.name) || getSeasonNumber(i.original_name);
+           if ((baseNormName && iBaseNormName && baseNormName === iBaseNormName) ||
+               (baseNormOrigName && iBaseNormOrigName && baseNormOrigName === iBaseNormOrigName)) {
+             if (itemSeason === iSeason) return true;
+           }
            
            return false;
         });
@@ -696,6 +706,8 @@ export const searchMovies = async (keyword: string) => {
         const normOrigName = normalizeName(item.original_name);
         const normName = normalizeName(item.name);
         const baseNormName = normalizeName(getBaseName(item.name));
+        const baseNormOrigName = normalizeName(getBaseName(item.original_name));
+        const itemSeason = getSeasonNumber(item.name) || getSeasonNumber(item.original_name);
 
         const existing = allItems.find(i => {
            if (i.slug === item.slug) return true;
@@ -704,9 +716,14 @@ export const searchMovies = async (keyword: string) => {
            if (iNormOrigName && normOrigName && iNormOrigName === normOrigName) return true;
            if (iNormName && normName && iNormName === normName) return true;
            
-           // Season grouping blocker
+           // Deduplicate across sources only when base titles match AND season numbers match
            const iBaseNormName = normalizeName(getBaseName(i.name));
-           if (baseNormName && iBaseNormName && baseNormName === iBaseNormName) return true;
+           const iBaseNormOrigName = normalizeName(getBaseName(i.original_name));
+           const iSeason = getSeasonNumber(i.name) || getSeasonNumber(i.original_name);
+           if ((baseNormName && iBaseNormName && baseNormName === iBaseNormName) ||
+               (baseNormOrigName && iBaseNormOrigName && baseNormOrigName === iBaseNormOrigName)) {
+             if (itemSeason === iSeason) return true;
+           }
            
            return false;
         });

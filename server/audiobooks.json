@@ -1,5 +1,65 @@
 [
   {
+    "id": "book-1794374960493-1KzWkK",
+    "title": "Tổ điều tra quỷ án",
+    "author": "Tư Nhiên",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Tổ điều tra quỷ án\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1KzWkKy632gcXUxrSqU0wlrw9UZ15_eLN",
+        "title": "Tổ điều tra quỷ án",
+        "driveUrl": "https://drive.google.com/file/d/1KzWkKy632gcXUxrSqU0wlrw9UZ15_eLN/view",
+        "driveId": "1KzWkKy632gcXUxrSqU0wlrw9UZ15_eLN"
+      }
+    ],
+    "createdAt": "2026-11-11T05:29:20.493Z",
+    "updatedAt": "2026-11-11T05:29:20.493Z"
+  },
+  {
+    "id": "book-1794374960492-1mlQSk",
+    "title": "Chân_Tướng_Suy_Luận_Sư_Phá_Kính_Hồ_Diên_Văn",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Chân_Tướng_Suy_Luận_Sư_Phá_Kính_Hồ_Diên_Văn\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1mlQSkDlV_xZd3AiMM6boBmq-VuvuHOho",
+        "title": "Chân_Tướng_Suy_Luận_Sư_Phá_Kính_Hồ_Diên_Văn",
+        "driveUrl": "https://drive.google.com/file/d/1mlQSkDlV_xZd3AiMM6boBmq-VuvuHOho/view",
+        "driveId": "1mlQSkDlV_xZd3AiMM6boBmq-VuvuHOho"
+      }
+    ],
+    "createdAt": "2026-11-11T05:29:20.492Z",
+    "updatedAt": "2026-11-11T05:29:20.492Z"
+  },
+  {
+    "id": "book-1794374960492-19K7w4",
+    "title": "Chân tướng thời lý sư",
+    "author": "Thiên Biến - Hồ Diên Văn",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Chân tướng thời lý sư\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_19K7w41u-zDi0ZPe-VdRsfpT_9gWTuGHr",
+        "title": "Chân tướng thời lý sư",
+        "driveUrl": "https://drive.google.com/file/d/19K7w41u-zDi0ZPe-VdRsfpT_9gWTuGHr/view",
+        "driveId": "19K7w41u-zDi0ZPe-VdRsfpT_9gWTuGHr"
+      }
+    ],
+    "createdAt": "2026-11-11T05:29:20.492Z",
+    "updatedAt": "2026-11-11T05:29:20.492Z"
+  },
+  {
     "id": "book-1794338980491-14NAWK",
     "title": "Hải Quỳ",
     "author": "Nhiều tác giả",

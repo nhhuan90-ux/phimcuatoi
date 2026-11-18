@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1794984174846-1yTmiP",
+    "title": "Vòng Lặp Ký Ức",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Vòng Lặp Ký Ức\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1yTmiPc7Xxne-mDgcpCXf0dHVHk6yjEt0",
+        "title": "Vòng Lặp Ký Ức",
+        "driveUrl": "https://drive.google.com/file/d/1yTmiPc7Xxne-mDgcpCXf0dHVHk6yjEt0/view",
+        "driveId": "1yTmiPc7Xxne-mDgcpCXf0dHVHk6yjEt0"
+      }
+    ],
+    "createdAt": "2026-11-18T06:42:54.846Z",
+    "updatedAt": "2026-11-18T06:42:54.846Z"
+  },
+  {
     "id": "book-1794899902876-1jPsR1",
     "title": "Rebecca_-_Daphn",
     "author": "Nhiều tác giả",

@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1795070679673-1i6YC4",
+    "title": "Bố Con Cá Gai",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Bố Con Cá Gai\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1i6YC4HhytsBQv2k3bSVbFjwWIpctuevd",
+        "title": "Bố Con Cá Gai",
+        "driveUrl": "https://drive.google.com/file/d/1i6YC4HhytsBQv2k3bSVbFjwWIpctuevd/view",
+        "driveId": "1i6YC4HhytsBQv2k3bSVbFjwWIpctuevd"
+      }
+    ],
+    "createdAt": "2026-11-19T06:44:39.673Z",
+    "updatedAt": "2026-11-19T06:44:39.673Z"
+  },
+  {
     "id": "book-1794984174846-1yTmiP",
     "title": "Vòng Lặp Ký Ức",
     "author": "Nhiều tác giả",

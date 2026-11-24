@@ -5,7 +5,7 @@ import { AlertTriangle, Film, Play, Search, X } from 'lucide-react';
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 const SOURCE_NAMES: Record<string, string> = {
   javhdz: 'JAVHDz', vlxx: 'VLXX', javsub: 'JAVSub',
-  javtiful: 'JavTiful', phimxyz: 'PhimXYZ', subjav: 'SubJAV'
+  javtiful: 'JavTiful', subjav: 'SubJAV'
 };
 
 function AgeGate({ onConfirm }: { onConfirm: () => void }) {
@@ -87,6 +87,7 @@ async function fetchStaticMovies(
     }
 
     if (list && Array.isArray(list)) {
+      list = list.filter((m: any) => m.source !== 'phimxyz');
       staticCache.set(source, list);
     } else {
       list = [];

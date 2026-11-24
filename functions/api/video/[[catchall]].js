@@ -21,44 +21,62 @@ export async function onRequest(context) {
     if (source === 'vlxx') {
       const paddedId = String(id).padStart(5, '0');
       const directManifest = `https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`;
-      const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(directManifest)}`;
+      const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(directManifest)}&referer=${encodeURIComponent('https://play.vlstream.net/')}`;
       return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
     }
 
-    // 2. JavTiful (Direct clean embed)
+    // 2. JavTiful (Direct clean embed route stripped of popunder ads)
     if (source === 'javtiful') {
-      return new Response(JSON.stringify({ url: `https://upload18.org/play/index/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ url: `/api/embed/javtiful/${id.toUpperCase()}`, type: 'iframe' }), { headers: corsHeaders });
     }
 
-    // 3. JAVSub (Direct clean HLS stream via vcast.name)
+    // 3. JAVSub (Direct clean HLS stream via wogplayer API config)
     if (source === 'javsub') {
-      // If id is a slug or code, fetch page to extract hash
-      const jDomains = ['javsub.blog', 'javsub.xyz'];
-      for (const jd of jDomains) {
+      let hash = id;
+      if (!/^[a-f0-9]{20,}$/.test(hash)) {
+        const jDomains = ['javsub.blog', 'javsub.xyz'];
+        for (const jd of jDomains) {
+          try {
+            const pageRes = await fetch(`https://${jd}/phim-sex/${encodeURIComponent(id)}`, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': `https://${jd}/` }
+            });
+            if (pageRes.ok) {
+              const html = await pageRes.text();
+              const m = html.match(/\/videos\/([a-f0-9]+)\//);
+              if (m) { hash = m[1]; break; }
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (/^[a-f0-9]{20,}$/.test(hash)) {
         try {
-          const pageRes = await fetch(`https://${jd}/phim-sex/${encodeURIComponent(id)}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': `https://${jd}/` }
+          const cfgRes = await fetch(`https://wogplayer.top/videos/${hash}/config?d=javsub.blog`, {
+            method: 'POST',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': 'https://javsub.blog/',
+              'Origin': 'https://javsub.blog'
+            }
           });
-          if (pageRes.ok) {
-            const html = await pageRes.text();
-            const hashMatch = html.match(/\/videos\/([a-f0-9]+)\//);
-            if (hashMatch) {
-              const hlsUrl = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${hashMatch[1]}/master.m3u8`)}`;
-              return new Response(JSON.stringify({ videoUrl: hlsUrl, type: 'hls' }), { headers: corsHeaders });
+          if (cfgRes.ok) {
+            const cfgData = await cfgRes.json();
+            const m3u8 = cfgData.sources?.[0]?.file;
+            if (m3u8) {
+              const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(m3u8)}&referer=${encodeURIComponent('https://wogplayer.top/')}`;
+              return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
             }
           }
         } catch (e) {}
       }
-      // Fallback if hash directly passed
-      if (/^[a-f0-9]{20,}$/.test(id)) {
-        const hlsUrl = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${id}/master.m3u8`)}`;
-        return new Response(JSON.stringify({ videoUrl: hlsUrl, type: 'hls' }), { headers: corsHeaders });
-      }
+
+      // Fallback to clean embed proxy
+      return new Response(JSON.stringify({ url: `/api/embed/javsub/${encodeURIComponent(hash || id)}`, type: 'iframe' }), { headers: corsHeaders });
     }
 
-    // 4. JAVHDz (Stream HLS decoded from javhdz.life atob)
+    // 4. JAVHDz (Stream HLS decoded from javhdz.page atob)
     if (source === 'javhdz') {
-      const jDomains = ['javhdz.life', 'javhdz.one'];
+      const jDomains = ['javhdz.page', 'javhdz.cam', 'javhdz.one', 'javhdz.life'];
       for (const jd of jDomains) {
         try {
           const jRes = await fetch(`https://${jd}/-${encodeURIComponent(id)}.html`, {
@@ -73,7 +91,7 @@ export async function onRequest(context) {
             if (atobMatch) {
               const stream = atob(atobMatch[1]);
               if (stream && stream.startsWith('http')) {
-                const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(stream)}`;
+                const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(stream)}&referer=${encodeURIComponent('https://javhdz.page/')}`;
                 return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
               }
             }
@@ -82,31 +100,27 @@ export async function onRequest(context) {
       }
     }
 
-    // 5. SubJAV (Direct HLS from apistream)
+    // 5. SubJAV (Direct HLS from subjav.baby ecyihz/v1/player)
     if (source === 'subjav') {
       try {
-        const pRes = await fetch(`https://subjav.asia/wp-json/ecyihz/v1/player/?id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`, {
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://subjav.asia/' }
+        const pRes = await fetch(`https://subjav.baby/wp-json/ecyihz/v1/player/?id=${encodeURIComponent(id)}&server=${encodeURIComponent(server)}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://subjav.baby/' }
         });
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData && pData.data) {
             const mMatch = pData.data.match(/file:\s*['"](https?:\/\/[^'"]+\.m3u8)['"]/i);
             if (mMatch) {
-              return new Response(JSON.stringify({ videoUrl: mMatch[1], type: 'hls' }), { headers: corsHeaders });
+              const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(mMatch[1])}&referer=${encodeURIComponent('https://subjav.baby/')}`;
+              return new Response(JSON.stringify({ videoUrl: proxyUrl, type: 'hls' }), { headers: corsHeaders });
             }
           }
         }
       } catch (e) {}
-      return new Response(JSON.stringify({ url: `https://subjav.asia/player/${encodeURIComponent(id)}/`, type: 'iframe' }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ url: `https://subjav.baby/player/${encodeURIComponent(id)}/`, type: 'iframe' }), { headers: corsHeaders });
     }
 
-    // 6. PhimXYZ
-    if (source === 'phimxyz') {
-      return new Response(JSON.stringify({ error: 'Nguồn PhimXYZ hiện đang bảo trì máy chủ.' }), { status: 503, headers: corsHeaders });
-    }
-
-    return new Response(JSON.stringify({ error: 'Unknown source: ' + source }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: 'Nguồn không hỗ trợ: ' + source }), { status: 404, headers: corsHeaders });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: corsHeaders });
   }

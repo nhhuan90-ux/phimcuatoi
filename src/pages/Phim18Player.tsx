@@ -6,7 +6,7 @@ import VideoPlayer from '../components/VideoPlayer';
 const PHIM18_API = import.meta.env.VITE_PHIM18_API || '';
 const SOURCE_NAMES: Record<string, string> = {
   javhdz: 'JAVHDz', vlxx: 'VLXX', javsub: 'JAVSub',
-  javtiful: 'JavTiful', phimxyz: 'PhimXYZ', subjav: 'SubJAV'
+  javtiful: 'JavTiful', subjav: 'SubJAV'
 };
 
 
@@ -139,31 +139,43 @@ export default function Phim18Player() {
           const detail = movie || await fetchStaticMovieDetail(source, id);
           if (source === 'javtiful') {
             const code = (detail?.code || id || '').toUpperCase();
-            data = { url: `https://upload18.org/play/index/${code}`, type: 'iframe' };
+            data = { url: `/api/embed/javtiful/${code}`, type: 'iframe' };
           } else if (source === 'vlxx') {
             if (detail?.embedUrl) {
               data = { url: detail.embedUrl, type: 'iframe' };
+            } else {
+              const paddedId = String(id).padStart(5, '0');
+              const directManifest = `https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`;
+              data = { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(directManifest)}&referer=${encodeURIComponent('https://play.vlstream.net/')}`, type: 'hls' };
             }
           } else if (source === 'javsub') {
             const playUrls = detail?.embedUrls || (detail?.embedUrl ? [{ url: detail.embedUrl, label: 'Server 1' }] : []);
             const idx = Math.min(Math.max(0, activeServer - 1), Math.max(0, playUrls.length - 1));
             const chosenUrl = playUrls[idx]?.url || detail?.embedUrl;
             if (chosenUrl) {
-              data = { url: chosenUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+              const cleanUrl = chosenUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+              const hashMatch = cleanUrl.match(/\/videos\/([a-f0-9]+)\//);
+              if (hashMatch) {
+                data = { url: `/api/embed/javsub/${hashMatch[1]}`, type: 'iframe' };
+              } else {
+                data = { url: `/api/embed/javsub/${encodeURIComponent(cleanUrl)}`, type: 'iframe' };
+              }
             }
           } else if (source === 'subjav') {
             if (detail?.videoUrl) {
-              data = { videoUrl: detail.videoUrl, type: 'hls' };
+              const proxied = detail.videoUrl.startsWith('http')
+                ? `/api/proxy/hls?url=${encodeURIComponent(detail.videoUrl)}&referer=${encodeURIComponent('https://subjav.baby/')}`
+                : detail.videoUrl;
+              data = { videoUrl: proxied, type: 'hls' };
             } else {
-              data = { url: `https://subjav.asia/player/${id}/`, type: 'iframe' };
+              data = { url: `/api/embed/subjav/${id}`, type: 'iframe' };
             }
           } else if (source === 'javhdz') {
             if (detail?.videoUrl) {
-              data = { videoUrl: detail.videoUrl, type: 'hls' };
-            }
-          } else if (source === 'phimxyz') {
-            if (detail?.videoUrl) {
-              data = { videoUrl: detail.videoUrl, type: 'hls' };
+              const proxied = detail.videoUrl.startsWith('http')
+                ? `/api/proxy/hls?url=${encodeURIComponent(detail.videoUrl)}&referer=${encodeURIComponent('https://javhdz.page/')}`
+                : detail.videoUrl;
+              data = { videoUrl: proxied, type: 'hls' };
             }
           }
         }

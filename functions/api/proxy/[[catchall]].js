@@ -1,6 +1,16 @@
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  const targetUrl = url.searchParams.get('url');
+  const catchall = context.params.catchall || [];
+  let targetUrl = url.searchParams.get('url');
+
+  if (!targetUrl && catchall.length > 0) {
+    const joined = catchall.join('/');
+    if (joined.startsWith('http')) {
+      targetUrl = joined;
+    } else if (catchall[0] === 'hls' && catchall.slice(1).join('/').startsWith('http')) {
+      targetUrl = catchall.slice(1).join('/');
+    }
+  }
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -19,14 +29,14 @@ export async function onRequest(context) {
   try {
     let referer = url.searchParams.get('referer');
     if (!referer) {
-      if (targetUrl.includes('tiktokcdn.top')) {
-        referer = 'https://javhdz.life/';
-      } else if (targetUrl.includes('vcast') || targetUrl.includes('sdeli') || targetUrl.includes('streamforester')) {
-        referer = 'https://vcast.name/';
+      if (targetUrl.includes('tiktokcdn.top') || targetUrl.includes('javhdz')) {
+        referer = 'https://javhdz.page/';
+      } else if (targetUrl.includes('vcast') || targetUrl.includes('sdeli') || targetUrl.includes('streamforester') || targetUrl.includes('wogplayer') || targetUrl.includes('bk11cba')) {
+        referer = 'https://wogplayer.top/';
       } else if (targetUrl.includes('gooqlevideo') || targetUrl.includes('vlstream') || targetUrl.includes('vlxx')) {
         referer = 'https://play.vlstream.net/';
       } else if (targetUrl.includes('subjav')) {
-        referer = 'https://subjav.asia/';
+        referer = 'https://subjav.baby/';
       } else {
         referer = targetUrl;
       }
@@ -49,7 +59,17 @@ export async function onRequest(context) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) return line;
         let segUrl = trimmed;
-        if (!segUrl.startsWith('http')) segUrl = baseUrl + segUrl;
+        if (!segUrl.startsWith('http')) {
+          if (segUrl.startsWith('/')) {
+            try {
+              segUrl = new URL(targetUrl).origin + segUrl;
+            } catch (e) {
+              segUrl = baseUrl + segUrl;
+            }
+          } else {
+            segUrl = baseUrl + segUrl;
+          }
+        }
         return `/api/proxy/hls?url=${encodeURIComponent(segUrl)}&referer=${encodeURIComponent(referer)}`;
       });
 

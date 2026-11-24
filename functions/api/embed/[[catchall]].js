@@ -48,17 +48,14 @@ export async function onRequest(context) {
       const antiAdScript = `
       <script>
         (function() {
-          // Block window.open and unwanted window creation
           try {
             window.open = function() { console.log('[AdBlock] Blocked popup attempt'); return null; };
           } catch(e) {}
 
-          // Neutralize devtool blocks if any
           try {
             window.__u18SandboxGuard = { version: "1.1.0", blocked: false, reason: "", iframeContext: false, probeStatus: "clear" };
           } catch(e) {}
 
-          // Disarm clickjacking target="_blank" on dynamically injected ad links
           document.addEventListener('click', function(e) {
             var el = e.target;
             while (el && el !== document) {
@@ -90,6 +87,67 @@ export async function onRequest(context) {
       });
     } catch (err) {
       return new Response('Embed error: ' + err.message, { status: 502, headers: corsHeaders });
+    }
+  }
+
+  // 2. JAVSub Clean Embed & Iframe Detection Bypass (Eliminates BLOCKED! screen)
+  if (source === 'javsub') {
+    try {
+      let targetEmbedUrl = decodeURIComponent(id);
+      if (!targetEmbedUrl.startsWith('http')) {
+        targetEmbedUrl = `https://e.streamforester.name/videos/${encodeURIComponent(id)}/play`;
+      }
+
+      const cleanUrl = targetEmbedUrl.replace(/&amp;/g, '&').replace(/&adTag=[^&]*/g, '').replace(/\?adTag=[^&]*/g, '');
+      let embedOrigin = 'https://e.streamforester.name';
+      try { embedOrigin = new URL(cleanUrl).origin; } catch (e) {}
+
+      const embedRes = await fetch(cleanUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          'Referer': 'https://javsub.blog/'
+        }
+      });
+
+      if (!embedRes.ok) {
+        return new Response('Embed fetch failed: ' + embedRes.status, { status: embedRes.status, headers: corsHeaders });
+      }
+
+      let html = await embedRes.text();
+
+      // Bakes authorized domain so config fetch returns real streams
+      html = html.replace(/"domain"\s*:\s*"[^"]*"/g, '"domain":"javsub.blog"');
+      // Bypass the BLOCKED! check: force iw to true
+      html = html.replace(/"iw"\s*:\s*false/g, '"iw":true');
+      html = html.replace(/if\s*\(\s*!o\.iw\s*\)[^;]*;/g, '/* bypass blocked */');
+      html = html.replace(/!t\.iw\s*&&\s*n\.currentTime\s*>\s*15/g, 'false');
+      html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
+      html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
+
+      // Inject base tag
+      if (!html.includes('<base')) {
+        html = html.replace('<head>', `<head><base href="${embedOrigin}/">`);
+      }
+
+      // Disarm popups
+      const antiAdScript = `
+      <script>
+        (function() {
+          try { window.open = function() { console.log('[AdBlock] Blocked popup'); return null; }; } catch(e) {}
+        })();
+      </script>
+      `;
+      html = html.replace('<head>', '<head>' + antiAdScript);
+
+      return new Response(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600'
+        }
+      });
+    } catch (err) {
+      return new Response('JAVSub embed error: ' + err.message, { status: 502, headers: corsHeaders });
     }
   }
 

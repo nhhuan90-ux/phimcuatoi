@@ -789,7 +789,7 @@ async function getJavhdzVideoUrl(id) {
 // ============ VLXX ============
 async function getVlxxVideoUrl(id, server = 1) {
   try {
-    const res = await axios.post('https://vlxx.phd/ajax.php', `vlxx_server=1&id=${id}&server=${server}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Mozilla/5.0', 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://vlxx.phd/' }, timeout: 15000 });
+    const res = await axios.post('https://vlxx.net/ajax.php', `vlxx_server=1&id=${id}&server=${server}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Mozilla/5.0', 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://vlxx.net/' }, timeout: 15000 });
     const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     if (data.player) {
       const $ = cheerio.load(data.player);
@@ -798,18 +798,27 @@ async function getVlxxVideoUrl(id, server = 1) {
         return { url: iframeUrl, type: 'iframe' };
       }
     }
-    return { error: 'No player data' };
-  } catch (e) { return null; }
+    const paddedId = String(id).padStart(5, '0');
+    const directManifest = `https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`;
+    return { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(directManifest)}&referer=${encodeURIComponent('https://play.vlstream.net/')}`, type: 'hls' };
+  } catch (e) {
+    const paddedId = String(id).padStart(5, '0');
+    const directManifest = `https://rr3---sn-8pxuuxa-i5ozr.gooqlevideo.com/manifest-s1/${paddedId}.vl`;
+    return { videoUrl: `/api/proxy/hls?url=${encodeURIComponent(directManifest)}&referer=${encodeURIComponent('https://play.vlstream.net/')}`, type: 'hls' };
+  }
 }
 
 // ============ JAVSub ============
 async function getJavsubVideoUrl(id, server = 1) {
-  const movie = moviesData.javsub.find(m => m.id === id);
+  const movie = moviesData.javsub?.find(m => m.id === id);
   try {
     let playUrl = '';
     if (movie && movie.embedUrls && movie.embedUrls.length > 0) {
       const idx = Math.min(Math.max(0, parseInt(server) - 1), movie.embedUrls.length - 1);
       playUrl = movie.embedUrls[idx]?.url || movie.embedUrls[0].url;
+    }
+    if (!playUrl && movie?.embedUrl) {
+      playUrl = movie.embedUrl;
     }
     if (!playUrl) {
       const link = movie?.link || `https://${domains.javsub || 'javsub.blog'}/phim-sex/${id}`;
@@ -822,12 +831,25 @@ async function getJavsubVideoUrl(id, server = 1) {
     // Extract video hash ID from embed URL
     const videoIdMatch = playUrl.match(/\/videos\/([a-f0-9]+)\//);
     if (videoIdMatch) {
-      const m3u8Url = `/api/proxy/hls?url=${encodeURIComponent(`https://vcast.name/videos/${videoIdMatch[1]}/master.m3u8`)}`;
-      return { videoUrl: m3u8Url, type: 'hls' };
+      try {
+        const cfgRes = await axios.post(`https://wogplayer.top/videos/${videoIdMatch[1]}/config?d=javsub.blog`, {}, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'https://javsub.blog/',
+            'Origin': 'https://javsub.blog'
+          },
+          timeout: 6000
+        });
+        const m3u8 = cfgRes.data?.sources?.[0]?.file;
+        if (m3u8) {
+          const proxyUrl = `/api/proxy/hls?url=${encodeURIComponent(m3u8)}&referer=${encodeURIComponent('https://wogplayer.top/')}`;
+          return { videoUrl: proxyUrl, type: 'hls' };
+        }
+      } catch (e) {}
+      return { url: `/api/embed/javsub/${videoIdMatch[1]}`, type: 'iframe' };
     }
 
-    // Fallback: return as iframe
-    return { url: playUrl.replace(/&adTag=[^&]*/g, ''), type: 'iframe' };
+    return { url: `/api/embed/javsub/${encodeURIComponent(id)}`, type: 'iframe' };
   } catch (e) {
     return null;
   }
@@ -838,24 +860,12 @@ async function getJavtifulVideoUrl(id) {
   const movie = moviesData.javtiful?.find(m => m.id === id);
   const code = movie?.code || id;
   const upperId = code ? code.toUpperCase() : code;
-  return { url: `https://upload18.org/play/index/${upperId}`, type: 'iframe' };
+  return { url: `/api/embed/javtiful/${upperId}`, type: 'iframe' };
 }
 
-// ============ PhimXYZ ============
+// ============ PhimXYZ (Ngừng hoạt động) ============
 async function getPhimxyzVideoUrl(id) {
-  try {
-    const movie = moviesData.phimxyz.find(m => m.id === id);
-    const link = movie?.link ? movie.link.replace(/i\d?\.phimxyz\.[a-z]+/i, domains.phimxyz) : `https://${domains.phimxyz}/phim/${id}`;
-    const html = await fetchHtml(link);
-    const $ = cheerio.load(html);
-    let p = $('[data-link]').first().attr('data-link') || '';
-    if (!p) {
-      const match = html.match(/data-link=["']([^"']+)["']/);
-      if (match) p = match[1];
-    }
-    if (!p) return null;
-    return { videoUrl: p.startsWith('http') ? p.replace(/^http:/i, 'https:') : 'https://' + domains.phimxyz + p, type: 'hls' };
-  } catch (e) { return null; }
+  return { error: 'Nguồn PhimXYZ đã ngừng hoạt động và bị gỡ bỏ.' };
 }
 
 // ============ SubJAV ============
@@ -1213,22 +1223,25 @@ app.post('/api/scan-folder', async (req, res) => {
 app.get('/api/proxy/hls', async (req, res) => {
   const { url } = req.query; if (!url) return res.status(400).json({ error: 'Missing url' });
   try {
-    let referer = `https://${domains.javhdz}/`;
+    let referer = 'https://javhdz.page/';
     let originHeader = referer;
     if (url.match(/sdeli/i)) {
       referer = 'https://vcast.name/';
       originHeader = referer;
-    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast)/i)) {
-      referer = 'https://javsub.blog/';
+    } else if (url.match(/(byzamlan|streamforester|zabitcdn|streamqq|playheovl|vcast|wogplayer|bk11cba)/i)) {
+      referer = 'https://wogplayer.top/';
       originHeader = referer;
     } else if (url.match(/subjav/i)) {
-      referer = `https://${domains.subjav}/`;
+      referer = 'https://subjav.baby/';
       originHeader = referer;
     } else if (url.match(/(helvid|upload18)/i)) {
       referer = 'https://upload18.org/';
       originHeader = referer;
     } else if (url.match(/tiktokcdn/i)) {
-      referer = `https://${domains.javhdz}/`;
+      referer = 'https://javhdz.page/';
+      originHeader = referer;
+    } else if (url.match(/(gooqlevideo|vlstream|vlxx)/i)) {
+      referer = 'https://play.vlstream.net/';
       originHeader = referer;
     } else if (url.match(/(streamvsmov|vsmov)/i)) {
       referer = 'https://vsmov.com/';
@@ -1265,7 +1278,15 @@ app.get('/api/proxy/hls', async (req, res) => {
       if (!trimmed || trimmed.startsWith('#')) return line;
       let targetUrl = trimmed;
       if (!targetUrl.startsWith('http')) {
-        targetUrl = baseUrl + targetUrl;
+        if (targetUrl.startsWith('/')) {
+          try {
+            targetUrl = new URL(url).origin + targetUrl;
+          } catch(e) {
+            targetUrl = baseUrl + targetUrl;
+          }
+        } else {
+          targetUrl = baseUrl + targetUrl;
+        }
       }
       if (targetUrl.includes('.m3u8')) {
         return '/api/proxy/hls?url=' + encodeURIComponent(targetUrl) + refParam;
@@ -1494,15 +1515,26 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
     let embedOrigin = '';
     try { embedOrigin = new URL(cleanUrl).origin; } catch (e) { embedOrigin = 'https://e.streamforester.name'; }
 
-    // Bypass the BLOCKED! check: force iw to true
+    // Bypass the BLOCKED! check: force iw to true and authorized domain
+    html = html.replace(/"domain"\s*:\s*"[^"]*"/g, '"domain":"javsub.blog"');
     html = html.replace(/"iw"\s*:\s*false/g, '"iw":true');
     // Bypass iframe detection checks
-    html = html.replace(/if\s*\(\s*!o\.iw\s*\)/g, 'if(false)');
+    html = html.replace(/if\s*\(\s*!o\.iw\s*\)[^;]*;/g, '/* bypass blocked */');
+    html = html.replace(/!t\.iw\s*&&\s*n\.currentTime\s*>\s*15/g, 'false');
     html = html.replace(/window\.top\s*!==\s*window\.self/g, 'false');
     html = html.replace(/window\.self\s*!==\s*window\.top/g, 'false');
 
     // Inject <base> tag so relative paths (scripts, CSS, config) resolve to the embed origin
     html = html.replace('<head>', `<head><base href="${embedOrigin}/">`);
+
+    const antiAdScript = `
+    <script>
+      (function() {
+        try { window.open = function() { console.log('[AdBlock] Blocked popup'); return null; }; } catch(e) {}
+      })();
+    </script>
+    `;
+    html = html.replace('<head>', '<head>' + antiAdScript);
 
     res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
     return res.send(html);
@@ -1512,10 +1544,58 @@ app.get('/api/embed/javsub/:id', async (req, res) => {
 });
 
 // ============ JavTiful EMBED ============
-app.get('/api/embed/javtiful/:id', (req, res) => {
+app.get('/api/embed/javtiful/:id', async (req, res) => {
   const id = req.params.id;
   const upperId = id ? id.toUpperCase() : id;
-  return res.redirect(`https://upload18.org/play/index/${upperId}`);
+  try {
+    const upstreamUrl = `https://upload18.org/play/index/${encodeURIComponent(upperId)}`;
+    const embedRes = await axios.get(upstreamUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://upload18.org/'
+      }
+    });
+
+    let html = embedRes.data;
+    if (!html.includes('<base')) {
+      html = html.replace('<head>', '<head><base href="https://upload18.org/">');
+    }
+
+    html = html.replace(/<script[^>]*src=["'][^"']*(?:egotistic|driverhug|plywood|overblown|popunder|clocid)[^"']*["'][^>]*><\/script>/gi, '<!-- ad removed -->');
+    html = html.replace(/<script[^>]*data-clocid[^>]*>[\s\S]*?<\/script>/gi, '<!-- ad removed -->');
+    html = html.replace(/<script[^>]*sandbox-guard[^>]*><\/script>/gi, '<script>window.__u18SandboxGuard={version:"1.1.0",blocked:false,reason:"",iframeContext:false,probeStatus:"clear"};</script>');
+
+    const antiAdScript = `
+    <script>
+      (function() {
+        try { window.open = function() { console.log('[AdBlock] Blocked popup attempt'); return null; }; } catch(e) {}
+        try { window.__u18SandboxGuard = { version: "1.1.0", blocked: false, reason: "", iframeContext: false, probeStatus: "clear" }; } catch(e) {}
+        document.addEventListener('click', function(e) {
+          var el = e.target;
+          while (el && el !== document) {
+            if (el.tagName === 'A') {
+              var href = el.getAttribute('href') || '';
+              if (href.startsWith('http') && !href.includes('upload18.org') && !href.includes('helvid.com')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+              }
+              el.removeAttribute('target');
+            }
+            el = el.parentNode;
+          }
+        }, true);
+      })();
+    </script>
+    `;
+    html = html.replace('<head>', '<head>' + antiAdScript);
+
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8' });
+    return res.send(html);
+  } catch (e) {
+    return res.status(502).send('Error loading JavTiful embed: ' + e.message);
+  }
 });
 
 // ============ SubJAV EMBED ============

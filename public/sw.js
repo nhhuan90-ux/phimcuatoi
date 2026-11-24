@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phimcuatoi-v8';
+const CACHE_NAME = 'phimcuatoi-v9';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

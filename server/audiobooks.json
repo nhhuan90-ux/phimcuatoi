@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1795641861412-1Uy9kU",
+    "title": "Thám Tử Galileo ra mắt",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Thám Tử Galileo ra mắt\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1Uy9kUtFKIyW-HIUIGzPQ9T7ucCJVvDEF",
+        "title": "Thám Tử Galileo ra mắt",
+        "driveUrl": "https://drive.google.com/file/d/1Uy9kUtFKIyW-HIUIGzPQ9T7ucCJVvDEF/view",
+        "driveId": "1Uy9kUtFKIyW-HIUIGzPQ9T7ucCJVvDEF"
+      }
+    ],
+    "createdAt": "2026-11-25T21:24:21.412Z",
+    "updatedAt": "2026-11-25T21:24:21.412Z"
+  },
+  {
     "id": "book-1795592860171-1HcyzU",
     "title": "Án Mạng trên tàu Noah",
     "author": "Nhiều tác giả",

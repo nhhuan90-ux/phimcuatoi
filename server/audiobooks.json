@@ -1,5 +1,25 @@
 [
   {
+    "id": "book-1795812886374-1oTwKp",
+    "title": "Ánh Nhìn Của Cô Hầu Gái",
+    "author": "Nhiều tác giả",
+    "narrator": "Diễn đọc Audio",
+    "category": "Sách nói",
+    "description": "Tác phẩm \"Ánh Nhìn Của Cô Hầu Gái\" cập nhật trực tiếp từ thư mục gốc Google Drive.",
+    "cover": "",
+    "folderId": "",
+    "chapters": [
+      {
+        "id": "c_1oTwKpYw9PriQ7X0QB8SohEsDwZID8pZw",
+        "title": "Ánh Nhìn Của Cô Hầu Gái",
+        "driveUrl": "https://drive.google.com/file/d/1oTwKpYw9PriQ7X0QB8SohEsDwZID8pZw/view",
+        "driveId": "1oTwKpYw9PriQ7X0QB8SohEsDwZID8pZw"
+      }
+    ],
+    "createdAt": "2026-11-27T20:54:46.374Z",
+    "updatedAt": "2026-11-27T20:54:46.374Z"
+  },
+  {
     "id": "book-1795678728484-1QBA3Q",
     "title": "Vật Hiến Tế Của Thám Tử Lừng Danh",
     "author": "Shirai Tomoyuki & AI (dịch)",
